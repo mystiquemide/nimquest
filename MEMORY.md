@@ -76,3 +76,53 @@ Risks:
 Next checkpoint:
 
 - Add persistence boundary and stricter backend validation before frontend work.
+
+## Correction - Master Forge Foundation Docs
+
+Date: 2026-07-28
+
+Note:
+
+- The Master Forge foundation docs were missing after project initialization.
+- Added the required project control files:
+  - `PRD.md`
+  - `TASKS.md`
+  - `ARCHITECTURE.md`
+
+Reason:
+
+- These files keep requirements, architecture, and execution checkpoints explicit while we move fast for Cycle I.
+
+## Checkpoint 2 - Backend Validation and Persistence
+
+Date: 2026-07-28
+
+Phase: Backend build.
+
+Deliverables:
+
+- Added `PRD.md`, `TASKS.md`, and `ARCHITECTURE.md`.
+- Added durable JSON completion storage.
+- Added atomic completion store writes.
+- Added Nimiq and EVM wallet-address validation.
+- Added Nimiq Pay device identifier validation.
+- Added tests for invalid wallet addresses.
+- Added tests for invalid device identifiers.
+- Added persistence test across store instances.
+- Updated README to point to project control docs.
+
+Verification:
+
+- Command: `npm test`
+- Result: pass
+- Evidence: 8 tests passed, 0 failed.
+
+Risks:
+
+- Completion persistence is file-based and suitable for MVP, not long-term scale.
+- Real wallet ownership proof is still pending frontend Nimiq Pay integration.
+- NIM transfer execution is still not implemented.
+
+Next checkpoint:
+
+- Define the Nimiq integration contract between frontend, wallet provider, and backend before UI work.
