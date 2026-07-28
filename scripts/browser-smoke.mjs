@@ -129,11 +129,32 @@ try {
     await page.close();
   }
 
+  // Answer randomization: options render in a shuffled order per session, but the
+  // correct answer keeps its true source index so backend grading stays correct.
+  const sourceOptions = ["NIM", "A wallet password", "A bank account number"];
+  const correctDisplayPositions = new Set();
+  for (let run = 0; run < 6; run += 1) {
+    const page = await browser.newPage({ viewport: { width: 390, height: 900 } });
+    await page.goto(`${baseUrl}/quests/meet-nimiq`, { waitUntil: "networkidle" });
+    await page.getByRole("button", { name: /Begin 3 questions/i }).click();
+    const shown = await page.locator(".answer-option b").allTextContents();
+    assert.deepEqual([...shown].sort(), [...sourceOptions].sort(), "options must be a permutation of the source");
+    // The correct answer for this question is the source option at index 0 ("NIM").
+    // Wherever it lands on screen, its data-answer must remain the true index 0.
+    const nimIndex = shown.indexOf("NIM");
+    const nimDataAnswer = await page.locator(".answer-option").nth(nimIndex).getAttribute("data-answer");
+    assert.equal(nimDataAnswer, "0", "the correct option must keep its true source index for grading");
+    correctDisplayPositions.add(nimIndex);
+    await page.close();
+  }
+  assert.ok(correctDisplayPositions.size > 1, "correct answer position must vary across sessions");
+
   console.log(JSON.stringify({
     status: "passed",
     routes: routes.length,
     widths,
-    checks: evidence.length
+    checks: evidence.length,
+    randomization: { correctDisplayPositions: [...correctDisplayPositions].sort() }
   }, null, 2));
 } finally {
   await browser.close();

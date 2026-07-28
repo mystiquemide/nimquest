@@ -951,6 +951,14 @@ function renderQuestSession(questId) {
   state.grading = false;
   state.gradeResult = null;
   state.gradeError = null;
+  if (
+    !Array.isArray(state.optionOrder) ||
+    state.optionOrder.length !== quest.questions.length
+  ) {
+    state.optionOrder = quest.questions.map((question) =>
+      shuffledIndices(question.options.length)
+    );
+  }
 
   document.querySelector("#app").innerHTML = `
     <a class="skip-link" href="#session-content">Skip to quest</a>
@@ -1085,18 +1093,18 @@ function renderQuestSession(questId) {
         <p class="eyebrow">Choose one answer</p>
         <h1>${question.prompt}</h1>
         <div class="answer-list" role="radiogroup" aria-label="${question.prompt}">
-          ${question.options
+          ${state.optionOrder[state.questionIndex]
             .map(
-              (option, index) => `
+              (originalIndex, displayIndex) => `
                 <button
-                  class="answer-option ${selected === index ? "is-selected" : ""}"
+                  class="answer-option ${selected === originalIndex ? "is-selected" : ""}"
                   type="button"
                   role="radio"
-                  aria-checked="${selected === index}"
-                  data-answer="${index}"
+                  aria-checked="${selected === originalIndex}"
+                  data-answer="${originalIndex}"
                 >
-                  <span>${String.fromCharCode(65 + index)}</span>
-                  <b>${option}</b>
+                  <span>${String.fromCharCode(65 + displayIndex)}</span>
+                  <b>${question.options[originalIndex]}</b>
                   <i aria-hidden="true">✓</i>
                 </button>
               `
@@ -1188,7 +1196,13 @@ function renderQuestSession(questId) {
                   <div>
                     <small>${question.prompt}</small>
                     <b>${question.options[state.answers[index]]}</b>
-                    ${needsWork ? `<p>${escapeHtml(feedback.explanation)}</p>` : ""}
+                    ${
+                      feedback?.correct
+                        ? `<p>${escapeHtml(feedback.explanation)}</p>`
+                        : needsWork
+                          ? `<p class="review-hint">Not quite. Revisit the lesson and pick again. NimQuest doesn’t reveal the answer.</p>`
+                          : ""
+                    }
                   </div>
                   ${
                     passed || !failed || needsWork
@@ -1494,7 +1508,7 @@ function renderWalletProof(questId) {
       <button class="button" type="button" data-connect-proof>
         ${hasError ? "Try again" : "Verify with Nimiq Pay"} <span aria-hidden="true">→</span>
       </button>
-      ${hasError ? `<a class="wallet-fallback" href="https://pay.nimiq.com/" target="_blank" rel="noreferrer">Open Nimiq Pay</a>` : ""}
+      ${hasError ? `<a class="wallet-fallback" href="https://pay.nimiq.com/" target="_blank" rel="noreferrer">Get the Nimiq Pay app</a>` : ""}
     `;
 
     gate.querySelector("[data-connect-proof]").addEventListener("click", beginWalletProof);
@@ -2180,9 +2194,9 @@ function normalizeWalletError(error) {
   const message = error instanceof Error ? error.message : String(error);
   if (/timeout|inject|provider/i.test(message)) {
     return new WalletFlowError(
-      "Open this inside Nimiq Pay",
-      "This browser can’t access the Nimiq Pay Mini App provider.",
-      "Open NimQuest from Nimiq Pay, then restart the wallet proof."
+      "Open NimQuest inside the Nimiq Pay app",
+      "A normal web browser can’t reach your wallet. NimQuest signs your proof inside the Nimiq Pay app.",
+      "1. Install Nimiq Pay from your app store. 2. Open Nimiq Pay. 3. Open NimQuest from inside it."
     );
   }
 
@@ -2221,6 +2235,15 @@ function escapeHtml(value) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
+}
+
+function shuffledIndices(count) {
+  const order = Array.from({ length: count }, (_, index) => index);
+  for (let i = order.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [order[i], order[j]] = [order[j], order[i]];
+  }
+  return order;
 }
 
 function walletShieldMarkup() {
