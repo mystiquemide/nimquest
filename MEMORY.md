@@ -161,4 +161,45 @@ Risks:
 
 Next checkpoint:
 
+- Add backend ecosystem readiness before frontend: richer quests, quest pools, progress stats, and frontend-safe CORS.
+
+## Checkpoint 4 - Backend Ecosystem Layer
+
+Date: 2026-07-28
+
+Phase: Backend build.
+
+Deliverables:
+
+- Expanded quest catalog from 3 to 7 quests.
+- Added ecosystem metadata to each quest:
+  - track
+  - audience
+  - difficulty
+  - ecosystem use case
+- Added sponsor-ready quest pools:
+  - `starter-onboarding`
+  - `ecosystem-growth`
+- Added `GET /api/pools`.
+- Added `GET /api/pools/:id`.
+- Added `GET /api/progress`.
+- Added public progress stats without exposing wallet addresses.
+- Added store value listing for aggregate stats.
+- Added CORS `OPTIONS` preflight handling for frontend calls.
+- Extended backend tests for pools and progress.
+
+Verification:
+
+- Command: `npm test`
+- Result: pass
+- Evidence: 12 tests passed, 0 failed.
+
+Risks:
+
+- Quest pools are demo-ready metadata, not funded pools yet.
+- Public progress is aggregate-only and suitable for judging/demo, not analytics-grade reporting.
+- Real Nimiq Pay provider behavior remains the next proof point.
+
+Next checkpoint:
+
 - Start frontend MVP with Nimiq Pay provider detection, browser fallback, quest flow, and backend integration.
