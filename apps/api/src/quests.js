@@ -1,321 +1,142 @@
 export const quests = [
   {
-    id: "wallet-basics",
-    title: "Wallet Basics",
+    id: "meet-nimiq",
+    title: "Meet Nimiq",
     track: "onboarding",
     audience: "new-user",
     difficulty: "starter",
-    ecosystemUseCase: "Teaches safe wallet approval before the user tries payments.",
-    rewardNim: 1,
-    estimatedSeconds: 45,
+    estimatedSeconds: 55,
+    reward: { status: "unavailable", asset: null, amount: null },
+    learningGoals: [
+      "Recognize NIM as the native asset of the Nimiq network.",
+      "Understand that Nimiq addresses can be shared without revealing wallet secrets."
+    ],
     lesson:
-      "A Nimiq Pay wallet lets you approve account access and payments without exposing private keys to mini apps.",
-    questions: [
-      {
-        id: "wallet-private-keys",
-        prompt: "Where do private keys stay during a Nimiq Pay Mini App wallet action?",
-        options: [
-          "Inside Nimiq Pay",
-          "Inside the mini app database",
-          "Inside the public GitHub repo"
-        ],
-        answerIndex: 0
-      },
-      {
-        id: "approval",
-        prompt: "What should happen before a sensitive wallet action?",
-        options: [
-          "The app should bypass approval",
-          "The user should approve it in Nimiq Pay",
-          "The backend should guess the user's address"
-        ],
-        answerIndex: 1
-      },
-      {
-        id: "integration",
-        prompt: "What counts as real Nimiq Pay integration?",
-        options: [
-          "Showing a logo only",
-          "Using wallet, transaction, or payment infrastructure",
-          "Mentioning NIM in the footer"
-        ],
-        answerIndex: 1
-      }
-    ]
-  },
-  {
-    id: "nim-payments",
-    title: "NIM Payments",
-    track: "payments",
-    audience: "new-user",
-    difficulty: "starter",
-    ecosystemUseCase: "Shows why NIM belongs inside the core Mini App flow.",
-    rewardNim: 1,
-    estimatedSeconds: 50,
-    lesson:
-      "NIM is the native asset of the Nimiq network and is a strong fit for fast, low-friction mini app rewards.",
+      "Nimiq is a payment-focused blockchain designed to make crypto simple to use. NIM is its native asset. Your Nimiq address identifies your account for receiving payments, while your private keys remain inside your wallet and must never be shared.",
+    sourceUrl: "https://nimiq.com/",
     questions: [
       {
         id: "native-asset",
-        prompt: "Which asset gives a Mini App bonus in the competition?",
-        options: ["NIM", "A fake token", "A screenshot"],
-        answerIndex: 0
+        prompt: "What is the native asset of the Nimiq network?",
+        options: ["NIM", "A wallet password", "A bank account number"],
+        answerIndex: 0,
+        explanation: "NIM is the native asset used on the Nimiq network."
       },
       {
-        id: "payments-core",
-        prompt: "Where should payments sit in a strong Mini App?",
-        options: [
-          "At the core of the user flow",
-          "Hidden in a logo",
-          "Only in a README claim"
-        ],
-        answerIndex: 0
+        id: "safe-to-share",
+        prompt: "What can you share when someone wants to send you NIM?",
+        options: ["Your Nimiq address", "Your private key", "Your recovery words"],
+        answerIndex: 0,
+        explanation: "A public Nimiq address can receive funds. Private keys and recovery words must stay secret."
       },
       {
-        id: "reward-cap",
-        prompt: "Why cap learning rewards?",
-        options: [
-          "To reduce farming and keep rewards sustainable",
-          "To stop users from learning",
-          "To remove wallet use"
-        ],
-        answerIndex: 0
+        id: "wallet-role",
+        prompt: "What protects the keys that control your NIM?",
+        options: ["Your wallet", "A public quest page", "A transaction recipient"],
+        answerIndex: 0,
+        explanation: "Your wallet protects the keys used to authorize account actions."
       }
     ]
   },
   {
-    id: "mini-app-safety",
-    title: "Mini App Safety",
+    id: "pay-with-nim",
+    title: "Pay with NIM",
+    track: "payments",
+    audience: "new-user",
+    difficulty: "starter",
+    estimatedSeconds: 60,
+    reward: { status: "unavailable", asset: null, amount: null },
+    learningGoals: [
+      "Review the recipient, amount, and asset before approving a payment.",
+      "Recognize that Nimiq Pay asks for approval for sensitive wallet actions."
+    ],
+    lesson:
+      "A NIM payment names a recipient and an amount. Nimiq Pay shows a confirmation before a Mini App can submit a payment from your account. Check the recipient, amount, and asset every time. Reject the request if any detail is unexpected.",
+    sourceUrl: "https://nimiq.dev/mini-apps/api-reference/nimiq-provider",
+    questions: [
+      {
+        id: "payment-review",
+        prompt: "Which details should you check before approving a NIM payment?",
+        options: [
+          "Recipient, amount, and asset",
+          "Only the page colour",
+          "Only the app name"
+        ],
+        answerIndex: 0,
+        explanation: "The recipient, amount, and asset determine what the payment will do."
+      },
+      {
+        id: "unexpected-request",
+        prompt: "What should you do when a wallet request is unexpected?",
+        options: ["Reject it", "Approve it quickly", "Share your recovery words"],
+        answerIndex: 0,
+        explanation: "Reject wallet actions you did not intentionally start."
+      },
+      {
+        id: "approval",
+        prompt: "Who approves a sensitive action inside Nimiq Pay?",
+        options: ["The wallet user", "The Mini App automatically", "Any website visitor"],
+        answerIndex: 0,
+        explanation: "Nimiq Pay requires the user to confirm sensitive wallet actions."
+      }
+    ]
+  },
+  {
+    id: "prove-wallet-control",
+    title: "Prove Wallet Control",
     track: "security",
     audience: "new-user",
     difficulty: "starter",
-    ecosystemUseCase: "Reinforces consent, fallback states, and secret hygiene for Mini Apps.",
-    rewardNim: 1,
-    estimatedSeconds: 55,
+    estimatedSeconds: 65,
+    reward: { status: "unavailable", asset: null, amount: null },
+    learningGoals: [
+      "Understand how message signing proves control without sending NIM.",
+      "Distinguish a signed message from a payment transaction."
+    ],
     lesson:
-      "Mini apps should be transparent about wallet actions, avoid secret handling, and fail safely when wallet access is unavailable.",
+      "A signed message proves that your wallet approved a specific statement. It does not move NIM. NimQuest uses a short-lived, one-time challenge so the backend can verify wallet control and reject replayed signatures. Read the message before signing it.",
+    sourceUrl: "https://nimiq.dev/mini-apps/api-reference/nimiq-provider",
     questions: [
       {
-        id: "secrets",
-        prompt: "What should never be committed to the repository?",
-        options: ["Private keys or API secrets", "README text", "Public docs"],
-        answerIndex: 0
+        id: "signing-effect",
+        prompt: "What happens when you sign a NimQuest proof message?",
+        options: [
+          "You prove wallet control without sending NIM",
+          "You transfer your full balance",
+          "You reveal your private key"
+        ],
+        answerIndex: 0,
+        explanation: "Message signing creates a signature and does not transfer funds."
       },
       {
-        id: "fallback",
-        prompt: "What should the app do if Nimiq Pay provider access is missing?",
-        options: [
-          "Show a clear fallback state",
-          "Crash silently",
-          "Fake a transaction"
-        ],
-        answerIndex: 0
+        id: "read-message",
+        prompt: "What should you do before signing a message?",
+        options: ["Read and understand it", "Ignore its contents", "Share your recovery words"],
+        answerIndex: 0,
+        explanation: "Only sign a message whose purpose and contents you understand."
       },
       {
-        id: "consent",
-        prompt: "Who approves sensitive wallet actions?",
-        options: ["The user", "The CSS file", "A random visitor"],
-        answerIndex: 0
-      }
-    ]
-  },
-  {
-    id: "nimiq-pay-flow",
-    title: "Nimiq Pay Flow",
-    track: "wallet-action",
-    audience: "new-user",
-    difficulty: "starter",
-    ecosystemUseCase: "Prepares users to approve account access and understand wallet prompts.",
-    rewardNim: 1,
-    estimatedSeconds: 50,
-    lesson:
-      "A strong Mini App makes wallet prompts clear, expected, and tied to the task the user just chose.",
-    questions: [
-      {
-        id: "wallet-prompt",
-        prompt: "When should a wallet prompt appear?",
+        id: "one-time-challenge",
+        prompt: "Why does NimQuest use a one-time challenge?",
         options: [
-          "After the user starts a clear wallet action",
-          "Before the app explains anything",
-          "Randomly on every page load"
+          "To prevent the same signature from being replayed",
+          "To hide the wallet address",
+          "To charge a transaction fee"
         ],
-        answerIndex: 0
-      },
-      {
-        id: "provider-proof",
-        prompt: "What should the Mini App prove during judging?",
-        options: [
-          "That wallet access is part of the product flow",
-          "That the logo is visible",
-          "That answers are stored in the browser only"
-        ],
-        answerIndex: 0
-      },
-      {
-        id: "fallback-truth",
-        prompt: "What should a browser fallback avoid doing?",
-        options: [
-          "Pretending a wallet transaction happened",
-          "Explaining the missing provider",
-          "Letting users preview a quest"
-        ],
-        answerIndex: 0
-      }
-    ]
-  },
-  {
-    id: "merchant-payments",
-    title: "Merchant Payments",
-    track: "ecosystem",
-    audience: "merchant",
-    difficulty: "starter",
-    ecosystemUseCase: "Turns NimQuest into a path for teaching payment acceptance and merchant value.",
-    rewardNim: 1,
-    estimatedSeconds: 55,
-    lesson:
-      "Nimiq can help small merchants accept fast digital payments when the app keeps the checkout flow simple and transparent.",
-    questions: [
-      {
-        id: "merchant-value",
-        prompt: "What should merchant onboarding focus on first?",
-        options: [
-          "A simple payment acceptance flow",
-          "A complex trading dashboard",
-          "Hidden fees"
-        ],
-        answerIndex: 0
-      },
-      {
-        id: "payment-clarity",
-        prompt: "What makes checkout safer for a user?",
-        options: [
-          "Clear amount, asset, and recipient",
-          "A blank approval screen",
-          "No confirmation"
-        ],
-        answerIndex: 0
-      },
-      {
-        id: "nim-fit",
-        prompt: "Why does NIM fit small payment demos?",
-        options: [
-          "It is native to the Nimiq network",
-          "It is a private key",
-          "It removes the need for consent"
-        ],
-        answerIndex: 0
-      }
-    ]
-  },
-  {
-    id: "community-quests",
-    title: "Community Quests",
-    track: "distribution",
-    audience: "community",
-    difficulty: "starter",
-    ecosystemUseCase: "Frames NimQuest as reusable onboarding infrastructure for community campaigns.",
-    rewardNim: 1,
-    estimatedSeconds: 60,
-    lesson:
-      "Community quests can turn announcements, docs, and campaigns into short actions that teach users and prove engagement.",
-    questions: [
-      {
-        id: "community-use",
-        prompt: "What is the best use for community quests?",
-        options: [
-          "Teaching and activating users",
-          "Farming unlimited rewards",
-          "Hiding product instructions"
-        ],
-        answerIndex: 0
-      },
-      {
-        id: "sponsor-pools",
-        prompt: "Who could fund a quest pool later?",
-        options: [
-          "Community members, teams, or sponsors",
-          "Only anonymous fake wallets",
-          "Nobody"
-        ],
-        answerIndex: 0
-      },
-      {
-        id: "repeatable",
-        prompt: "Why should quests be reusable?",
-        options: [
-          "So onboarding can scale beyond one demo",
-          "So users never finish",
-          "So the backend can expose answers"
-        ],
-        answerIndex: 0
-      }
-    ]
-  },
-  {
-    id: "mini-app-builder",
-    title: "Mini App Builder Basics",
-    track: "builders",
-    audience: "builder",
-    difficulty: "starter",
-    ecosystemUseCase: "Makes NimQuest useful for future builders who need Mini App integration guidance.",
-    rewardNim: 1,
-    estimatedSeconds: 60,
-    lesson:
-      "Builders should keep Mini Apps narrow, wallet-aware, mobile-first, and honest about what is real versus fallback.",
-    questions: [
-      {
-        id: "builder-focus",
-        prompt: "What should a strong hackathon Mini App prioritize?",
-        options: [
-          "One polished wallet-native loop",
-          "Ten unfinished features",
-          "A landing page only"
-        ],
-        answerIndex: 0
-      },
-      {
-        id: "server-trust",
-        prompt: "Where should quiz grading happen?",
-        options: [
-          "On the backend",
-          "In exposed answer keys",
-          "In screenshots"
-        ],
-        answerIndex: 0
-      },
-      {
-        id: "mini-app-truth",
-        prompt: "What should builders avoid claiming?",
-        options: [
-          "Unverified wallet actions",
-          "Clear limits",
-          "Known risks"
-        ],
-        answerIndex: 0
+        answerIndex: 0,
+        explanation: "A consumed or expired challenge cannot be reused for another completion."
       }
     ]
   }
 ];
 
-export function publicQuest(quest) {
-  return {
-    id: quest.id,
-    title: quest.title,
-    track: quest.track,
-    audience: quest.audience,
-    difficulty: quest.difficulty,
-    ecosystemUseCase: quest.ecosystemUseCase,
-    rewardNim: quest.rewardNim,
-    estimatedSeconds: quest.estimatedSeconds,
-    lesson: quest.lesson,
-    questions: quest.questions.map((question) => ({
-      id: question.id,
-      prompt: question.prompt,
-      options: question.options
-    }))
-  };
-}
-
 export function findQuest(questId) {
   return quests.find((quest) => quest.id === questId);
+}
+
+export function publicQuest(quest) {
+  return {
+    ...quest,
+    questions: quest.questions.map(({ answerIndex, ...question }) => question)
+  };
 }
