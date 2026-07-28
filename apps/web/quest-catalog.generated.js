@@ -112,7 +112,7 @@ export const catalogQuests = [
       "Understand how message signing proves control without sending NIM.",
       "Distinguish a signed message from a payment transaction."
     ],
-    "lesson": "A signed message proves that your wallet approved a specific statement. It does not move NIM. NimQuest uses a short-lived, one-time challenge so the backend can verify wallet control and reject replayed signatures. Read the message before signing it.",
+    "lesson": "A signed message proves that your wallet approved a specific statement. It does not move NIM. Nimiq accounts use Ed25519 keys, so signing the challenge produces an Ed25519 signature that NimQuest verifies against the address derived from your public key. The challenge is short-lived and one-time, so the backend can confirm wallet control and reject replayed signatures.",
     "sourceUrl": "https://nimiq.dev/mini-apps/api-reference/nimiq-provider",
     "questions": [
       {
@@ -125,12 +125,12 @@ export const catalogQuests = [
         ]
       },
       {
-        "id": "read-message",
-        "prompt": "What should you do before signing a message?",
+        "id": "signature-scheme",
+        "prompt": "What kind of signature does your wallet create to prove control in NimQuest?",
         "options": [
-          "Read and understand it",
-          "Ignore its contents",
-          "Share your recovery words"
+          "An Ed25519 signature over the challenge message",
+          "A username and password",
+          "A screenshot of your balance"
         ]
       },
       {
