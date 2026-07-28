@@ -1,5 +1,7 @@
 import http from "node:http";
 import { createClaimIntent } from "./claim-service.js";
+import { getPublicProgress } from "./progress-service.js";
+import { getQuestPool, listQuestPools } from "./pool-service.js";
 import { getCompletionStore, getQuest, gradeQuest, listQuests } from "./quest-service.js";
 
 const PORT = Number.parseInt(process.env.PORT || "8787", 10);
@@ -8,6 +10,10 @@ export function createServer() {
   return http.createServer(async (request, response) => {
     try {
       const url = new URL(request.url, `http://${request.headers.host}`);
+
+      if (request.method === "OPTIONS") {
+        return sendJson(response, 204, null);
+      }
 
       if (request.method === "GET" && url.pathname === "/health") {
         return sendJson(response, 200, {
@@ -19,6 +25,33 @@ export function createServer() {
       if (request.method === "GET" && url.pathname === "/api/quests") {
         return sendJson(response, 200, {
           quests: listQuests()
+        });
+      }
+
+      if (request.method === "GET" && url.pathname === "/api/pools") {
+        return sendJson(response, 200, {
+          pools: listQuestPools()
+        });
+      }
+
+      const poolMatch = url.pathname.match(/^\/api\/pools\/([^/]+)$/);
+      if (request.method === "GET" && poolMatch) {
+        const pool = getQuestPool(poolMatch[1]);
+
+        if (!pool) {
+          return sendJson(response, 404, {
+            error: "Quest pool not found."
+          });
+        }
+
+        return sendJson(response, 200, {
+          pool
+        });
+      }
+
+      if (request.method === "GET" && url.pathname === "/api/progress") {
+        return sendJson(response, 200, {
+          progress: getPublicProgress(getCompletionStore())
         });
       }
 
@@ -79,7 +112,7 @@ export function createServer() {
 }
 
 function sendJson(response, statusCode, payload) {
-  const body = JSON.stringify(payload);
+  const body = payload === null ? "" : JSON.stringify(payload);
 
   response.writeHead(statusCode, {
     "content-type": "application/json; charset=utf-8",
