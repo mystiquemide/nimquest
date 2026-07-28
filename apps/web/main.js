@@ -269,12 +269,15 @@ const questSessionMatch = normalizedPath.match(/^\/quests\/([^/]+)$/);
 const walletProofMatch = normalizedPath.match(/^\/proof\/([^/]+)$/);
 const completionMatch = normalizedPath.match(/^\/completions\/([^/]+)$/);
 const isJourney = normalizedPath === "/journey";
+const isLeaderboard = normalizedPath === "/leaderboard";
 const isQuestTrail =
   normalizedPath === "/quests" ||
   new URLSearchParams(window.location.search).get("screen") === "quests";
 
 if (completionMatch) {
   renderCompletionDetail(decodeURIComponent(completionMatch[1]));
+} else if (isLeaderboard) {
+  renderLeaderboard();
 } else if (isJourney) {
   renderJourney();
 } else if (walletProofMatch) {
@@ -333,7 +336,7 @@ document.querySelector("#app").innerHTML = `
     <nav aria-label="Main navigation">
       <a href="#how">How it works</a>
       <a href="#quests">Quests</a>
-      <a href="#safety">Wallet safety</a>
+      <a href="/leaderboard">Leaderboard</a>
     </nav>
 
     <a class="button button--small" href="/quests/meet-nimiq">Start a quest</a>
@@ -489,6 +492,7 @@ document.querySelector("#app").innerHTML = `
       <a href="https://nimiq.com/" target="_blank" rel="noreferrer">Nimiq</a>
       <a href="/quests">Quest Trail</a>
       <a href="/journey">My Journey</a>
+      <a href="/leaderboard">Leaderboard</a>
       <a href="https://github.com/mystiquemide/nimquest" target="_blank" rel="noreferrer">GitHub</a>
     </div>
     <p class="photo-credit">
@@ -1681,6 +1685,7 @@ function renderJourney() {
       <nav class="journey-nav" aria-label="Product navigation">
         <a href="/quests">Quest Trail</a>
         <a href="/journey" aria-current="page">My Journey</a>
+        <a href="/leaderboard">Leaderboard</a>
       </nav>
       <a class="back-link" href="/quests"><span aria-hidden="true">←</span> Quest Trail</a>
     </header>
@@ -1858,6 +1863,114 @@ function renderJourney() {
       button.disabled = false;
     }
   });
+}
+
+async function renderLeaderboard() {
+  const isLocalPreview = ["localhost", "127.0.0.1"].includes(window.location.hostname);
+  const apiBase =
+    import.meta.env.VITE_API_BASE_URL || (isLocalPreview ? "http://localhost:8787" : "");
+
+  document.querySelector("#app").innerHTML = `
+    <a class="skip-link" href="#leaderboard-content">Skip to leaderboard</a>
+    <header class="app-header journey-header">
+      <a class="brand" href="/" aria-label="NimQuest home">${brandMarkup()}</a>
+      <nav class="journey-nav" aria-label="Product navigation">
+        <a href="/quests">Quest Trail</a>
+        <a href="/journey">My Journey</a>
+        <a href="/leaderboard" aria-current="page">Leaderboard</a>
+      </nav>
+      <a class="back-link" href="/quests"><span aria-hidden="true">←</span> Quest Trail</a>
+    </header>
+
+    <main class="leaderboard-page" id="leaderboard-content">
+      <section class="leaderboard-hero">
+        <div>
+          <p class="eyebrow eyebrow--large">Verified community progress</p>
+          <h1>Every place is<br><span class="word-highlight word-highlight--yellow">earned onchain.</span></h1>
+          <p>Wallets are ranked by the number of NimQuest quests they’ve completed with a verified Nimiq signature. No self-reported scores count.</p>
+        </div>
+        <aside class="leaderboard-rule">
+          <span aria-hidden="true">✦</span>
+          <div>
+            <p class="eyebrow">Ranking rule</p>
+            <h2>Most verified quests wins.</h2>
+            <p>Ties go to the wallet that earned its first proof earlier.</p>
+          </div>
+        </aside>
+      </section>
+
+      <section class="leaderboard-board" aria-live="polite">
+        <div class="leaderboard-board__heading">
+          <div>
+            <p class="eyebrow">Top learners</p>
+            <h2>Wallet leaderboard</h2>
+          </div>
+          <span class="leaderboard-status">Loading verified proofs…</span>
+        </div>
+        <div class="leaderboard-loading">
+          <span aria-hidden="true">◎</span>
+          <p>Counting verified quest proofs.</p>
+        </div>
+      </section>
+    </main>
+  `;
+
+  const board = document.querySelector(".leaderboard-board");
+
+  try {
+    if (!navigator.onLine) {
+      throw new Error("You’re offline. Reconnect to load the live rankings.");
+    }
+
+    const response = await fetch(`${apiBase}/api/leaderboard`);
+    const result = await response.json();
+    if (!response.ok) {
+      throw new Error(result.error || "NimQuest couldn’t load the leaderboard.");
+    }
+
+    const entries = Array.isArray(result.leaderboard) ? result.leaderboard : [];
+    const rows = entries.map((entry) => `
+      <li class="leaderboard-row ${entry.rank <= 3 ? `leaderboard-row--top-${entry.rank}` : ""}">
+        <span class="leaderboard-rank" aria-label="Rank ${entry.rank}">${entry.rank <= 3 ? ["", "✦", "◆", "●"][entry.rank] : entry.rank}</span>
+        <div class="leaderboard-wallet">
+          <span>Wallet address</span>
+          <b title="${escapeHtml(entry.walletAddress)}">${escapeHtml(compactAddress(entry.walletAddress))}</b>
+        </div>
+        <div class="leaderboard-score">
+          <strong>${entry.verifiedQuests}<small>/${quests.length}</small></strong>
+          <span>verified quests</span>
+        </div>
+        <div class="leaderboard-date">
+          <span>Latest proof</span>
+          <b>${escapeHtml(formatCompletionDate(entry.latestVerifiedAt))}</b>
+        </div>
+      </li>
+    `).join("");
+
+    board.innerHTML = `
+      <div class="leaderboard-board__heading">
+        <div>
+          <p class="eyebrow">Top learners</p>
+          <h2>Wallet leaderboard</h2>
+        </div>
+        <span class="leaderboard-status">${entries.length} ranked wallet${entries.length === 1 ? "" : "s"}</span>
+      </div>
+      ${entries.length
+        ? `<ol class="leaderboard-list">${rows}</ol>`
+        : `<div class="leaderboard-empty"><span aria-hidden="true">✦</span><h3>The first place is open.</h3><p>Complete a quest with Nimiq Pay to become the first ranked wallet.</p><a class="button" href="/quests">Start a quest</a></div>`}
+    `;
+  } catch (error) {
+    board.innerHTML = `
+      <div class="leaderboard-error">
+        <span aria-hidden="true">!</span>
+        <p class="eyebrow">Rankings unavailable</p>
+        <h2>We couldn’t load the leaderboard.</h2>
+        <p>${escapeHtml(error instanceof Error ? error.message : "Try again in a moment.")}</p>
+        <button class="button" type="button" data-retry-leaderboard>Try again</button>
+      </div>
+    `;
+    board.querySelector("[data-retry-leaderboard]").addEventListener("click", () => window.location.reload());
+  }
 }
 
 function readVerifiedCompletions() {
