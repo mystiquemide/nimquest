@@ -1,7 +1,7 @@
 import "./styles.css";
 import heroImage from "./assets/nimquest-hero.jpg";
 import brandMark from "./assets/nimquest-mark.svg";
-import { init, requestDeviceIdentifier } from "@nimiq/mini-app-sdk";
+import { init } from "@nimiq/mini-app-sdk";
 import { catalogQuests } from "./quest-catalog.generated.js";
 
 const questPresentation = [
@@ -264,29 +264,37 @@ const quests = [...catalogQuests]
     };
   });
 
-const normalizedPath = window.location.pathname.replace(/\/+$/, "") || "/";
-const questSessionMatch = normalizedPath.match(/^\/quests\/([^/]+)$/);
-const walletProofMatch = normalizedPath.match(/^\/proof\/([^/]+)$/);
-const completionMatch = normalizedPath.match(/^\/completions\/([^/]+)$/);
-const isJourney = normalizedPath === "/journey";
-const isLeaderboard = normalizedPath === "/leaderboard";
-const isQuestTrail =
-  normalizedPath === "/quests" ||
-  new URLSearchParams(window.location.search).get("screen") === "quests";
+function renderCurrentRoute() {
+  const normalizedPath = window.location.pathname.replace(/\/+$/, "") || "/";
+  const questSessionMatch = normalizedPath.match(/^\/quests\/([^/]+)$/);
+  const walletProofMatch = normalizedPath.match(/^\/proof\/([^/]+)$/);
+  const completionMatch = normalizedPath.match(/^\/completions\/([^/]+)$/);
+  const documentationMatch = normalizedPath.match(/^\/docs(?:\/([^/]+))?$/);
+  const isJourney = normalizedPath === "/journey";
+  const isLeaderboard = normalizedPath === "/leaderboard";
+  const isQuestTrail =
+    normalizedPath === "/quests" ||
+    new URLSearchParams(window.location.search).get("screen") === "quests";
 
-if (completionMatch) {
-  renderCompletionDetail(decodeURIComponent(completionMatch[1]));
-} else if (isLeaderboard) {
-  renderLeaderboard();
-} else if (isJourney) {
-  renderJourney();
-} else if (walletProofMatch) {
-  renderWalletProof(walletProofMatch[1]);
-} else if (questSessionMatch) {
-  renderQuestSession(questSessionMatch[1]);
-} else if (isQuestTrail) {
-  renderQuestTrail();
-} else if (normalizedPath === "/") {
+  if (completionMatch) {
+    renderCompletionDetail(decodeURIComponent(completionMatch[1]));
+  } else if (documentationMatch) {
+    renderDocumentationPage(documentationMatch[1] || "overview");
+  } else if (isLeaderboard) {
+    renderLeaderboard();
+  } else if (isJourney) {
+    renderJourney();
+  } else if (normalizedPath === "/privacy") {
+    renderLegalPage("privacy");
+  } else if (normalizedPath === "/terms") {
+    renderLegalPage("terms");
+  } else if (walletProofMatch) {
+    renderWalletProof(walletProofMatch[1]);
+  } else if (questSessionMatch) {
+    renderQuestSession(questSessionMatch[1]);
+  } else if (isQuestTrail) {
+    renderQuestTrail();
+  } else if (normalizedPath === "/") {
 const questCards = quests
   .slice(0, 6)
   .map(
@@ -337,6 +345,7 @@ document.querySelector("#app").innerHTML = `
       <a href="#how">How it works</a>
       <a href="#quests">Quests</a>
       <a href="/leaderboard">Leaderboard</a>
+      <a href="/docs">Docs</a>
     </nav>
 
     <a class="button button--small" href="/quests/meet-nimiq">Start a quest</a>
@@ -354,7 +363,7 @@ document.querySelector("#app").innerHTML = `
           <span class="word-highlight word-highlight--yellow">by doing.</span>
         </h1>
         <p class="hero__lead">
-          Complete quick, friendly quests. Learn how NIM works, prove what you know with your wallet, and build a journey you can trust.
+          Complete quick, friendly quests. Learn how NIM works, verify your completion with your wallet, and build a journey you can trust.
         </p>
         <div class="hero__actions">
           <a class="button" href="/quests/meet-nimiq">Start your first quest <span aria-hidden="true">→</span></a>
@@ -493,6 +502,9 @@ document.querySelector("#app").innerHTML = `
       <a href="/quests">Quest Trail</a>
       <a href="/journey">My Journey</a>
       <a href="/leaderboard">Leaderboard</a>
+      <a href="/docs">Docs</a>
+      <a href="/privacy">Privacy</a>
+      <a href="/terms">Terms</a>
       <a href="https://github.com/mystiquemide/nimquest" target="_blank" rel="noreferrer">GitHub</a>
     </div>
     <p class="photo-credit">
@@ -541,11 +553,10 @@ document.querySelectorAll("[data-close]").forEach((button) => {
     document.querySelector(`[data-preview="${questId}"]`).setAttribute("aria-expanded", "false");
   });
 });
-} else {
-  renderNotFound();
+  } else {
+    renderNotFound();
+  }
 }
-
-installConnectivityBanner();
 
 function installConnectivityBanner() {
   const banner = document.createElement("div");
@@ -964,7 +975,7 @@ function renderQuestSession(questId) {
       </article>
 
       <div class="session-actions">
-        <a class="session-exit" href="/quests">Save for later</a>
+        <a class="session-exit" href="/quests">Save and return to Trail</a>
         <button class="button" type="button" data-begin-quiz>
           Begin 3 questions <span aria-hidden="true">→</span>
         </button>
@@ -1228,7 +1239,8 @@ function renderWalletProof(questId) {
     account: null,
     blockHeight: null,
     error: null,
-    proof: null
+    proof: null,
+    feedbackToken: null
   };
 
   if (!quest) {
@@ -1236,7 +1248,7 @@ function renderWalletProof(questId) {
       <main class="session-not-found">
         <span class="session-not-found__mark">?</span>
         <p class="eyebrow">Proof marker missing</p>
-        <h1>That proof route isn’t here.</h1>
+        <h1>This proof link is incomplete or unavailable.</h1>
         <p>Choose an available quest and complete its questions first.</p>
         <a class="button" href="/quests">Return to Quest Trail</a>
       </main>
@@ -1343,7 +1355,7 @@ function renderWalletProof(questId) {
         <div class="proof-receipt">
           <span>Status <b>Verified</b></span>
           <span>Payment <b>None</b></span>
-          <span>Reward <b>Unavailable</b></span>
+          <span>Reward <b>Coming soon</b></span>
         </div>
         <div class="completion-feedback">
           <div><p class="eyebrow">One quick check</p><h3>How clear was this quest?</h3></div>
@@ -1368,6 +1380,7 @@ function renderWalletProof(questId) {
               headers: { "content-type": "application/json" },
               body: JSON.stringify({
                 proofKey: state.proof.key,
+                feedbackToken: state.feedbackToken,
                 rating: Number(button.dataset.feedbackRating)
               })
             });
@@ -1403,10 +1416,11 @@ function renderWalletProof(questId) {
             <li><span>✓</span>Private keys stay inside Nimiq Pay</li>
             <li><span>✓</span>The challenge can only be used once</li>
           </ul>
+          <p class="proof-disclosure">Verification stores your wallet address, public key, quest, and completion time. Every verified completion joins the mandatory public leaderboard with a masked wallet label. <a href="/privacy">Read the Privacy Notice</a>.</p>
         `}
       </div>
       <button class="button" type="button" data-connect-proof>
-        ${hasError ? "Try again" : "Connect Nimiq Pay"} <span aria-hidden="true">→</span>
+        ${hasError ? "Try again" : "Verify with Nimiq Pay"} <span aria-hidden="true">→</span>
       </button>
       ${hasError ? `<a class="wallet-fallback" href="https://pay.nimiq.com/" target="_blank" rel="noreferrer">Open Nimiq Pay</a>` : ""}
     `;
@@ -1444,22 +1458,13 @@ function renderWalletProof(questId) {
       }
 
       state.account = accounts[0];
-      let deviceId;
-      try {
-        deviceId = await requestDeviceIdentifier({
-          reason: "Prevent duplicate quest completion claims"
-        });
-      } catch {
-        deviceId = undefined;
-      }
 
       const challengeResponse = await fetch(`${apiBase}/api/completion-challenges`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           questId: quest.id,
-          walletAddress: state.account,
-          deviceId
+          walletAddress: state.account
         })
       });
       const challengeResult = await challengeResponse.json();
@@ -1511,6 +1516,7 @@ function renderWalletProof(questId) {
 
       state.phase = "success";
       state.proof = completion.proof;
+      state.feedbackToken = completion.feedbackToken;
       sessionStorage.removeItem(`nimquest:proof:${quest.id}`);
       sessionStorage.removeItem(`nimquest:draft:${quest.id}`);
       localStorage.setItem(`nimquest:completion:${quest.id}`, JSON.stringify(completion.proof));
@@ -1573,11 +1579,11 @@ async function renderCompletionDetail(proofKey) {
         <div class="completion-card__status"><span aria-hidden="true">✓</span><div><b>Verified</b><small>No NIM was sent</small></div></div>
         <dl>
           <div><dt>Quest</dt><dd>${quest.number} · ${quest.title}</dd></div>
-          <div><dt>Wallet</dt><dd>${escapeHtml(proof.walletAddress)}</dd></div>
+          <div><dt>Wallet</dt><dd>${escapeHtml(compactAddress(proof.walletAddress))}</dd></div>
           <div><dt>Completed</dt><dd>${formatCompletionDate(proof.completedAt)}</dd></div>
           <div><dt>Method</dt><dd>Nimiq signed message</dd></div>
-          <div><dt>Proof key</dt><dd>${escapeHtml(proof.key)}</dd></div>
-          <div><dt>Reward</dt><dd>Unavailable</dd></div>
+          <div><dt>Receipt ID</dt><dd>${escapeHtml(proof.key)}</dd></div>
+          <div><dt>Reward</dt><dd>Coming soon</dd></div>
         </dl>
         <div class="completion-card__actions">
           <button class="button" type="button" data-share-detail>Share verified proof</button>
@@ -1769,7 +1775,7 @@ function renderJourney() {
         <div class="journey-truth__receipt">
           <span>Status <b>${latestCompletion ? "Verified" : "Not started"}</b></span>
           <span>Payment <b>None</b></span>
-          <span>Reward <b>Unavailable</b></span>
+          <span>Reward <b>Coming soon</b></span>
         </div>
       </section>
     </main>
@@ -1784,7 +1790,7 @@ function renderJourney() {
         <div><dt>Completed</dt><dd data-proof-date></dd></div>
         <div><dt>Method</dt><dd>Signed message</dd></div>
         <div><dt>Payment</dt><dd>None</dd></div>
-        <div><dt>Reward</dt><dd>Unavailable</dd></div>
+        <div><dt>Reward</dt><dd>Coming soon</dd></div>
       </dl>
       <div class="journey-proof-dialog__actions">
         <a class="button button--small" data-proof-link href="#">Open receipt</a>
@@ -1886,14 +1892,14 @@ async function renderLeaderboard() {
       <section class="leaderboard-hero">
         <div>
           <p class="eyebrow eyebrow--large">Verified community progress</p>
-          <h1>Every place is<br><span class="word-highlight word-highlight--yellow">earned onchain.</span></h1>
-          <p>Wallets are ranked by the number of NimQuest quests they’ve completed with a verified Nimiq signature. No self-reported scores count.</p>
+          <h1>Every place is backed by<br><span class="word-highlight word-highlight--yellow">verified wallet proof.</span></h1>
+          <p>Every verified completion joins this public ranking. Wallet labels are masked, and self-reported scores never count.</p>
         </div>
         <aside class="leaderboard-rule">
           <span aria-hidden="true">✦</span>
           <div>
             <p class="eyebrow">Ranking rule</p>
-            <h2>Most verified quests wins.</h2>
+            <h2>The most verified quests win.</h2>
             <p>Ties go to the wallet that earned its first proof earlier.</p>
           </div>
         </aside>
@@ -1934,7 +1940,7 @@ async function renderLeaderboard() {
         <span class="leaderboard-rank" aria-label="Rank ${entry.rank}">${entry.rank <= 3 ? ["", "✦", "◆", "●"][entry.rank] : entry.rank}</span>
         <div class="leaderboard-wallet">
           <span>Wallet address</span>
-          <b title="${escapeHtml(entry.walletAddress)}">${escapeHtml(compactAddress(entry.walletAddress))}</b>
+          <b>${escapeHtml(entry.walletLabel || compactAddress(entry.walletAddress))}</b>
         </div>
         <div class="leaderboard-score">
           <strong>${entry.verifiedQuests}<small>/${quests.length}</small></strong>
@@ -1953,7 +1959,7 @@ async function renderLeaderboard() {
           <p class="eyebrow">Top learners</p>
           <h2>Wallet leaderboard</h2>
         </div>
-        <span class="leaderboard-status">${entries.length} ranked wallet${entries.length === 1 ? "" : "s"}</span>
+        <span class="leaderboard-status">${entries.length} wallet${entries.length === 1 ? "" : "s"} ranked</span>
       </div>
       ${entries.length
         ? `<ol class="leaderboard-list">${rows}</ol>`
@@ -2133,7 +2139,7 @@ class WalletFlowError extends Error {
 
 function compactAddress(address) {
   const compact = address.replace(/\s+/g, "");
-  return `${compact.slice(0, 8)}…${compact.slice(-6)}`;
+  return `${compact.slice(0, 8)}${"*".repeat(10)}`;
 }
 
 function escapeHtml(value) {
@@ -2153,3 +2159,339 @@ function walletShieldMarkup() {
     </svg>
   `;
 }
+
+function renderLegalPage(page) {
+  const isPrivacy = page === "privacy";
+  const title = isPrivacy ? "Privacy Notice" : "Terms of Use";
+  const content = isPrivacy
+    ? `
+      <p class="legal-lead">This notice explains what NimQuest stores, why it stores it, and what other people can see.</p>
+      <section>
+        <h2>Data we use</h2>
+        <p>When you verify a quest, NimQuest receives your selected Nimiq wallet address, public key, signature, quest answers, quest identifier, and completion time. Nimiq Pay keeps your private keys and recovery data. NimQuest never receives them.</p>
+        <p>NimQuest does not request or store a Nimiq Pay device identifier.</p>
+      </section>
+      <section>
+        <h2>Why we use this data</h2>
+        <ul>
+          <li>Verify that the selected wallet approved a one-time completion message.</li>
+          <li>Prevent the same wallet from claiming the same quest more than once.</li>
+          <li>Restore verified progress for the wallet that you approve in Nimiq Pay.</li>
+          <li>Rank verified progress on the public leaderboard.</li>
+          <li>Protect the service from spam and repeated automated requests.</li>
+        </ul>
+      </section>
+      <section>
+        <h2>Public information</h2>
+        <p>Leaderboard participation is required for every verified completion. You cannot opt out of public ranking. Public pages show a masked wallet label, verified quest count, completion dates, quest name, and verification method. NimQuest does not show your full wallet address, public key, signature, answers, or security tokens on public pages.</p>
+      </section>
+      <section>
+        <h2>Storage and retention</h2>
+        <p>Cloudflare D1 stores verified completions and feedback. One-time signing challenges expire after five minutes. Abuse-prevention counters expire automatically. Completion records remain available while NimQuest operates because they support Journey recovery, receipts, and ranking. You can request correction or deletion through the project repository contact channel, subject to technical and competition record requirements.</p>
+      </section>
+      <section>
+        <h2>Service providers</h2>
+        <p>Cloudflare hosts the application, static assets, Worker API, and D1 database. Nimiq Pay supplies wallet account access and message signing after your approval.</p>
+      </section>
+      <section>
+        <h2>Your choice before verification</h2>
+        <p>You can use lessons and quizzes without creating a wallet proof. If you verify a completion, the public ranking rules above apply.</p>
+      </section>
+    `
+    : `
+      <p class="legal-lead">These terms apply when you use NimQuest.</p>
+      <section>
+        <h2>Using NimQuest</h2>
+        <p>You may use NimQuest to read lessons, answer quizzes, create wallet-verified completions, view public receipts, and compare public leaderboard progress. You must be able to lawfully use Nimiq Pay and the Nimiq network in your location.</p>
+      </section>
+      <section>
+        <h2>Wallet actions</h2>
+        <p>NimQuest requests account access and a message signature only after you choose to verify a passed quest. The signature does not transfer NIM. Always read the full Nimiq Pay approval message before you sign it.</p>
+      </section>
+      <section>
+        <h2>Public leaderboard</h2>
+        <p>Every verified completion participates in the public leaderboard. Ranking is mandatory and has no opt-out. Public displays mask most of the wallet address. The wallet with the most verified quests ranks first. The earlier first completion breaks a tie.</p>
+      </section>
+      <section>
+        <h2>Rewards</h2>
+        <p>Quest rewards are coming soon. NimQuest does not currently promise, fund, or distribute NIM or any other asset for quest completion.</p>
+      </section>
+      <section>
+        <h2>Acceptable use</h2>
+        <p>Do not attack, overload, automate abuse of, reverse engineer for abuse, or submit false proof to NimQuest. Do not use another person’s wallet without permission.</p>
+      </section>
+      <section>
+        <h2>Availability and liability</h2>
+        <p>NimQuest is provided as available. Features can change, pause, or stop. Verify important wallet information in Nimiq Pay and official Nimiq sources. To the extent allowed by law, the project contributors are not liable for indirect loss caused by use of the service.</p>
+      </section>
+      <section>
+        <h2>Open-source code</h2>
+        <p>The NimQuest source code is released under the MIT License. These product terms do not replace the repository license.</p>
+      </section>
+    `;
+
+  document.querySelector("#app").innerHTML = `
+    <header class="app-header">
+      <a class="brand" href="/" aria-label="NimQuest home">${brandMarkup()}</a>
+      <span class="receipt-header-label">${title}</span>
+      <a class="back-link" href="/"><span aria-hidden="true">←</span> Back home</a>
+    </header>
+    <main class="legal-page">
+      <p class="eyebrow">Effective 28 July 2026</p>
+      <h1>${title}</h1>
+      ${content}
+      <p class="legal-note">Questions can be raised through the public NimQuest GitHub repository.</p>
+    </main>
+  `;
+}
+
+const documentationPages = {
+  overview: {
+    eyebrow: "NimQuest documentation",
+    title: "Learn how NimQuest works.",
+    lead:
+      "Use these guides to understand the product, the wallet-proof flow, the security model, and the local development setup.",
+    content: `
+      <div class="docs-card-grid">
+        <a class="docs-card docs-card--yellow" href="/docs/architecture">
+          <span>01</span>
+          <p class="eyebrow">System design</p>
+          <h2>Architecture</h2>
+          <p>See the frontend, Nimiq Pay, Worker, and D1 data flow.</p>
+          <b>Open guide <span aria-hidden="true">→</span></b>
+        </a>
+        <a class="docs-card docs-card--blue" href="/docs/integration">
+          <span>02</span>
+          <p class="eyebrow">Wallet flow</p>
+          <h2>Nimiq Pay integration</h2>
+          <p>Follow the verified-completion procedure and API contract.</p>
+          <b>Open guide <span aria-hidden="true">→</span></b>
+        </a>
+        <a class="docs-card docs-card--violet" href="/docs/security">
+          <span>03</span>
+          <p class="eyebrow">Trust boundaries</p>
+          <h2>Security and privacy</h2>
+          <p>Review proof controls, public data, abuse limits, and retention.</p>
+          <b>Open guide <span aria-hidden="true">→</span></b>
+        </a>
+        <a class="docs-card docs-card--mint" href="/docs/setup">
+          <span>04</span>
+          <p class="eyebrow">Developer guide</p>
+          <h2>Run NimQuest locally</h2>
+          <p>Install dependencies, apply migrations, test, and start the app.</p>
+          <b>Open guide <span aria-hidden="true">→</span></b>
+        </a>
+      </div>
+      <section class="docs-section">
+        <p class="eyebrow">Product truth</p>
+        <h2>What the proof means</h2>
+        <p>A verified completion means that the learner passed a server-graded quiz and approved a one-time message with the selected Nimiq wallet. The signature does not send NIM. The completion record is stored in Cloudflare D1.</p>
+        <div class="docs-facts">
+          <article><b>20</b><span>sourced quests</span></article>
+          <article><b>5 min</b><span>challenge expiry</span></article>
+          <article><b>0 NIM</b><span>required for proof</span></article>
+        </div>
+      </section>
+    `
+  },
+  architecture: {
+    eyebrow: "System design",
+    title: "Architecture",
+    lead:
+      "NimQuest separates learning, wallet approval, verification, and persistence across four clear trust boundaries.",
+    content: `
+      <section class="docs-section">
+        <h2>Components</h2>
+        <div class="docs-table-wrap">
+          <table class="docs-table">
+            <thead><tr><th>Component</th><th>Function</th></tr></thead>
+            <tbody>
+              <tr><td>Vite frontend</td><td>Renders lessons, quizzes, Journey, receipts, badges, legal pages, and the leaderboard.</td></tr>
+              <tr><td>Nimiq Pay</td><td>Provides approved account access, consensus state, block height, and message signing.</td></tr>
+              <tr><td>Cloudflare Worker</td><td>Grades quizzes, verifies signatures, applies abuse controls, and serves the API and static app.</td></tr>
+              <tr><td>Cloudflare D1</td><td>Stores challenges, verified completions, feedback, and short-lived rate counters.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+      <section class="docs-section">
+        <h2>Completion data flow</h2>
+        <ol class="docs-steps">
+          <li><span>1</span><div><b>Grade the quiz</b><p>The Worker checks all three answers. Correct answer indexes stay on the server.</p></div></li>
+          <li><span>2</span><div><b>Approve the wallet</b><p>Nimiq Pay asks the learner to approve the selected public account.</p></div></li>
+          <li><span>3</span><div><b>Create a challenge</b><p>The Worker stores a five-minute challenge bound to one quest and wallet.</p></div></li>
+          <li><span>4</span><div><b>Sign the message</b><p>Nimiq Pay displays the exact message and asks the learner to approve it.</p></div></li>
+          <li><span>5</span><div><b>Verify and store</b><p>The Worker verifies the signer, consumes the challenge, and stores one completion.</p></div></li>
+        </ol>
+      </section>
+      <section class="docs-section">
+        <h2>Trust boundaries</h2>
+        <ul class="docs-checklist">
+          <li>The browser cannot grade itself or create verified proof.</li>
+          <li>A wallet address alone does not prove wallet control.</li>
+          <li>Account access and signing require native approval in Nimiq Pay.</li>
+          <li>Public APIs return masked wallet labels and opaque receipt IDs.</li>
+        </ul>
+      </section>
+    `
+  },
+  integration: {
+    eyebrow: "Wallet flow",
+    title: "Nimiq Pay integration",
+    lead:
+      "Nimiq Pay is part of the completion path. It approves account access and signs the one-time proof message.",
+    content: `
+      <section class="docs-section">
+        <h2>Verified-completion procedure</h2>
+        <ol class="docs-steps">
+          <li><span>1</span><div><b>Initialize the Mini App SDK.</b><p>Confirm that Nimiq Pay is available and consensus is established.</p></div></li>
+          <li><span>2</span><div><b>Request account access.</b><p>Use <code>listAccounts()</code> after the learner passes the quiz.</p></div></li>
+          <li><span>3</span><div><b>Request a challenge.</b><p>Send the quest ID and selected wallet address to NimQuest.</p></div></li>
+          <li><span>4</span><div><b>Request the signature.</b><p>Use <code>sign()</code>. The learner must read and approve the exact message.</p></div></li>
+          <li><span>5</span><div><b>Submit the proof.</b><p>Send the challenge ID, public key, signature, wallet address, quest ID, and answers.</p></div></li>
+          <li><span>6</span><div><b>Show the result.</b><p>Store the returned receipt and feedback token only in the active browser flow.</p></div></li>
+        </ol>
+      </section>
+      <section class="docs-section">
+        <h2>API routes</h2>
+        <div class="docs-endpoints">
+          <code>GET /api/quests</code><span>Get the public quest catalog.</span>
+          <code>POST /api/grade</code><span>Grade quiz answers without wallet access.</span>
+          <code>POST /api/completion-challenges</code><span>Create a five-minute signing challenge.</span>
+          <code>POST /api/complete</code><span>Verify the signature and store the completion.</span>
+          <code>GET /api/completions?wallet=</code><span>Recover progress for an approved wallet.</span>
+          <code>GET /api/leaderboard</code><span>Get rankings with masked wallet labels.</span>
+        </div>
+      </section>
+      <aside class="docs-callout">
+        <b>Wallet safety rule</b>
+        <p>Message signing proves wallet approval. It does not transfer NIM, reveal a private key, or expose recovery data.</p>
+      </aside>
+    `
+  },
+  security: {
+    eyebrow: "Trust boundaries",
+    title: "Security and privacy",
+    lead:
+      "NimQuest limits what the browser can claim, what public routes can reveal, and how often write routes can be called.",
+    content: `
+      <section class="docs-section">
+        <h2>Verification controls</h2>
+        <ul class="docs-checklist">
+          <li>The server grades answers before wallet access and before completion.</li>
+          <li>Challenges bind the quest, wallet, nonce, issue time, and expiry.</li>
+          <li>Challenges expire after five minutes and can be used once.</li>
+          <li>The Worker derives the Nimiq address from the submitted public key.</li>
+          <li>D1 enforces one verified completion for each quest and wallet.</li>
+        </ul>
+      </section>
+      <section class="docs-section">
+        <h2>Public and private data</h2>
+        <div class="docs-split">
+          <article>
+            <p class="eyebrow">Public</p>
+            <ul><li>Masked wallet label</li><li>Quest and completion date</li><li>Verification method</li><li>Rank and verified quest count</li></ul>
+          </article>
+          <article>
+            <p class="eyebrow">Not public</p>
+            <ul><li>Full wallet address</li><li>Public key and signature</li><li>Quiz answers</li><li>Feedback token</li><li>Device identifier</li></ul>
+          </article>
+        </div>
+      </section>
+      <section class="docs-section">
+        <h2>Abuse controls</h2>
+        <p>Write routes require an accepted browser origin. D1 counters apply route-specific limits. One wallet can hold no more than five active challenges. Rate keys use short-lived SHA-256 source digests instead of raw IP addresses.</p>
+      </section>
+      <aside class="docs-callout">
+        <b>Mandatory ranking</b>
+        <p>Every verified completion joins the public leaderboard. The app discloses this rule before wallet approval. Public pages mask the wallet address.</p>
+      </aside>
+    `
+  },
+  setup: {
+    eyebrow: "Developer guide",
+    title: "Run NimQuest locally",
+    lead:
+      "Use Node.js 20 or later. Run each command from the repository root.",
+    content: `
+      <section class="docs-section">
+        <h2>Install and verify</h2>
+        <ol class="docs-steps">
+          <li><span>1</span><div><b>Install dependencies.</b><pre><code>npm ci</code></pre></div></li>
+          <li><span>2</span><div><b>Run the Node and API tests.</b><pre><code>npm test</code></pre></div></li>
+          <li><span>3</span><div><b>Build the frontend.</b><pre><code>npm run build:web</code></pre></div></li>
+          <li><span>4</span><div><b>Start the local app.</b><pre><code>npm start</code></pre><p>Open <code>http://localhost:8787</code>.</p></div></li>
+        </ol>
+      </section>
+      <section class="docs-section">
+        <h2>Run the Worker</h2>
+        <p>Apply local D1 migrations before you start the Worker.</p>
+        <pre><code>npx wrangler d1 migrations apply nimquest --local
+npm run dev:worker</code></pre>
+      </section>
+      <section class="docs-section">
+        <h2>Run the release checks</h2>
+        <pre><code>npm run qa
+npm run test:worker-integration</code></pre>
+        <p>The release checks cover the API, cryptography, frontend build, rendered routes, responsive overflow, and Worker bundle.</p>
+      </section>
+      <aside class="docs-callout docs-callout--warning">
+        <b>Production prerequisite</b>
+        <p>Apply pending D1 migrations before you deploy Worker code that uses the new schema.</p>
+      </aside>
+    `
+  }
+};
+
+function renderDocumentationPage(page) {
+  const documentation = documentationPages[page];
+  if (!documentation) {
+    renderNotFound();
+    return;
+  }
+
+  const navigation = [
+    ["overview", "Overview"],
+    ["architecture", "Architecture"],
+    ["integration", "Nimiq Pay"],
+    ["security", "Security"],
+    ["setup", "Local setup"]
+  ];
+
+  document.querySelector("#app").innerHTML = `
+    <a class="skip-link" href="#docs-content">Skip to documentation</a>
+    <header class="app-header docs-header">
+      <a class="brand" href="/" aria-label="NimQuest home">${brandMarkup()}</a>
+      <span class="receipt-header-label">Documentation</span>
+      <a class="back-link" href="/"><span aria-hidden="true">←</span> Back home</a>
+    </header>
+    <div class="docs-layout">
+      <aside class="docs-sidebar" aria-label="Documentation navigation">
+        <p class="eyebrow">Guides</p>
+        <nav>
+          ${navigation
+            .map(
+              ([slug, label]) =>
+                `<a class="${slug === page ? "is-active" : ""}" href="${slug === "overview" ? "/docs" : `/docs/${slug}`}">${label}</a>`
+            )
+            .join("")}
+        </nav>
+        <a class="docs-sidebar__github" href="https://github.com/mystiquemide/nimquest" target="_blank" rel="noreferrer">View source on GitHub <span aria-hidden="true">↗</span></a>
+      </aside>
+      <main class="docs-page" id="docs-content">
+        <p class="eyebrow">${documentation.eyebrow}</p>
+        <h1>${documentation.title}</h1>
+        <p class="docs-lead">${documentation.lead}</p>
+        ${documentation.content}
+        <nav class="docs-bottom-nav" aria-label="More documentation">
+          <a href="/docs">Documentation home</a>
+          <a href="/privacy">Privacy Notice</a>
+          <a href="/terms">Terms of Use</a>
+        </nav>
+      </main>
+    </div>
+  `;
+}
+
+renderCurrentRoute();
+installConnectivityBanner();
