@@ -35,18 +35,18 @@ Status: Done
 
 ## Checkpoint 3 - Nimiq Integration Contract
 
-Status: Next
+Status: Done
 
-- [ ] Define frontend-to-backend wallet proof payload.
-- [ ] Define Nimiq Pay provider success and fallback states.
-- [ ] Add claim-preparation endpoint if needed.
-- [ ] Add tests.
-- [ ] Update `MEMORY.md`.
-- [ ] Push through GitHub plugin.
+- [x] Define frontend-to-backend wallet proof payload.
+- [x] Define Nimiq Pay provider success and fallback states.
+- [x] Add claim-preparation endpoint if needed.
+- [x] Add tests.
+- [x] Update `MEMORY.md`.
+- [x] Push through GitHub plugin.
 
 ## Checkpoint 4 - Frontend MVP
 
-Status: Pending
+Status: Next
 
 - [ ] Build mobile-first quest list.
 - [ ] Build quest lesson and quiz flow.
