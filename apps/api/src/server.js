@@ -1,5 +1,6 @@
 import http from "node:http";
-import { getQuest, gradeQuest, listQuests } from "./quest-service.js";
+import { createClaimIntent } from "./claim-service.js";
+import { getCompletionStore, getQuest, gradeQuest, listQuests } from "./quest-service.js";
 
 const PORT = Number.parseInt(process.env.PORT || "8787", 10);
 
@@ -39,6 +40,22 @@ export function createServer() {
       if (request.method === "POST" && url.pathname === "/api/complete") {
         const body = await readJson(request);
         const result = gradeQuest(body);
+
+        if (!result.ok && result.status) {
+          return sendJson(response, result.status, {
+            error: result.error
+          });
+        }
+
+        return sendJson(response, 200, result);
+      }
+
+      if (request.method === "POST" && url.pathname === "/api/claim-intents") {
+        const body = await readJson(request);
+        const result = createClaimIntent({
+          ...body,
+          completionStore: getCompletionStore()
+        });
 
         if (!result.ok && result.status) {
           return sendJson(response, result.status, {
