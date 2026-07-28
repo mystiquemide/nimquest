@@ -17,7 +17,7 @@ Current production:
 - Hosting: Cloudflare Workers with Static Assets
 - Database: Cloudflare D1
 - Deployment: automatic Cloudflare build from pushes to `main`
-- Repository visibility: public
+- Repository visibility: private as verified by GitHub on 2026-07-28. This remains a competition eligibility blocker.
 - License: MIT
 
 Live product:
@@ -49,6 +49,8 @@ Latest verification:
 - Zero dependency vulnerabilities
 - Native Nimiq Pay completion succeeded on iPhone
 - Production routes and APIs were checked after deployment
+- Canonical first-quest routing and route-specific page titles passed 56 rendered checks
+- A second production quiz reached the Nimiq Pay proof boundary, but five new native wallet signatures remain a real-device check
 
 ## Product Decisions
 
@@ -556,6 +558,57 @@ Current production release:
 
 - Commit `196a0a331372a9eff3fd8f3870ec6430621a4ac6`
 
+## Milestone 17 - Re-Audit and Onboarding Consistency
+
+A four-part re-audit was run against the current live app and GitHub repository.
+
+Updated scores:
+
+- Website UX: 8.7/10, up from 6.8/10
+- Hackathon estimate: 68/105
+- Potential after final submission work: 86-92/105
+
+Confirmed fixed during the re-audit:
+
+- Core Quest Trail and Journey routes
+- Legal and documentation routes
+- Masked public wallet labels
+- Device-ID removal
+- Unsupported onchain claims
+- Mobile overflow and recovery states
+
+Remaining issues from the re-audit:
+
+- GitHub reported the repository as private.
+- The homepage, Trail, and Journey needed one explicit starter quest.
+- Repeated preview actions needed unique accessible names.
+- Major routes needed unique document titles.
+- Five additional native Nimiq Pay completions were still required for real-device evidence.
+
+Implemented after the re-audit:
+
+- Added STARTER_QUEST_ID with meet-nimiq as the canonical first quest.
+- Pointed the announcement, header, hero, final CTA, Trail recommendation, and Journey recommendation to the same starter quest.
+- Added unique accessible names to quest preview, start, close, review, and proof actions.
+- Added route-specific document titles for Home, Quest Trail, quests, wallet proof, Journey, leaderboard, docs, legal pages, receipts, and 404.
+- Added browser regression coverage for canonical starter links, unique preview labels, and route titles.
+
+Verification:
+
+- 25 Node, API, and cryptography tests passed.
+- Production frontend build passed.
+- Cloudflare Worker dry run passed.
+- 56 rendered-route checks passed at 320, 375, 390, and 430 CSS-pixel widths.
+- The production Pay with NIM quiz passed server grading and reached the wallet-proof screen.
+- The cloud browser correctly received the fallback state because it does not provide the Nimiq Pay Mini App provider.
+- No wallet signatures or leaderboard activity were fabricated.
+- Five native completions remain pending inside Nimiq Pay on a real device.
+
+Release commits:
+
+- 84acdadcc911f01687fe0ce9f03bd6fde408c092 added the regression checks.
+- eb6c0c8c335ace4b13d4bc9e9164bbc0756efdcd added the canonical onboarding and accessibility fixes.
+
 ## Database History
 
 Production migrations completed:
@@ -601,18 +654,20 @@ Current D1 responsibilities:
 - There is no quest-authoring dashboard.
 - A custom domain has not been recorded as connected.
 - Final competition demo, judge material, and submission copy have not been requested for the public release.
+- GitHub currently reports the repository as private, which blocks competition eligibility until changed.
+- Five additional native Nimiq Pay completions have not yet been signed on a real device.
 
 ## Next Work
 
 Recommended next order:
 
-1. Run a final native Nimiq Pay mobile regression across quest, Journey, leaderboard, receipt, legal, and docs routes.
-2. Complete more quests to verify leaderboard count updates beyond `2/20`.
-3. Prepare the competition submission package when requested.
-4. Capture final production screenshots.
-5. Record the final demo video.
+1. Make the GitHub repository public.
+2. Open NimQuest inside Nimiq Pay on iPhone and complete five different quests with the same wallet.
+3. Confirm Journey and leaderboard progress increase from the current verified count.
+4. Prepare the competition submission package when requested.
+5. Capture final production screenshots and record the demo video.
 6. Write submission copy against the final deployed build.
-7. Run a last rules, repository, UX, and end-to-end audit before submission.
+7. Run the last rules, repository, UX, and end-to-end audit before submission.
 8. Add funded rewards only after the payout design and source of NIM are confirmed.
 
 ## Commit Timeline
@@ -621,3 +676,6 @@ Recommended next order:
 - `d6abc7258d8a034ead26a4de8db765510bd90f37` - 20 quests, post-proof layer, and new logo
 - `ec9063eb46dac2fda2730bb5e33b9717e916c136` - verified wallet leaderboard
 - `196a0a331372a9eff3fd8f3870ec6430621a4ac6` - audit fixes, legal pages, in-app docs, privacy controls, CI, and production release
+- `74ba7a3b293bf60946aa572d82cc77194be4a990` - complete public project memory
+- `84acdadcc911f01687fe0ce9f03bd6fde408c092` - onboarding and accessibility regression checks
+- `eb6c0c8c335ace4b13d4bc9e9164bbc0756efdcd` - canonical first quest, accessible labels, and route titles
