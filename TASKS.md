@@ -44,7 +44,20 @@ Status: Done
 - [x] Update `MEMORY.md`.
 - [x] Push through GitHub plugin.
 
-## Checkpoint 4 - Frontend MVP
+## Checkpoint 4 - Backend Ecosystem Layer
+
+Status: Done
+
+- [x] Expand quest catalog beyond the first three onboarding quests.
+- [x] Add ecosystem metadata for tracks, audiences, difficulty, and use cases.
+- [x] Add sponsor-ready quest pool contract.
+- [x] Add public progress stats without exposing wallet addresses.
+- [x] Add CORS preflight handling.
+- [x] Extend tests.
+- [x] Update `MEMORY.md`.
+- [x] Push through GitHub plugin.
+
+## Checkpoint 5 - Frontend MVP
 
 Status: Next
 
@@ -56,7 +69,7 @@ Status: Next
 - [ ] Update `MEMORY.md`.
 - [ ] Push through GitHub plugin.
 
-## Checkpoint 5 - Submission Package
+## Checkpoint 6 - Submission Package
 
 Status: Pending
 
