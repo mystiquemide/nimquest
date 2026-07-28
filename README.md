@@ -1,47 +1,37 @@
 # NimQuest
 
-NimQuest is a backend-first Nimiq Pay Mini App project for 60-second onboarding quests.
+NimQuest is Nimiq's learn-by-doing onboarding layer. Users complete short, sourced quests and sign a one-time Nimiq Pay challenge to create a cryptographically verified completion proof.
 
-The goal is simple: help a new Nimiq user learn one concept, prove completion with wallet context, and prepare a tiny NIM reward or badge claim.
+## Current Backend
 
-## Current Scope
+- Three sourced Nimiq onboarding quests.
+- Server-side quiz grading with hidden answer keys.
+- Five-minute, wallet-bound signing challenges.
+- Official `@nimiq/core` signature verification.
+- Public-key-derived Nimiq address matching.
+- Nonce expiry and replay protection.
+- Durable verified completion records.
+- Honest unavailable reward state until a payout rail is funded.
 
-- Backend API for quests.
-- Seven onboarding and ecosystem quests.
-- Ecosystem metadata for tracks, audiences, and use cases.
-- Sponsor-ready quest pools.
-- Public progress stats.
-- Route-level backend tests.
-- Quiz validation without exposing answer keys.
-- Wallet-address completion proof.
-- Duplicate completion guard per quest and wallet.
-- Durable JSON completion store.
-- Wallet and device identifier validation.
-- Frontend comes last.
-
-## Backend API
+## API
 
 ```txt
 GET  /health
 GET  /api/quests
 GET  /api/quests/:id
-GET  /api/pools
-GET  /api/pools/:id
-GET  /api/progress
+POST /api/completion-challenges
 POST /api/complete
-POST /api/claim-intents
 ```
 
 ## Run
 
 ```bash
+npm install
 npm test
 npm start
 ```
 
-## Competition Fit
-
-NimQuest is built around Nimiq onboarding, NIM-native completion, and a mobile-first Mini App flow.
+Current verification: 17 passing tests, including real Nimiq signatures, address derivation, expiry, replay protection, duplicate handling, and HTTP integration.
 
 ## Project Docs
 
