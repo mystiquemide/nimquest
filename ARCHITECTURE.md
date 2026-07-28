@@ -24,6 +24,8 @@ Current backend stack:
 Backend responsibilities:
 
 - Serve public quest data.
+- Serve sponsor-ready quest pool metadata.
+- Serve aggregate public progress stats without exposing wallet addresses.
 - Keep answer keys server-side.
 - Grade submitted answers.
 - Validate wallet address and device identifier inputs.
@@ -37,6 +39,9 @@ Routes:
 GET  /health
 GET  /api/quests
 GET  /api/quests/:id
+GET  /api/pools
+GET  /api/pools/:id
+GET  /api/progress
 POST /api/complete
 POST /api/claim-intents
 ```
@@ -70,10 +75,27 @@ Quest:
 
 - `id`
 - `title`
+- `track`
+- `audience`
+- `difficulty`
+- `ecosystemUseCase`
 - `lesson`
 - `rewardNim`
 - `estimatedSeconds`
 - `questions`
+
+Quest pool:
+
+- `id`
+- `title`
+- `sponsor`
+- `purpose`
+- `asset`
+- `status`
+- `fundingModel`
+- `budgetNim`
+- `totalRewardNim`
+- `questIds`
 
 Completion proof:
 
