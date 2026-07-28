@@ -1,8 +1,8 @@
 import { blake2b } from "@noble/hashes/blake2.js";
+import { encodeNimiqSignedMessage } from "./nimiq-signed-message.js";
 import { normalizeWalletAddress } from "./validation.js";
 
 const NIMIQ_ALPHABET = "0123456789ABCDEFGHJKLMNPQRSTUVXY";
-const encoder = new TextEncoder();
 
 export async function verifyWalletProofWorker({
   challenge,
@@ -39,7 +39,10 @@ export async function verifyWalletProofWorker({
       "Ed25519",
       cryptoKey,
       fromHex(signature),
-      encoder.encode(challenge.message)
+      await crypto.subtle.digest(
+        "SHA-256",
+        encodeNimiqSignedMessage(challenge.message)
+      )
     );
 
     if (!valid) {

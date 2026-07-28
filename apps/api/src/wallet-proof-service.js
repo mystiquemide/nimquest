@@ -1,7 +1,6 @@
-import { PublicKey, Signature } from "@nimiq/core";
+import { Hash, PublicKey, Signature } from "@nimiq/core";
+import { encodeNimiqSignedMessage } from "./nimiq-signed-message.js";
 import { normalizeWalletAddress } from "./validation.js";
-
-const encoder = new TextEncoder();
 
 export function verifyWalletProof({ challenge, walletAddress, publicKey, signature }) {
   const normalizedWallet = normalizeWalletAddress(walletAddress);
@@ -23,7 +22,10 @@ export function verifyWalletProof({ challenge, walletAddress, publicKey, signatu
     }
 
     const parsedSignature = Signature.fromHex(signature);
-    const valid = parsedPublicKey.verify(parsedSignature, encoder.encode(challenge.message));
+    const signedMessageHash = Hash.computeSha256(
+      encodeNimiqSignedMessage(challenge.message)
+    );
+    const valid = parsedPublicKey.verify(parsedSignature, signedMessageHash);
 
     if (!valid) {
       return { ok: false, error: "Wallet signature is invalid." };

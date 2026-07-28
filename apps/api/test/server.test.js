@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import { after, before, describe, it } from "node:test";
 import { KeyPair } from "@nimiq/core";
 import { createServer } from "../src/server.js";
+import { signNimiqMessage } from "./nimiq-signature.js";
 
-const encoder = new TextEncoder();
 let server;
 let baseUrl;
 
@@ -62,7 +62,7 @@ describe("api server", () => {
         challengeId: challenge.id,
         answers: [0, 0, 0],
         publicKey: keyPair.publicKey.toHex(),
-        signature: keyPair.sign(encoder.encode(challenge.message)).toHex()
+        signature: signNimiqMessage(keyPair, challenge.message)
       })
     });
     const completion = await completionResponse.json();

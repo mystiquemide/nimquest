@@ -5,8 +5,7 @@ import {
   publicKeyToNimiqAddress,
   verifyWalletProofWorker
 } from "../src/wallet-proof-worker.js";
-
-const encoder = new TextEncoder();
+import { signNimiqMessage } from "./nimiq-signature.js";
 
 describe("worker wallet proof", () => {
   it("derives the same Nimiq address as the official core library", () => {
@@ -33,7 +32,7 @@ describe("worker wallet proof", () => {
       challenge,
       walletAddress,
       publicKey: keyPair.publicKey.toHex(),
-      signature: keyPair.sign(encoder.encode(challenge.message)).toHex()
+      signature: signNimiqMessage(keyPair, challenge.message)
     });
 
     assert.equal(result.ok, true);
@@ -52,7 +51,7 @@ describe("worker wallet proof", () => {
       },
       walletAddress,
       publicKey: keyPair.publicKey.toHex(),
-      signature: keyPair.sign(encoder.encode(signedMessage)).toHex()
+      signature: signNimiqMessage(keyPair, signedMessage)
     });
 
     assert.equal(result.ok, false);

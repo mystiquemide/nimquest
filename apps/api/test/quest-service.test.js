@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { beforeEach, describe, it } from "node:test";
 import { KeyPair } from "@nimiq/core";
+import { signNimiqMessage } from "./nimiq-signature.js";
 import { ChallengeStore } from "../src/challenge-store.js";
 import { CompletionStore } from "../src/completion-store.js";
 import {
@@ -16,7 +17,6 @@ import {
 } from "../src/quest-service.js";
 import { normalizeWalletAddress } from "../src/validation.js";
 
-const encoder = new TextEncoder();
 const deviceId = "a".repeat(64);
 let keyPair;
 let walletAddress;
@@ -131,7 +131,7 @@ describe("quest service", () => {
       challengeId: challenge.id,
       answers: [0, 0, 0],
       publicKey: otherKeyPair.publicKey.toHex(),
-      signature: otherKeyPair.sign(encoder.encode(challenge.message)).toHex()
+      signature: signNimiqMessage(otherKeyPair, challenge.message)
     });
 
     assert.equal(result.status, 401);
@@ -146,7 +146,7 @@ describe("quest service", () => {
       challengeId: challenge.id,
       answers: [0, 0, 0],
       publicKey: keyPair.publicKey.toHex(),
-      signature: keyPair.sign(encoder.encode(`${challenge.message} changed`)).toHex()
+      signature: signNimiqMessage(keyPair, `${challenge.message} changed`)
     });
 
     assert.equal(result.status, 401);
@@ -195,7 +195,7 @@ function issueChallenge() {
 function sign(message) {
   return {
     publicKey: keyPair.publicKey.toHex(),
-    signature: keyPair.sign(encoder.encode(message)).toHex()
+    signature: signNimiqMessage(keyPair, message)
   };
 }
 
