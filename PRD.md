@@ -1,91 +1,67 @@
-# NimQuest PRD
+# NimQuest Product Requirements
 
-## Summary
+## Product
 
-NimQuest is Nimiq's learn-by-doing onboarding layer. A new user learns one Nimiq concept, answers a short quiz, and signs a one-time Nimiq Pay challenge to create verified completion proof.
-
-## Competition Target
-
-- Competition: Nimiq Mini Apps Competition
-- Target cycle: Cycle I
-- Primary judging goal: ship one polished, working Nimiq-native flow
-- Required integration: Nimiq Pay Mini Apps Framework with NIM support
+NimQuest teaches Nimiq through short lessons, three-question quizzes, and wallet-verified completion records.
 
 ## Users
 
-Primary user:
+Primary user: a new or curious Nimiq user who wants clear guidance before approving wallet actions.
 
-- A new or curious Nimiq user who needs a fast way to understand wallet actions, NIM payments, and Mini App safety.
-
-Secondary user:
-
-- Nimiq community members who want a simple onboarding link to share with new users.
+Secondary user: a Nimiq community member who needs a reliable onboarding link to share.
 
 ## Problem
 
-Nimiq onboarding can be too passive when users only read docs or marketing pages. Users understand faster when they perform small actions, answer simple checks, and see immediate progress.
+Passive documentation does not confirm understanding. New users can reach wallet prompts before they understand addresses, signatures, payments, recovery, staking, or Mini App permissions.
 
-## Product Thesis
+## Product Rule
 
-If Nimiq onboarding is split into 60-second quests with wallet-based completion proof, new users can move from curiosity to active wallet use faster.
+A verified completion requires:
 
-## MVP Scope
+1. A passed server-side quiz.
+2. A five-minute challenge bound to one quest and wallet.
+3. A valid Nimiq signed message.
+4. Successful challenge consumption.
+5. A unique quest-and-wallet record.
 
-Must have:
+## Current Scope
 
-- Backend quest catalog.
-- Three accurate, sourced onboarding quests.
-- Quiz validation without exposing answer keys.
-- Cryptographic Nimiq wallet-control proof.
-- Short-lived challenges with expiry and replay protection.
-- Duplicate completion guard.
-- Durable completion storage.
-- Basic anti-abuse validation.
-- Mobile-first frontend after backend is stable.
-- Nimiq Pay wallet/provider integration.
-- README, demo story, and submission copy.
+- 20 sourced quests across seven paths
+- Nimiq Pay account approval and message signing
+- Server-side grading
+- D1 completion persistence
+- Journey recovery
+- Opaque receipts
+- Eight verified badges
+- Mandatory public leaderboard with masked wallet labels
+- Protected completion feedback
+- Privacy Notice and Terms of Use
 
-Should have:
+## Product Decisions
 
-- Device identifier support.
-- Quest streak or completion state.
-- Clean browser fallback for judging/demo.
-- Public testing evidence.
-- Builder/community quest lanes that show the app can grow past one contest demo.
+| Question | Decision |
+| --- | --- |
+| Is leaderboard participation required? | Yes. Every verified completion is ranked. |
+| Can a learner opt out of ranking? | No. The rule is disclosed before wallet verification. |
+| Is a device identifier collected? | No. Wallet plus quest already prevents duplicate completion. |
+| Does a public receipt show the full wallet? | No. It shows the address prefix and asterisks. |
+| Are rewards active? | No. The interface says **Coming soon**. |
 
-Out of scope for Cycle I:
+## Out of Scope
 
-- Full learning management system.
-- Complex admin dashboard.
-- Custodial reward wallet.
-- Randomized rewards or games of chance.
-- Marketplace, escrow, or creator monetization features.
+- Custodial reward wallet
+- Funded NIM payouts
+- Random rewards or games of chance
+- Quest authoring dashboard
+- Sponsored campaigns
+- Full learning-management features
 
-## Success Metrics
+## Success Checks
 
-- A user can complete the first quest in under 60 seconds.
-- App works on mobile-sized screens.
-- Backend tests pass.
-- Demo shows a real quest completion flow.
-- A real Nimiq Pay message signature is verified by the backend.
-- README explains setup and judging path clearly.
-
-## Risks
-
-- Real Nimiq Pay testing may be slower than backend/frontend implementation.
-- Real NIM reward transfer may require funding and wallet flow confirmation.
-- Weak positioning could make the app look like a faucet.
-
-## Positioning
-
-NimQuest is the onboarding layer for Nimiq. It teaches users through short, wallet-verified quests.
-
-## Ecosystem App Angle
-
-NimQuest should feel useful beyond one submission. The backend supports:
-
-- New-user onboarding quests.
-- Builder education quests.
-- Merchant payment education quests.
-- Community-sponsored quest pools.
-- Aggregate public progress that can be shown in a demo, README, or community update.
+- A first-time learner can reach wallet verification in about one minute.
+- Every primary route renders on a fresh mobile browser.
+- Nimiq Pay verifies a completion without transferring NIM.
+- Browser bundles do not contain answer indexes.
+- Public responses do not expose a full wallet address.
+- Unauthorized feedback updates return an authorization error.
+- Tests, browser smoke checks, build, and Worker checks pass before release.
