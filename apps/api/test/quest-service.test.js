@@ -1,15 +1,23 @@
 import assert from "node:assert/strict";
 import { describe, it, beforeEach } from "node:test";
+import os from "node:os";
+import path from "node:path";
+import { CompletionStore } from "../src/completion-store.js";
 import {
   getQuest,
   gradeQuest,
   listQuests,
-  resetCompletionStore
+  resetCompletionStore,
+  useCompletionStore
 } from "../src/quest-service.js";
+
+const validNimiqAddress = "NQ12 ABCD EFGH IJKL MNOP QRST UVWX YZ12 3456";
+const validDeviceId = "a".repeat(64);
 
 describe("quest service", () => {
   beforeEach(() => {
-    resetCompletionStore();
+    const storePath = path.join(os.tmpdir(), `nimquest-test-${crypto.randomUUID()}.json`);
+    useCompletionStore(new CompletionStore(storePath));
   });
 
   it("lists public quests without exposing answer keys", () => {
@@ -31,8 +39,8 @@ describe("quest service", () => {
   it("grades a passing quest and returns completion proof", () => {
     const result = gradeQuest({
       questId: "wallet-basics",
-      walletAddress: "NQ00 TEST WALLET",
-      deviceId: "device-1",
+      walletAddress: validNimiqAddress,
+      deviceId: validDeviceId,
       answers: [0, 1, 1]
     });
 
@@ -45,8 +53,8 @@ describe("quest service", () => {
   it("blocks duplicate reward eligibility for the same wallet and quest", () => {
     const payload = {
       questId: "wallet-basics",
-      walletAddress: "NQ00 TEST WALLET",
-      deviceId: "device-1",
+      walletAddress: validNimiqAddress,
+      deviceId: validDeviceId,
       answers: [0, 1, 1]
     };
 
@@ -57,11 +65,53 @@ describe("quest service", () => {
   it("fails incomplete answers", () => {
     const result = gradeQuest({
       questId: "wallet-basics",
-      walletAddress: "NQ00 TEST WALLET",
+      walletAddress: validNimiqAddress,
       answers: [0]
     });
 
     assert.equal(result.ok, false);
     assert.equal(result.status, 400);
+  });
+
+  it("rejects invalid wallet addresses", () => {
+    const result = gradeQuest({
+      questId: "wallet-basics",
+      walletAddress: "NQ00 TEST WALLET",
+      answers: [0, 1, 1]
+    });
+
+    assert.equal(result.ok, false);
+    assert.equal(result.status, 400);
+  });
+
+  it("rejects invalid device identifiers when provided", () => {
+    const result = gradeQuest({
+      questId: "wallet-basics",
+      walletAddress: validNimiqAddress,
+      deviceId: "device-1",
+      answers: [0, 1, 1]
+    });
+
+    assert.equal(result.ok, false);
+    assert.equal(result.status, 400);
+  });
+
+  it("persists completions across store instances", () => {
+    const storePath = path.join(os.tmpdir(), `nimquest-persist-${crypto.randomUUID()}.json`);
+    useCompletionStore(new CompletionStore(storePath));
+
+    const payload = {
+      questId: "wallet-basics",
+      walletAddress: validNimiqAddress,
+      deviceId: validDeviceId,
+      answers: [0, 1, 1]
+    };
+
+    assert.equal(gradeQuest(payload).rewardEligible, true);
+
+    useCompletionStore(new CompletionStore(storePath));
+
+    assert.equal(gradeQuest(payload).rewardEligible, false);
+    resetCompletionStore();
   });
 });
