@@ -1,4 +1,5 @@
 import http from "node:http";
+import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -30,6 +31,21 @@ export function createServer() {
   return http.createServer(async (request, response) => {
     try {
       const url = new URL(request.url, `http://${request.headers.host}`);
+      const origin = request.headers.origin;
+      const allowedOrigin =
+        !origin ||
+        origin === url.origin ||
+        /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
+
+      if (!allowedOrigin && (request.method === "POST" || request.method === "OPTIONS")) {
+        return sendJson(response, 403, { error: "Origin not allowed." });
+      }
+      if (origin && allowedOrigin) {
+        response.setHeader("access-control-allow-origin", origin);
+        response.setHeader("access-control-allow-methods", "GET,POST,OPTIONS");
+        response.setHeader("access-control-allow-headers", "content-type");
+        response.setHeader("vary", "Origin");
+      }
 
       if (request.method === "OPTIONS") {
         return sendJson(response, 204, null);
@@ -80,7 +96,13 @@ export function createServer() {
             a.walletAddress.localeCompare(b.walletAddress)
           )
           .slice(0, 100)
-          .map((entry, index) => ({ rank: index + 1, ...entry }));
+          .map((entry, index) => ({
+            rank: index + 1,
+            walletLabel: maskWalletAddress(entry.walletAddress),
+            verifiedQuests: entry.verifiedQuests,
+            firstVerifiedAt: entry.firstVerifiedAt,
+            latestVerifiedAt: entry.latestVerifiedAt
+          }));
 
         return sendJson(response, 200, { leaderboard: ranked });
       }
@@ -99,7 +121,8 @@ export function createServer() {
 
       const completionMatch = url.pathname.match(/^\/api\/completions\/([^/]+)$/);
       if (request.method === "GET" && completionMatch) {
-        const proof = getCompletionStore().get(decodeURIComponent(completionMatch[1]));
+        const publicId = decodeURIComponent(completionMatch[1]);
+        const proof = getCompletionStore().values().find((item) => item.key === publicId);
         return proof
           ? sendJson(response, 200, { proof: toPublicProof(proof) })
           : sendJson(response, 404, { error: "Verified completion not found." });
@@ -157,9 +180,15 @@ export function createServer() {
 
       if (request.method === "POST" && url.pathname === "/api/feedback") {
         const body = await readJson(request);
-        const proof = getCompletionStore().get(body.proofKey);
+        const proof = getCompletionStore().values().find((item) => item.key === body.proofKey);
         if (!proof) {
           return sendJson(response, 404, { error: "Verified completion not found." });
+        }
+        if (
+          typeof body.feedbackToken !== "string" ||
+          !isMatchingToken(body.feedbackToken, proof.feedbackTokenHash)
+        ) {
+          return sendJson(response, 403, { error: "Feedback authorization is invalid." });
         }
         if (!Number.isInteger(body.rating) || body.rating < 1 || body.rating > 3) {
           return sendJson(response, 400, { error: "Feedback rating must be between 1 and 3." });
@@ -191,12 +220,24 @@ function toPublicProof(proof) {
   return {
     key: proof.key,
     questId: proof.questId,
-    walletAddress: proof.walletAddress,
+    walletAddress: maskWalletAddress(proof.walletAddress),
     verificationMethod: proof.verificationMethod,
     completedAt: proof.completedAt,
     status: proof.status,
     reward: proof.reward
   };
+}
+
+function maskWalletAddress(value) {
+  const compact = String(value || "").replace(/\s+/g, "");
+  return `${compact.slice(0, 8)}${"*".repeat(10)}`;
+}
+
+function isMatchingToken(token, expectedHash) {
+  if (typeof expectedHash !== "string") return false;
+  const actualHash = crypto.createHash("sha256").update(token).digest("hex");
+  if (actualHash.length !== expectedHash.length) return false;
+  return crypto.timingSafeEqual(Buffer.from(actualHash), Buffer.from(expectedHash));
 }
 
 function sendFrontend(request, response, pathname) {
@@ -235,9 +276,8 @@ function sendJson(response, statusCode, payload) {
 
   response.writeHead(statusCode, {
     "content-type": "application/json; charset=utf-8",
-    "access-control-allow-origin": "*",
-    "access-control-allow-methods": "GET,POST,OPTIONS",
-    "access-control-allow-headers": "content-type"
+    "x-content-type-options": "nosniff",
+    "referrer-policy": "no-referrer"
   });
   response.end(body);
 }
