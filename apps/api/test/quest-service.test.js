@@ -17,7 +17,6 @@ import {
 } from "../src/quest-service.js";
 import { normalizeWalletAddress } from "../src/validation.js";
 
-const deviceId = "a".repeat(64);
 let keyPair;
 let walletAddress;
 
@@ -58,8 +57,7 @@ describe("quest service", () => {
   it("issues a short-lived challenge bound to quest and wallet", () => {
     const result = createCompletionChallenge({
       questId: "meet-nimiq",
-      walletAddress,
-      deviceId
+      walletAddress
     });
 
     assert.equal(result.ok, true);
@@ -186,8 +184,7 @@ describe("quest service", () => {
 function issueChallenge() {
   const result = createCompletionChallenge({
     questId: "meet-nimiq",
-    walletAddress,
-    deviceId
+      walletAddress
   });
   return result.challenge;
 }
