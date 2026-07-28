@@ -99,23 +99,21 @@ Run them all: `npm test` (25 tests).
 
 The leaderboard is live D1 data, not seeded mock rows. At the time of writing it shows two distinct masked wallets, each with two verified quests, the earliest proof timestamped 2026-07-28. The first Meet Nimiq proof was signed natively inside Nimiq Pay on an iPhone. Query it yourself with the leaderboard curl above.
 
-## How this differs
+## Benchmarks
 
-| Alternative | What it does | Why NimQuest is different |
-|---|---|---|
-| A docs page or blog tutorial | You read, nothing records that you understood it | You prove understanding with a server-graded quiz plus a wallet signature |
-| A browser quiz app | Answer key ships in the page, trivial to cheat | Correct answers stay server-side, the browser never sees them |
-| An airdrop or faucet quest farm | Rewards NIM for clicking, invites sybils | No payout in the flow, the reward is a verifiable proof record |
-| An on-chain "proof of learning" contract | Pays gas and writes a tx per completion | A signed message proves control with zero gas and no NIM movement |
+How NimQuest compares to the obvious alternatives, capability by capability.
 
-## Honest limitations
+| Capability | NimQuest | Docs or blog tutorial | Browser quiz app | Airdrop / faucet quest farm | On-chain proof-of-learning |
+|---|:---:|:---:|:---:|:---:|:---:|
+| Records that you actually learned | Yes | No | Partial | No | Yes |
+| Answers hidden from the browser | Yes | n/a | No | n/a | Varies |
+| Proves wallet control | Yes | No | No | Partial | Yes |
+| No gas or NIM spent to complete | Yes | Yes | Yes | No | No |
+| Resistant to payout sybil farming | Yes | Yes | Yes | No | Varies |
+| Runs natively in Nimiq Pay | Yes | No | No | Varies | Varies |
+| Verifiable public receipt | Yes | No | No | Partial | Yes |
 
-- Unaudited, early-stage code. Do not treat it as production-grade security.
-- Rewards are shown as Coming soon. No reward asset is funded or distributed, and no NIM moves during completion.
-- Completions live in Cloudflare D1, not on the Nimiq blockchain. The proof is a wallet signature, not an on-chain record.
-- The public leaderboard is mandatory after verification. There is no ranking opt-out.
-- The quest catalog is maintained in source. There is no quest-authoring dashboard.
-- Native signing has been proven on one real device so far. Broader real-device coverage is still in progress.
+The pattern: a docs page teaches but proves nothing, a browser quiz proves something you can cheat, an airdrop farm pays for clicks and invites sybils, and an on-chain contract proves control but charges gas for every completion. NimQuest keeps the proof and drops the gas, the cheating surface, and the payout farm.
 
 ## What's real
 
