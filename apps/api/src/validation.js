@@ -1,5 +1,4 @@
 const NIMIQ_ADDRESS_PATTERN = /^NQ[0-9]{2}(?:\s?[A-Z0-9]{4}){8}$/;
-const DEVICE_ID_PATTERN = /^[a-fA-F0-9]{64}$/;
 
 export function normalizeWalletAddress(walletAddress) {
   if (typeof walletAddress !== "string") {
@@ -14,22 +13,4 @@ export function normalizeWalletAddress(walletAddress) {
   }
 
   return null;
-}
-
-export function normalizeDeviceId(deviceId) {
-  if (deviceId === undefined || deviceId === null || deviceId === "") {
-    return "unknown-device";
-  }
-
-  if (typeof deviceId !== "string") {
-    return null;
-  }
-
-  const trimmed = deviceId.trim();
-
-  if (!DEVICE_ID_PATTERN.test(trimmed)) {
-    return null;
-  }
-
-  return trimmed.toLowerCase();
 }
