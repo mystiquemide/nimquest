@@ -11,6 +11,7 @@ The goal is simple: help a new Nimiq user learn one concept, prove completion wi
 - Ecosystem metadata for tracks, audiences, and use cases.
 - Sponsor-ready quest pools.
 - Public progress stats.
+- Route-level backend tests.
 - Quiz validation without exposing answer keys.
 - Wallet-address completion proof.
 - Duplicate completion guard per quest and wallet.
