@@ -103,6 +103,10 @@ export function resetCompletionStore() {
   completionStore.clear();
 }
 
+export function getCompletionStore() {
+  return completionStore;
+}
+
 export function useCompletionStore(store) {
   completionStore = store;
 }
