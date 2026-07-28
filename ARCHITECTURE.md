@@ -29,6 +29,7 @@ Backend responsibilities:
 - Validate wallet address and device identifier inputs.
 - Store completion proofs.
 - Block duplicate reward eligibility per quest and wallet.
+- Prepare NIM claim intents for frontend wallet execution.
 
 Routes:
 
@@ -37,6 +38,7 @@ GET  /health
 GET  /api/quests
 GET  /api/quests/:id
 POST /api/complete
+POST /api/claim-intents
 ```
 
 ## Frontend
@@ -83,10 +85,22 @@ Completion proof:
 - `completedAt`
 - `status`
 
+Claim intent:
+
+- `type`
+- `asset`
+- `amount`
+- `recipient`
+- `questId`
+- `proofKey`
+- `memo`
+- `status`
+
 ## Current Limitations
 
 - Completion store is file-based.
 - Real NIM transfer is not integrated yet.
+- Claim intents prepare metadata but do not execute transfers yet.
 - Wallet proof currently depends on submitted wallet address until Nimiq Pay frontend integration is added.
 - No frontend yet.
 
