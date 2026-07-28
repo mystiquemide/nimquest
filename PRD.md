@@ -2,7 +2,7 @@
 
 ## Summary
 
-NimQuest is a Nimiq Pay Mini App that turns onboarding into short quests. A new user learns one Nimiq concept, answers a quick quiz, proves completion with wallet context, and prepares a tiny NIM reward or badge claim.
+NimQuest is Nimiq's learn-by-doing onboarding layer. A new user learns one Nimiq concept, answers a short quiz, and signs a one-time Nimiq Pay challenge to create verified completion proof.
 
 ## Competition Target
 
@@ -34,11 +34,10 @@ If Nimiq onboarding is split into 60-second quests with wallet-based completion 
 Must have:
 
 - Backend quest catalog.
-- Ecosystem-ready quest metadata.
-- Sponsor-ready quest pool structure.
-- Public progress stats for demo and community proof.
+- Three accurate, sourced onboarding quests.
 - Quiz validation without exposing answer keys.
-- Wallet-address completion proof.
+- Cryptographic Nimiq wallet-control proof.
+- Short-lived challenges with expiry and replay protection.
 - Duplicate completion guard.
 - Durable completion storage.
 - Basic anti-abuse validation.
@@ -68,19 +67,18 @@ Out of scope for Cycle I:
 - App works on mobile-sized screens.
 - Backend tests pass.
 - Demo shows a real quest completion flow.
-- Nimiq wallet interaction is visible and core to the experience.
+- A real Nimiq Pay message signature is verified by the backend.
 - README explains setup and judging path clearly.
 
 ## Risks
 
-- Cycle I timeline is tight.
 - Real Nimiq Pay testing may be slower than backend/frontend implementation.
 - Real NIM reward transfer may require funding and wallet flow confirmation.
 - Weak positioning could make the app look like a faucet.
 
 ## Positioning
 
-NimQuest is onboarding infrastructure for Nimiq Pay. It teaches users by making them complete tiny, wallet-aware quests.
+NimQuest is the onboarding layer for Nimiq. It teaches users through short, wallet-verified quests.
 
 ## Ecosystem App Angle
 
