@@ -1508,7 +1508,10 @@ function renderWalletProof(questId) {
       <button class="button" type="button" data-connect-proof>
         ${hasError ? "Try again" : "Verify with Nimiq Pay"} <span aria-hidden="true">→</span>
       </button>
-      ${hasError ? `<a class="wallet-fallback" href="https://pay.nimiq.com/" target="_blank" rel="noreferrer">Get the Nimiq Pay app</a>` : ""}
+      ${hasError ? `<div class="wallet-stores">
+        <a class="wallet-fallback" href="https://apps.apple.com/us/app/nimiq-pay/id6471844738" target="_blank" rel="noreferrer">Nimiq Pay on the App Store</a>
+        <a class="wallet-fallback" href="https://play.google.com/store/apps/details?id=com.nimiq.pay" target="_blank" rel="noreferrer">Nimiq Pay on Google Play</a>
+      </div>` : ""}
     `;
 
     gate.querySelector("[data-connect-proof]").addEventListener("click", beginWalletProof);

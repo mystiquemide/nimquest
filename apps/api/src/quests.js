@@ -570,29 +570,29 @@ export const quests = [
       "Understand that validators produce blocks and secure the network."
     ],
     lesson:
-      "Nimiq’s Proof-of-Stake network uses validators rather than mining. Validators participate in block production and network consensus. Stake helps determine validator participation, while protocol rules and penalties support honest operation.",
-    sourceUrl: "https://nimiq.com/blog/nimiq-proof-of-stake-is-now-live",
+      "Nimiq 2.0 runs on Albatross, a Proof-of-Stake consensus that replaces mining with validators. Validators produce micro blocks that carry transactions, while macro blocks finalize each batch. Albatross targets roughly one-second block times and more than 1000 transactions per second.",
+    sourceUrl: "https://nimiq.dev/protocol/",
     questions: [
       {
-        id: "pos-network",
-        prompt: "Which consensus system does Nimiq use?",
-        options: ["Proof of Stake", "Proof of screenshots", "A bank database"],
+        id: "pos-algorithm",
+        prompt: "Which consensus algorithm secures the Nimiq network?",
+        options: ["Albatross Proof-of-Stake", "Proof of Work mining", "Proof of Authority"],
         answerIndex: 0,
-        explanation: "Nimiq’s current network runs on Proof of Stake."
+        explanation: "Nimiq 2.0 runs on Albatross, a Proof-of-Stake consensus algorithm."
       },
       {
-        id: "pos-validator",
-        prompt: "Who participates in producing blocks?",
-        options: ["Validators", "Cashlink recipients only", "Website designers"],
+        id: "pos-microblocks",
+        prompt: "In Albatross, which block type carries user transactions?",
+        options: ["Micro blocks", "Macro blocks", "Election blocks"],
         answerIndex: 0,
-        explanation: "Validators perform block-production and consensus duties."
+        explanation: "Micro blocks are produced by validators and carry user transactions. Macro blocks finalize each batch."
       },
       {
-        id: "pos-stake",
-        prompt: "What helps determine validator participation?",
-        options: ["Stake", "Page colour", "Wallet nickname"],
+        id: "pos-blocktime",
+        prompt: "About how quickly does Albatross separate blocks?",
+        options: ["Around one second", "Around ten minutes", "Around one hour"],
         answerIndex: 0,
-        explanation: "Stake is part of how Proof of Stake assigns participation."
+        explanation: "Albatross targets roughly one-second block separation, supporting more than 1000 transactions per second."
       }
     ]
   },
@@ -687,29 +687,29 @@ export const quests = [
       "Know that running a validator requires secure keys and reliable infrastructure."
     ],
     lesson:
-      "Validators produce blocks and vote in Nimiq consensus. Operating one requires technical setup, secure validator keys, and a machine that stays reliably available. Many users delegate to a staking pool instead of running validator infrastructure themselves.",
-    sourceUrl: "https://nimiq.dev/nodes/validators/becoming-a-validator",
+      "Validators produce blocks and vote in Nimiq consensus. A node becomes a validator by staking coins as a deposit, and a larger stake earns more of the 512 per-batch slots, raising its chance to produce blocks. Election blocks periodically re-elect the validator set. Many users delegate to a staking pool instead of running validator infrastructure themselves.",
+    sourceUrl: "https://nimiq.dev/protocol/",
     questions: [
       {
-        id: "validator-duty",
-        prompt: "What is a validator responsible for?",
-        options: ["Block production and consensus duties", "Creating Recovery Words for users", "Approving every wallet payment"],
+        id: "validator-become",
+        prompt: "How does a node become a validator in Nimiq?",
+        options: ["By staking coins as a deposit", "By mining with a GPU", "By buying a license"],
         answerIndex: 0,
-        explanation: "Validators participate in producing blocks and network consensus."
+        explanation: "A node proposes to become a validator by staking coins as a deposit."
       },
       {
-        id: "validator-keys",
-        prompt: "How should validator private keys be handled?",
-        options: ["Stored securely", "Published openly", "Shared with delegators"],
+        id: "validator-slots",
+        prompt: "What does a larger stake give a Nimiq validator?",
+        options: ["More slots and a higher chance to produce blocks", "A fixed guaranteed reward", "The power to reverse transactions"],
         answerIndex: 0,
-        explanation: "Validator keys are sensitive operational credentials."
+        explanation: "Stake influences how many of the 512 per-batch slots a validator is assigned, so more stake means more chances to produce blocks."
       },
       {
-        id: "validator-alternative",
-        prompt: "What can a non-technical holder use instead of running a validator?",
-        options: ["A staking pool", "A public private key", "A duplicate wallet request"],
+        id: "validator-election",
+        prompt: "What renews the Nimiq validator set?",
+        options: ["Election blocks", "Every micro block", "A manual vote by users"],
         answerIndex: 0,
-        explanation: "Staking pools handle the validator operations for delegators."
+        explanation: "Election blocks, a type of macro block, provide periodic finality and re-elect the validator set."
       }
     ]
   },
@@ -726,15 +726,15 @@ export const quests = [
       "Review the selected asset and address before sending."
     ],
     lesson:
-      "The Nimiq Wallet can display both NIM and Bitcoin accounts. They are separate assets with different address systems. Always confirm which asset you selected and use the matching recipient address before sending.",
+      "The Nimiq Wallet shows both NIM and Bitcoin accounts, and they are separate assets with different address systems. Nimiq uses atomic swaps to trade between them without a custodian, and Nimiq Pay uses the same mechanism so you can spend NIM where Bitcoin Lightning is accepted. Always confirm which asset you selected and use the matching recipient address before sending.",
     sourceUrl: "https://nimiq.com/blog/wallet-update-atomic-swap-nimiq-and-bitcoin",
     questions: [
       {
-        id: "asset-separate",
-        prompt: "Are NIM and BTC the same asset?",
-        options: ["No", "Yes", "Only inside the wallet"],
+        id: "nim-lightning-swap",
+        prompt: "How can Nimiq Pay let you spend where Bitcoin Lightning is accepted?",
+        options: ["Atomic swaps between NIM and BTC Lightning", "By wrapping NIM as an ERC-20 token", "By using a custodial exchange to hold your funds"],
         answerIndex: 0,
-        explanation: "NIM and Bitcoin are separate assets on different networks."
+        explanation: "Nimiq Pay uses atomic swaps, so you pay with NIM and the merchant receives Bitcoin Lightning."
       },
       {
         id: "asset-address",
