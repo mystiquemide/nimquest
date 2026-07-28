@@ -45,8 +45,7 @@ describe("api server", () => {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
         questId: "meet-nimiq",
-        walletAddress,
-        deviceId: "b".repeat(64)
+        walletAddress
       })
     });
     const { challenge } = await challengeResponse.json();
@@ -79,6 +78,7 @@ describe("api server", () => {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           proofKey: completion.proof.key,
+          feedbackToken: completion.feedbackToken,
           rating: 3
         })
       }),
@@ -88,7 +88,7 @@ describe("api server", () => {
     const receipt = await receiptResponse.json();
     const leaderboard = await leaderboardResponse.json();
     const leaderboardEntry = leaderboard.leaderboard.find(
-      (entry) => entry.walletAddress === walletAddress
+      (entry) => entry.walletLabel === maskWalletAddress(walletAddress)
     );
 
     assert.equal(walletResponse.status, 200);
@@ -97,10 +97,22 @@ describe("api server", () => {
     assert.equal(receipt.proof.key, completion.proof.key);
     assert.equal("publicKey" in receipt.proof, false);
     assert.equal("deviceId" in receipt.proof, false);
+    assert.equal(receipt.proof.walletAddress, maskWalletAddress(walletAddress));
     assert.equal(feedbackResponse.status, 201);
     assert.equal(leaderboardResponse.status, 200);
     assert.equal(leaderboardEntry.verifiedQuests, 1);
     assert.ok(leaderboardEntry.rank >= 1);
+
+    const unauthorizedFeedback = await fetch(`${baseUrl}/api/feedback`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        proofKey: completion.proof.key,
+        feedbackToken: "0".repeat(64),
+        rating: 1
+      })
+    });
+    assert.equal(unauthorizedFeedback.status, 403);
   });
 
   it("grades a quiz before wallet access is requested", async () => {
@@ -146,9 +158,32 @@ describe("api server", () => {
   });
 
   it("handles CORS preflight", async () => {
-    const response = await fetch(`${baseUrl}/api/quests`, { method: "OPTIONS" });
+    const response = await fetch(`${baseUrl}/api/quests`, {
+      method: "OPTIONS",
+      headers: { origin: "http://localhost:5173" }
+    });
 
     assert.equal(response.status, 204);
-    assert.equal(response.headers.get("access-control-allow-origin"), "*");
+    assert.equal(response.headers.get("access-control-allow-origin"), "http://localhost:5173");
+  });
+
+  it("rejects cross-origin browser writes", async () => {
+    const response = await fetch(`${baseUrl}/api/grade`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        origin: "https://attacker.example"
+      },
+      body: JSON.stringify({
+        questId: "meet-nimiq",
+        answers: [0, 0, 0]
+      })
+    });
+
+    assert.equal(response.status, 403);
   });
 });
+
+function maskWalletAddress(value) {
+  return `${value.replace(/\s+/g, "").slice(0, 8)}${"*".repeat(10)}`;
+}
