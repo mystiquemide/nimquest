@@ -5,3 +5,16 @@ node_modules/
 worker-configuration.d.ts
 worker-startup.cpuprofile
 npm-debug.log*
+
+# Internal project and submission work
+MEMORY.md
+TASKS.md
+PAGE_PLAN.md
+nimquest-combined-audit-*.md
+docs/DEMO.md
+docs/JUDGING.md
+docs/SUBMISSION.md
+docs/screenshots/
+upload/
+*-desktop.jpg
+*-mobile.jpg
