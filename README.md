@@ -21,6 +21,7 @@ GET  /health
 GET  /api/quests
 GET  /api/quests/:id
 POST /api/complete
+POST /api/claim-intents
 ```
 
 ## Run
@@ -38,6 +39,7 @@ NimQuest is built around Nimiq onboarding, NIM-native completion, and a mobile-f
 
 - `PRD.md`
 - `ARCHITECTURE.md`
+- `INTEGRATION.md`
 - `TASKS.md`
 - `MEMORY.md`
 
