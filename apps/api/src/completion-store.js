@@ -18,6 +18,10 @@ export class CompletionStore {
     return this.records.get(key);
   }
 
+  values() {
+    return Array.from(this.records.values());
+  }
+
   set(key, value) {
     this.records.set(key, value);
     this.save();
