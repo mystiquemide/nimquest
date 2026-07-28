@@ -56,6 +56,8 @@ try {
       assert.equal(await page.title(), title, `${route} has the wrong document title`);
 
       if (route === "/") {
+        const featuredQuestTitles = await page.locator(".quest-card h3").allTextContents();
+        assert.equal(featuredQuestTitles[0], "Meet Nimiq");
         const previewLabels = await page.locator("[data-preview]").evaluateAll((buttons) =>
           buttons.map((button) => button.getAttribute("aria-label"))
         );
@@ -83,11 +85,20 @@ try {
       }
 
       if (route === "/quests") {
+        const trailQuestTitles = await page.locator(".trail-card h2").allTextContents();
+        assert.equal(trailQuestTitles[0], "Meet Nimiq");
         const paymentsFilter = page.locator('[data-filter="payments"]');
         await paymentsFilter.click();
         assert.equal(await paymentsFilter.getAttribute("aria-pressed"), "true");
         assert.ok(await page.locator('.trail-card[data-track="payments"]:visible').count() > 0);
         await page.locator('[data-filter="all"]').click();
+      }
+
+      if (route === "/journey") {
+        assert.equal(
+          await page.locator(".journey-content__heading .button").getAttribute("href"),
+          "/quests/meet-nimiq"
+        );
       }
 
       const overflows = await page.evaluate(
