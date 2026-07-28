@@ -34,6 +34,9 @@ If Nimiq onboarding is split into 60-second quests with wallet-based completion 
 Must have:
 
 - Backend quest catalog.
+- Ecosystem-ready quest metadata.
+- Sponsor-ready quest pool structure.
+- Public progress stats for demo and community proof.
 - Quiz validation without exposing answer keys.
 - Wallet-address completion proof.
 - Duplicate completion guard.
@@ -49,6 +52,7 @@ Should have:
 - Quest streak or completion state.
 - Clean browser fallback for judging/demo.
 - Public testing evidence.
+- Builder/community quest lanes that show the app can grow past one contest demo.
 
 Out of scope for Cycle I:
 
@@ -77,3 +81,13 @@ Out of scope for Cycle I:
 ## Positioning
 
 NimQuest is onboarding infrastructure for Nimiq Pay. It teaches users by making them complete tiny, wallet-aware quests.
+
+## Ecosystem App Angle
+
+NimQuest should feel useful beyond one submission. The backend supports:
+
+- New-user onboarding quests.
+- Builder education quests.
+- Merchant payment education quests.
+- Community-sponsored quest pools.
+- Aggregate public progress that can be shown in a demo, README, or community update.
