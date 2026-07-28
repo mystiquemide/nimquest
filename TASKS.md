@@ -70,19 +70,43 @@ Status: Done
 - [x] Update `MEMORY.md`.
 - [x] Push through GitHub plugin.
 
-## Checkpoint 6 - Frontend MVP
+## Checkpoint 6 - Backend Truth and Wallet Proof
+
+Status: Done
+
+- [x] Replace filler content with three sourced quests.
+- [x] Remove demo pools, unverified progress, and claim-intent routes.
+- [x] Remove automatic reward promises and EVM support.
+- [x] Add one-time signing challenges.
+- [x] Verify Nimiq signatures and signer addresses with `@nimiq/core`.
+- [x] Add nonce expiry and replay protection.
+- [x] Persist verified completion proof.
+- [x] Add service and HTTP integration tests.
+- [x] Update project control docs.
+- [x] Push through GitHub plugin.
+
+## Checkpoint 7 - Nimiq Pay Runtime Proof
 
 Status: Next
 
-- [ ] Build mobile-first quest list.
-- [ ] Build quest lesson and quiz flow.
-- [ ] Connect to backend API.
-- [ ] Add Nimiq Pay provider integration.
-- [ ] Add browser fallback.
-- [ ] Update `MEMORY.md`.
-- [ ] Push through GitHub plugin.
+- [ ] Initialize the Mini Apps SDK.
+- [ ] Check consensus and block height.
+- [ ] Request account access and sign a backend challenge.
+- [ ] Verify one real completion inside Nimiq Pay.
+- [ ] Verify rejection, timeout, and browser fallback.
+- [ ] Stop and send the first screen screenshots for approval.
 
-## Checkpoint 7 - Submission Package
+## Checkpoint 8 - Screen-by-Screen Frontend
+
+Status: Pending
+
+- [ ] Build Entry screen and request approval.
+- [ ] Build Quest Trail screen and request approval.
+- [ ] Build Quest Session screen and request approval.
+- [ ] Build Wallet Proof screen and request approval.
+- [ ] Build My Journey screen and request approval.
+
+## Checkpoint 9 - Submission Package
 
 Status: Pending
 
