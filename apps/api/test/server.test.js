@@ -1,32 +1,22 @@
 import assert from "node:assert/strict";
 import { after, before, describe, it } from "node:test";
+import { KeyPair } from "@nimiq/core";
 import { createServer } from "../src/server.js";
 
+const encoder = new TextEncoder();
 let server;
 let baseUrl;
 
 describe("api server", () => {
   before(async () => {
     server = createServer();
-
-    await new Promise((resolve) => {
-      server.listen(0, "127.0.0.1", resolve);
-    });
-
-    const address = server.address();
-    baseUrl = `http://127.0.0.1:${address.port}`;
+    await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+    baseUrl = `http://127.0.0.1:${server.address().port}`;
   });
 
   after(async () => {
     await new Promise((resolve, reject) => {
-      server.close((error) => {
-        if (error) {
-          reject(error);
-          return;
-        }
-
-        resolve();
-      });
+      server.close((error) => error ? reject(error) : resolve());
     });
   });
 
@@ -36,40 +26,66 @@ describe("api server", () => {
 
     assert.equal(response.status, 200);
     assert.equal(body.ok, true);
-    assert.equal(body.service, "nimquest-api");
   });
 
-  it("serves public quests without answer keys", async () => {
+  it("serves three public quests without answer keys", async () => {
     const response = await fetch(`${baseUrl}/api/quests`);
     const body = await response.json();
 
     assert.equal(response.status, 200);
-    assert.equal(body.quests.length, 7);
+    assert.equal(body.quests.length, 3);
     assert.equal("answerIndex" in body.quests[0].questions[0], false);
   });
 
-  it("serves sponsor-ready quest pools", async () => {
-    const response = await fetch(`${baseUrl}/api/pools`);
-    const body = await response.json();
+  it("creates and verifies a wallet-bound completion over HTTP", async () => {
+    const keyPair = KeyPair.generate();
+    const walletAddress = keyPair.toAddress().toUserFriendlyAddress();
+    const challengeResponse = await fetch(`${baseUrl}/api/completion-challenges`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        questId: "meet-nimiq",
+        walletAddress,
+        deviceId: "b".repeat(64)
+      })
+    });
+    const { challenge } = await challengeResponse.json();
 
-    assert.equal(response.status, 200);
-    assert.equal(body.pools.length, 2);
-    assert.equal(body.pools[0].asset, "NIM");
+    assert.equal(challengeResponse.status, 201);
+
+    const completionResponse = await fetch(`${baseUrl}/api/complete`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        questId: "meet-nimiq",
+        walletAddress,
+        challengeId: challenge.id,
+        answers: [0, 0, 0],
+        publicKey: keyPair.publicKey.toHex(),
+        signature: keyPair.sign(encoder.encode(challenge.message)).toHex()
+      })
+    });
+    const completion = await completionResponse.json();
+
+    assert.equal(completionResponse.status, 200);
+    assert.equal(completion.verified, true);
+    assert.equal(completion.proof.status, "verified");
   });
 
-  it("serves public progress stats", async () => {
-    const response = await fetch(`${baseUrl}/api/progress`);
-    const body = await response.json();
+  it("does not expose unverified pool or public progress routes", async () => {
+    const [pools, progress, claims] = await Promise.all([
+      fetch(`${baseUrl}/api/pools`),
+      fetch(`${baseUrl}/api/progress`),
+      fetch(`${baseUrl}/api/claim-intents`, { method: "POST" })
+    ]);
 
-    assert.equal(response.status, 200);
-    assert.equal(body.progress.totalQuests, 7);
-    assert.equal(Array.isArray(body.progress.quests), true);
+    assert.equal(pools.status, 404);
+    assert.equal(progress.status, 404);
+    assert.equal(claims.status, 404);
   });
 
   it("handles CORS preflight", async () => {
-    const response = await fetch(`${baseUrl}/api/quests`, {
-      method: "OPTIONS"
-    });
+    const response = await fetch(`${baseUrl}/api/quests`, { method: "OPTIONS" });
 
     assert.equal(response.status, 204);
     assert.equal(response.headers.get("access-control-allow-origin"), "*");
