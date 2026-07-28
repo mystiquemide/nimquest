@@ -24,8 +24,7 @@ const challengeResponse = await fetch(`${baseUrl}/api/completion-challenges`, {
   headers: { "content-type": "application/json" },
   body: JSON.stringify({
     questId: "receive-nim-safely",
-    walletAddress,
-    deviceId: "c".repeat(64)
+    walletAddress
   })
 });
 const { challenge } = await challengeResponse.json();
@@ -58,6 +57,7 @@ const [walletResponse, receiptResponse, feedbackResponse, replayResponse, leader
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
       proofKey: completion.proof.key,
+      feedbackToken: completion.feedbackToken,
       rating: 3
     })
   }),
@@ -73,7 +73,7 @@ const receipt = await receiptResponse.json();
 const replay = await replayResponse.json();
 const leaderboard = await leaderboardResponse.json();
 const leaderboardEntry = leaderboard.leaderboard.find(
-  (entry) => entry.walletAddress === walletAddress
+  (entry) => entry.walletLabel === maskWalletAddress(walletAddress)
 );
 
 assert.equal(walletResponse.status, 200);
@@ -82,12 +82,24 @@ assert.equal(receiptResponse.status, 200);
 assert.equal(receipt.proof.key, completion.proof.key);
 assert.equal("publicKey" in receipt.proof, false);
 assert.equal("deviceId" in receipt.proof, false);
+assert.equal(receipt.proof.walletAddress, maskWalletAddress(walletAddress));
 assert.equal(feedbackResponse.status, 201);
 assert.equal(replayResponse.status, 400);
 assert.match(replay.error, /already been used/);
 assert.equal(leaderboardResponse.status, 200);
 assert.equal(leaderboardEntry.verifiedQuests, 1);
 assert.ok(leaderboardEntry.rank >= 1);
+
+const unauthorizedFeedbackResponse = await fetch(`${baseUrl}/api/feedback`, {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify({
+    proofKey: completion.proof.key,
+    feedbackToken: "0".repeat(64),
+    rating: 1
+  })
+});
+assert.equal(unauthorizedFeedbackResponse.status, 403);
 
 console.log(JSON.stringify({
   health: "passed",
@@ -98,6 +110,11 @@ console.log(JSON.stringify({
   journeyRecovery: "passed",
   sharedReceipt: "passed",
   feedback: "passed",
+  feedbackAuthorization: "passed",
   leaderboard: "passed",
   replayProtection: "passed"
 }, null, 2));
+
+function maskWalletAddress(value) {
+  return `${value.replace(/\s+/g, "").slice(0, 8)}${"*".repeat(10)}`;
+}
