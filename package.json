@@ -13,7 +13,10 @@
     "build:web": "vite build",
     "preview:web": "vite preview --host 0.0.0.0",
     "test": "node --test",
+    "test:browser": "node scripts/browser-smoke.mjs",
+    "screenshots": "node scripts/capture-screenshots.mjs",
     "test:worker-integration": "node scripts/worker-integration.mjs",
+    "qa": "npm test && npm run build:web && npm run test:browser && npm run worker:check",
     "worker:types": "wrangler types",
     "worker:check": "npm run build:web && wrangler deploy --dry-run"
   },
@@ -29,6 +32,7 @@
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20260728.1",
     "@types/node": "^24.0.0",
+    "playwright": "^1.61.1",
     "vite": "^7.0.0",
     "wrangler": "^4.0.0"
   }
