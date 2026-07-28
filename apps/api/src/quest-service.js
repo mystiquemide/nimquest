@@ -1,6 +1,8 @@
 import { findQuest, publicQuest, quests } from "./quests.js";
+import { CompletionStore } from "./completion-store.js";
+import { normalizeDeviceId, normalizeWalletAddress } from "./validation.js";
 
-const completionStore = new Map();
+let completionStore = new CompletionStore();
 
 export function listQuests() {
   return quests.map(publicQuest);
@@ -30,11 +32,23 @@ export function gradeQuest({ questId, answers, walletAddress, deviceId }) {
     };
   }
 
-  if (!walletAddress || typeof walletAddress !== "string") {
+  const normalizedWallet = normalizeWalletAddress(walletAddress);
+
+  if (!normalizedWallet) {
     return {
       ok: false,
       status: 400,
-      error: "Wallet address is required for quest proof."
+      error: "A valid Nimiq or EVM wallet address is required for quest proof."
+    };
+  }
+
+  const normalizedDevice = normalizeDeviceId(deviceId);
+
+  if (!normalizedDevice) {
+    return {
+      ok: false,
+      status: 400,
+      error: "Device identifier must be a 64-character hex string when provided."
     };
   }
 
@@ -55,8 +69,8 @@ export function gradeQuest({ questId, answers, walletAddress, deviceId }) {
 
   const proof = createCompletionProof({
     questId,
-    walletAddress,
-    deviceId,
+    walletAddress: normalizedWallet,
+    deviceId: normalizedDevice,
     rewardNim: quest.rewardNim
   });
 
@@ -89,17 +103,19 @@ export function resetCompletionStore() {
   completionStore.clear();
 }
 
+export function useCompletionStore(store) {
+  completionStore = store;
+}
+
 function createCompletionProof({ questId, walletAddress, deviceId, rewardNim }) {
-  const normalizedWallet = walletAddress.trim();
-  const normalizedDevice = typeof deviceId === "string" ? deviceId.trim() : "unknown-device";
   const completedAt = new Date().toISOString();
-  const key = `${questId}:${normalizedWallet}`;
+  const key = `${questId}:${walletAddress}`;
 
   return {
     key,
     questId,
-    walletAddress: normalizedWallet,
-    deviceId: normalizedDevice,
+    walletAddress,
+    deviceId,
     rewardNim,
     completedAt,
     status: "ready_for_wallet_claim"
