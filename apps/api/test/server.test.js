@@ -71,7 +71,7 @@ describe("api server", () => {
     assert.equal(completion.verified, true);
     assert.equal(completion.proof.status, "verified");
 
-    const [walletResponse, receiptResponse, feedbackResponse] = await Promise.all([
+    const [walletResponse, receiptResponse, feedbackResponse, leaderboardResponse] = await Promise.all([
       fetch(`${baseUrl}/api/completions?wallet=${encodeURIComponent(walletAddress)}`),
       fetch(`${baseUrl}/api/completions/${encodeURIComponent(completion.proof.key)}`),
       fetch(`${baseUrl}/api/feedback`, {
@@ -81,10 +81,15 @@ describe("api server", () => {
           proofKey: completion.proof.key,
           rating: 3
         })
-      })
+      }),
+      fetch(`${baseUrl}/api/leaderboard`)
     ]);
     const walletProofs = await walletResponse.json();
     const receipt = await receiptResponse.json();
+    const leaderboard = await leaderboardResponse.json();
+    const leaderboardEntry = leaderboard.leaderboard.find(
+      (entry) => entry.walletAddress === walletAddress
+    );
 
     assert.equal(walletResponse.status, 200);
     assert.equal(walletProofs.completions.length, 1);
@@ -93,6 +98,9 @@ describe("api server", () => {
     assert.equal("publicKey" in receipt.proof, false);
     assert.equal("deviceId" in receipt.proof, false);
     assert.equal(feedbackResponse.status, 201);
+    assert.equal(leaderboardResponse.status, 200);
+    assert.equal(leaderboardEntry.verifiedQuests, 1);
+    assert.ok(leaderboardEntry.rank >= 1);
   });
 
   it("grades a quiz before wallet access is requested", async () => {
