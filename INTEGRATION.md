@@ -1,98 +1,57 @@
-# NimQuest Nimiq Integration Contract
+# NimQuest Nimiq Pay Integration Contract
 
-## Goal
+## Verified Completion Flow
 
-Define the contract between the Mini App frontend, Nimiq Pay provider, and NimQuest backend before frontend implementation.
+1. Initialize `@nimiq/mini-app-sdk`.
+2. Check consensus and read the current block height.
+3. Request an account with `listAccounts()`.
+4. Request a one-time challenge from NimQuest.
+5. Sign the exact challenge with `sign()`.
+6. Submit answers, challenge ID, public key, and signature.
+7. Backend derives the signer address and verifies the signature.
+8. Backend consumes the nonce and persists verified completion.
 
-## Frontend Wallet Flow
+## Challenge
 
-1. Detect Nimiq Pay provider.
-2. Request wallet account access.
-3. Request device identifier when available.
-4. Submit quest answers plus wallet context to the backend.
-5. Receive completion proof.
-6. Request claim intent from backend.
-7. Ask Nimiq Pay to execute the visible wallet action.
-8. Show proof, claim status, and next quest.
+```txt
+POST /api/completion-challenges
+```
 
-## Provider Success State
+```json
+{
+  "questId": "meet-nimiq",
+  "walletAddress": "NQ...",
+  "deviceId": "optional 64-character hex value"
+}
+```
 
-The frontend should treat provider access as successful when it can collect:
+The challenge expires after five minutes and can be used once.
 
-- `walletAddress`
-- optional `deviceId`
-- provider environment flag, such as `nimiqPayAvailable: true`
-
-## Browser Fallback State
-
-If Nimiq Pay provider access is unavailable:
-
-- Allow demo-mode quiz completion.
-- Show a clear fallback message.
-- Do not claim a real NIM transfer.
-- Mark proof as `demo_wallet_context` only when using a browser fallback.
-
-## Completion Request
-
-Endpoint:
+## Completion
 
 ```txt
 POST /api/complete
 ```
 
-Request:
-
 ```json
 {
-  "questId": "wallet-basics",
-  "answers": [0, 1, 1],
-  "walletAddress": "NQ12 ABCD EFGH IJKL MNOP QRST UVWX YZ12 3456",
-  "deviceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  "questId": "meet-nimiq",
+  "answers": [0, 0, 0],
+  "walletAddress": "NQ...",
+  "challengeId": "server-issued UUID",
+  "publicKey": "64-character hex public key",
+  "signature": "128-character hex signature"
 }
 ```
 
-## Claim Intent Request
+## Truth Rules
 
-Endpoint:
+- Browser fallback may preview lessons and quizzes but cannot create verified proof.
+- Message signing does not transfer NIM.
+- Rewards cannot appear funded or paid without a real payout transaction.
+- Nimiq Pay approval is required for account access and signing.
+- Private keys, payout keys, and API secrets never enter client code or source control.
 
-```txt
-POST /api/claim-intents
-```
+## Runtime Acceptance
 
-Request:
-
-```json
-{
-  "proofKey": "wallet-basics:NQ12 ABCD EFGH IJKL MNOP QRST UVWX YZ12 3456",
-  "walletAddress": "NQ12 ABCD EFGH IJKL MNOP QRST UVWX YZ12 3456"
-}
-```
-
-Response:
-
-```json
-{
-  "claimIntent": {
-    "type": "nim_reward_claim",
-    "asset": "NIM",
-    "amount": 1,
-    "recipient": "NQ12 ABCD EFGH IJKL MNOP QRST UVWX YZ12 3456",
-    "memo": "NimQuest reward for wallet-basics",
-    "status": "prepared"
-  }
-}
-```
-
-## Trust Rules
-
-- Backend grades answers.
-- Backend stores completion proof.
-- Backend prepares claim metadata.
-- Frontend never grades itself.
-- Frontend never fabricates reward eligibility.
-- Wallet approval must happen inside Nimiq Pay when real claim execution is available.
-- No private keys or payout secrets are stored in source control.
-
-## Current MVP Limitation
-
-Checkpoint 3 prepares claim intents only. Real NIM transfer execution is a later integration step after provider behavior is verified in the Mini App frontend.
+One real user must complete `meet-nimiq` inside Nimiq Pay, approve the challenge signature, and receive a backend proof with `status: "verified"`.
