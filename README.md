@@ -14,6 +14,7 @@ NimQuest is Nimiq's learn-by-doing onboarding layer. Users complete short, sourc
 - Backend-backed Journey recovery by approved wallet address.
 - Durable completion receipts and proof sharing.
 - Proof-linked completion feedback.
+- Wallet-address leaderboard ranked by verified quest count.
 - Eight verified badge milestones.
 - Honest unavailable reward state until a payout rail is funded.
 
@@ -23,6 +24,7 @@ NimQuest is Nimiq's learn-by-doing onboarding layer. Users complete short, sourc
 GET  /health
 GET  /api/quests
 GET  /api/quests/:id
+GET  /api/leaderboard
 GET  /api/completions?wallet=:address
 GET  /api/completions/:proofKey
 POST /api/completion-challenges
