@@ -1,62 +1,151 @@
 # NimQuest
 
-NimQuest is a learn-by-doing Nimiq Mini App. A learner completes a short, sourced quest, passes a server-graded quiz, and signs a one-time message in Nimiq Pay. NimQuest verifies the signature and creates a wallet-backed completion record without sending NIM.
+Learn Nimiq by doing, then prove you learned it with your own wallet.
 
-[Open the live Mini App](https://nimquest.artistic-chip.workers.dev)
+[Open the live Mini App](https://nimquest.artistic-chip.workers.dev) · [In-app docs](https://nimquest.artistic-chip.workers.dev/docs) · [Leaderboard](https://nimquest.artistic-chip.workers.dev/leaderboard)
 
-[Read the in-app documentation](https://nimquest.artistic-chip.workers.dev/docs)
+![NimQuest landing page](docs/assets/hero.png)
 
-## Judge Path
+## The story
 
-1. Open NimQuest inside Nimiq Pay.
-2. Start **Meet Nimiq**.
-3. Read the lesson and answer three questions.
-4. Correct any marked answer.
-5. Select **Verify with Nimiq Pay**.
-6. Approve account access.
-7. Read and sign the one-time completion message.
-8. Open **My Journey** and **Leaderboard**.
+Every time I onboard to a new chain, the "learning" is read-only. I skim a docs page, nod, and close the tab with nothing to show I understood any of it. Quizzes that live in the browser are worse, the answers ship in the page and you can cheat in five seconds.
 
-Expected result: the quest shows as verified, the Journey count increases, and the masked wallet label joins the mandatory public leaderboard. No NIM moves.
+So I built the opposite. You pass a quiz that is graded on the server, then you sign a one-time message with the wallet you actually control. The receipt is the proof. The real receipt so far: one Meet Nimiq completion signed inside Nimiq Pay on an iPhone, stored in D1, visible on the live leaderboard. No NIM moved.
 
-## Live Features
+## One-liner
 
-- 20 sourced quests across seven Nimiq learning paths
-- Server-side grading with answer keys excluded from browser bundles
-- Five-minute signing challenges with nonce expiry and replay protection
-- Nimiq signed-message verification and signer-address derivation
-- Cloudflare D1 persistence for verified completions
-- Journey recovery after approved Nimiq Pay account access
-- Eight badges backed by verified completion records
-- Opaque public receipt IDs and masked wallet labels
-- Mandatory wallet leaderboard ranked by verified quest count
-- Feedback writes protected by a completion-only token
-- Privacy Notice, Terms of Use, offline recovery, and 404 states
-- In-app architecture, integration, security, and local setup guides
-- Rewards shown as **Coming soon**, with no current payout promise
+I did not build a token faucet, an airdrop farm, or a browser quiz you can cheat by reading the source. I built a learn-and-prove Mini App where the only thing that counts as "done" is a signature from your wallet, and correct answers never leave the server.
 
-## Nimiq Pay Integration
+## How it works
 
-NimQuest uses the Nimiq Pay Mini Apps Framework for:
+You start a quest freely and read a short sourced lesson. The quiz is graded server-side, so the answer key is never in the browser bundle. Only after you pass do you reach the wallet step. You sign a one-time, wallet-bound, expiring message in Nimiq Pay, the Worker verifies the signature and derives the signer address, and the completion is stored in Cloudflare D1. Signing proves control. It does not send NIM.
 
-- `listAccounts()` to request the selected public Nimiq account
-- `isConsensusEstablished()` and `getBlockNumber()` to confirm wallet readiness
-- `sign()` to approve a one-time quest-completion message
+| Operation | Result |
+|---|---|
+| Start a quest and read the lesson | Immediate |
+| Submit quiz answers | Graded server-side, answer key stays hidden |
+| Reach the wallet step | Only after the quiz passes |
+| Request a signing challenge | Wallet-bound, five-minute expiry, single-use |
+| Sign the completion message | Signature verified, address derived, no NIM sent |
+| Duplicate the same quest | Returns the existing proof, no double record |
+| Verified completion | Joins the mandatory masked-wallet leaderboard |
 
-Nimiq Pay keeps private keys inside the wallet. NimQuest receives the public account, public key, and signature only after user approval. NimQuest does not request a device identifier.
+## Product screens
 
-## Architecture
+Quest trail with learning paths and the recommended starter quest:
 
-```mermaid
-flowchart TD
-  User["Learner in Nimiq Pay"] --> Web["Vite Mini App"]
-  Web --> Pay["Nimiq Pay provider"]
-  Web --> Worker["Cloudflare Worker"]
-  Worker --> Verify["Nimiq signature verifier"]
-  Worker --> D1["Cloudflare D1"]
+![Quest trail](docs/assets/quest-trail.png)
+
+Verified wallet leaderboard, masked labels, ranked by verified quest count:
+
+![Leaderboard](docs/assets/leaderboard.png)
+
+Mobile layout:
+
+![Mobile home](docs/assets/mobile-home.png)
+
+## Try it in 2 minutes
+
+Native path (full proof):
+
+1. Open [nimquest.artistic-chip.workers.dev](https://nimquest.artistic-chip.workers.dev) inside Nimiq Pay.
+2. Start Meet Nimiq, read the lesson, answer the three questions.
+3. Select Verify with Nimiq Pay, approve account access, sign the one-time message.
+4. Open My Journey and Leaderboard. The quest shows verified, the count goes up, your masked wallet joins the board. No NIM moves.
+
+No-wallet path (verify the server logic without signing):
+
+```bash
+# Correct answers pass and unlock the wallet step
+curl -s -X POST https://nimquest.artistic-chip.workers.dev/api/grade \
+  -H "content-type: application/json" \
+  -d '{"questId":"meet-nimiq","answers":[0,0,0]}'
+
+# Read the live verified leaderboard
+curl -s https://nimquest.artistic-chip.workers.dev/api/leaderboard
 ```
 
-The browser receives lessons, options, and explanations. Correct answer indexes remain in the server source. The Worker grades answers, verifies signatures, consumes challenges, and stores verified completions.
+The grade response returns per-question correctness and explanations but never the correct index. The quest catalog at `/api/quests` ships lessons and options with no answer keys.
+
+## Ways I tried to break it
+
+Every row maps to a real automated test in the repo.
+
+| Attempt | Outcome | Proof |
+|---|---|---|
+| Read answer keys from the browser bundle | Not present, catalog is split at build time | `quest-service.test.js`: grades answers before wallet proof without exposing answer indexes |
+| Replay an already-used signing challenge | Rejected | `quest-service.test.js`: blocks replay of an already consumed challenge |
+| Use an expired challenge | Rejected | `quest-service.test.js`: blocks expired challenges |
+| Sign a different message than the challenge | Rejected | `wallet-proof-worker.test.js`: rejects an altered message |
+| Sign with a different wallet | Rejected | `quest-service.test.js`: rejects a signature created by a different wallet |
+| Skip the quiz and jump to the wallet step | Blocked, grading runs before wallet access | `server.test.js`: grades a quiz before wallet access is requested |
+| Complete the same quest twice | Returns the existing proof, no duplicate | `quest-service.test.js`: returns the existing verified proof for a duplicate quest completion |
+| Write from a cross-origin browser | Rejected | `server.test.js`: rejects cross-origin browser writes |
+| Submit an EVM address instead of a Nimiq one | Rejected | `quest-service.test.js`: accepts generated Nimiq addresses and rejects EVM addresses |
+
+Run them all: `npm test` (25 tests).
+
+## Live proof
+
+- App: https://nimquest.artistic-chip.workers.dev (Cloudflare Workers with Static Assets)
+- Health: https://nimquest.artistic-chip.workers.dev/health
+- Public quests API: https://nimquest.artistic-chip.workers.dev/api/quests (20 quests, no answer keys)
+- Live leaderboard API: https://nimquest.artistic-chip.workers.dev/api/leaderboard
+- Storage: Cloudflare D1, three applied migrations in `migrations/`
+- Deploys automatically from `main`, current commit `7866b5f`
+- No smart contract. Completions are wallet-signed records in D1, not on-chain writes.
+
+## Real usage
+
+The leaderboard is live D1 data, not seeded mock rows. At the time of writing it shows two distinct masked wallets, each with two verified quests, the earliest proof timestamped 2026-07-28. The first Meet Nimiq proof was signed natively inside Nimiq Pay on an iPhone. Query it yourself with the leaderboard curl above.
+
+## How this differs
+
+| Alternative | What it does | Why NimQuest is different |
+|---|---|---|
+| A docs page or blog tutorial | You read, nothing records that you understood it | You prove understanding with a server-graded quiz plus a wallet signature |
+| A browser quiz app | Answer key ships in the page, trivial to cheat | Correct answers stay server-side, the browser never sees them |
+| An airdrop or faucet quest farm | Rewards NIM for clicking, invites sybils | No payout in the flow, the reward is a verifiable proof record |
+| An on-chain "proof of learning" contract | Pays gas and writes a tx per completion | A signed message proves control with zero gas and no NIM movement |
+
+## Honest limitations
+
+- Unaudited, early-stage code. Do not treat it as production-grade security.
+- Rewards are shown as Coming soon. No reward asset is funded or distributed, and no NIM moves during completion.
+- Completions live in Cloudflare D1, not on the Nimiq blockchain. The proof is a wallet signature, not an on-chain record.
+- The public leaderboard is mandatory after verification. There is no ranking opt-out.
+- The quest catalog is maintained in source. There is no quest-authoring dashboard.
+- Native signing has been proven on one real device so far. Broader real-device coverage is still in progress.
+
+## What's real
+
+The shipped path is real: the quiz grading, the Nimiq signature verification, the address derivation, the D1 persistence, the leaderboard, and the abuse controls all run in this repository. There are no mocked values in the completion flow. Verification owns the pass/fail decision through deterministic code, there is no model deciding truth. What is pending: funded rewards and wider on-device signing coverage.
+
+Verify it:
+
+```bash
+npm ci
+npm run build:web
+npm test            # 25 Node, API, and cryptography tests
+npm audit           # 0 vulnerabilities
+```
+
+CI runs the same tests plus a Playwright browser smoke suite and a Worker dry run on every push (`.github/workflows/ci.yml`).
+
+## Run locally
+
+```bash
+git clone https://github.com/mystiquemide/nimquest
+cd nimquest
+npm ci
+npm run build:web && npm start   # opens http://localhost:8787
+```
+
+Run the Worker with local D1:
+
+```bash
+npx wrangler d1 migrations apply nimquest --local && npm run dev:worker
+```
 
 ## API
 
@@ -73,91 +162,13 @@ POST /api/complete
 POST /api/feedback
 ```
 
-Write routes reject unsupported browser origins. D1 rate counters limit grading, challenge, completion, and feedback requests. Each wallet can hold no more than five active signing challenges.
+Write routes reject unsupported browser origins. D1 rate counters limit grading, challenge, completion, and feedback requests, and each wallet can hold at most five active signing challenges.
 
-## Local Setup
-
-Prerequisites:
-
-- Node.js 20 or later
-- npm
-
-Install and test:
-
-```bash
-npm ci
-npm test
-npm run build:web
-npm start
-```
-
-Open `http://localhost:8787`.
-
-Run browser smoke tests:
-
-```bash
-npx playwright install chromium
-npm run test:browser
-```
-
-Run the Worker locally:
-
-```bash
-npx wrangler d1 migrations apply nimquest --local
-npm run dev:worker
-```
-
-Run the full release check:
-
-```bash
-npm run qa
-```
-
-## Production Migration
-
-Before deployment, apply all D1 migrations:
-
-```bash
-npx wrangler d1 migrations apply nimquest --remote
-```
-
-Migration `0003_privacy_and_abuse_controls.sql` adds opaque receipt IDs, feedback authorization hashes, abuse counters, and removal markers for legacy device identifiers.
-
-## Security and Privacy
-
-- Private keys and recovery data never enter NimQuest.
-- Public APIs mask wallet labels.
-- Public receipts use opaque IDs.
-- Public keys, signatures, quiz answers, feedback tokens, and device identifiers are not public.
-- Every verified completion joins the public leaderboard. There is no ranking opt-out.
-- Write-route rate counters store a short-lived SHA-256 digest, not a raw IP address.
-
-Read the [Privacy Notice](https://nimquest.artistic-chip.workers.dev/privacy), [Terms of Use](https://nimquest.artistic-chip.workers.dev/terms), and [security guide](https://nimquest.artistic-chip.workers.dev/docs/security).
-
-## Verification Evidence
-
-- 25 Node, API, and cryptography tests pass.
-- 56 rendered-route checks pass across 320, 375, 390, and 430 CSS-pixel widths.
-- The production build passes.
-- The Worker dry run passes.
-- The local Worker and D1 integration passes a real Nimiq-format signature, persistence, recovery, receipt, feedback authorization, leaderboard, and replay-rejection flow.
-- A native Nimiq Pay proof has been completed successfully on iPhone in the current production release.
-
-## Documentation
+## More
 
 - [In-app documentation](https://nimquest.artistic-chip.workers.dev/docs)
-- [Product requirements](PRD.md)
-- [Architecture](ARCHITECTURE.md)
-- [Nimiq Pay integration](INTEGRATION.md)
-- [Security](docs/SECURITY.md)
-- [Contributing](CONTRIBUTING.md)
-
-## Current Limits
-
-- Quest rewards are coming soon. No reward asset is funded or distributed.
-- Verified completions are stored in Cloudflare D1, not written to the Nimiq blockchain.
-- The public leaderboard is mandatory after wallet verification.
-- The current starter catalog is maintained in the repository. There is no quest-authoring interface.
+- [Privacy Notice](https://nimquest.artistic-chip.workers.dev/privacy) · [Terms of Use](https://nimquest.artistic-chip.workers.dev/terms)
+- [Architecture](ARCHITECTURE.md) · [Nimiq Pay integration](INTEGRATION.md) · [Product requirements](PRD.md) · [Security](docs/SECURITY.md) · [Contributing](CONTRIBUTING.md)
 
 ## License
 
