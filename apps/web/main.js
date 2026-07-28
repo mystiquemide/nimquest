@@ -244,6 +244,7 @@ const trackPresentation = {
 };
 
 const trackOrder = ["onboarding", "payments", "security", "network", "staking", "mini-apps", "ecosystem"];
+const STARTER_QUEST_ID = "meet-nimiq";
 const quests = [...catalogQuests]
   .sort((a, b) => trackOrder.indexOf(a.track) - trackOrder.indexOf(b.track))
   .map((quest, index) => {
@@ -264,6 +265,14 @@ const quests = [...catalogQuests]
     };
   });
 
+function getNextQuest(completedQuestIds) {
+  const starterQuest = quests.find((quest) => quest.id === STARTER_QUEST_ID);
+  if (starterQuest && !completedQuestIds.has(STARTER_QUEST_ID)) {
+    return starterQuest;
+  }
+  return quests.find((quest) => !completedQuestIds.has(quest.id));
+}
+
 function renderCurrentRoute() {
   const normalizedPath = window.location.pathname.replace(/\/+$/, "") || "/";
   const questSessionMatch = normalizedPath.match(/^\/quests\/([^/]+)$/);
@@ -275,6 +284,17 @@ function renderCurrentRoute() {
   const isQuestTrail =
     normalizedPath === "/quests" ||
     new URLSearchParams(window.location.search).get("screen") === "quests";
+
+  setDocumentTitle({
+    normalizedPath,
+    questSessionMatch,
+    walletProofMatch,
+    completionMatch,
+    documentationMatch,
+    isJourney,
+    isLeaderboard,
+    isQuestTrail
+  });
 
   if (completionMatch) {
     renderCompletionDetail(decodeURIComponent(completionMatch[1]));
@@ -311,15 +331,15 @@ const questCards = quests
         </div>
         <div class="quest-card__bottom">
           <span>${quest.duration}</span>
-          <button class="text-button" type="button" data-preview="${quest.id}" aria-expanded="false">
+          <button class="text-button" type="button" data-preview="${quest.id}" aria-expanded="false" aria-label="Preview ${quest.title}">
             Preview quest <span aria-hidden="true">↗</span>
           </button>
         </div>
         <div class="quest-preview" id="preview-${quest.id}" hidden>
           <p>${quest.lesson}</p>
           <div class="quest-preview__actions">
-            <button class="preview-close" type="button" data-close="${quest.id}">Close preview</button>
-            <a class="button button--small" href="/quests/${quest.id}">Start quest <span aria-hidden="true">→</span></a>
+            <button class="preview-close" type="button" data-close="${quest.id}" aria-label="Close ${quest.title} preview">Close preview</button>
+            <a class="button button--small" href="/quests/${quest.id}" aria-label="Start ${quest.title}">Start quest <span aria-hidden="true">→</span></a>
           </div>
         </div>
       </article>
@@ -332,7 +352,7 @@ document.querySelector("#app").innerHTML = `
 
   <div class="announcement">
     <span>New to Nimiq?</span>
-    <a href="/quests/meet-nimiq">Take your first 60-second quest <span aria-hidden="true">→</span></a>
+    <a href="/quests/${STARTER_QUEST_ID}">Take your first 60-second quest <span aria-hidden="true">→</span></a>
   </div>
 
   <header class="site-header">
@@ -348,7 +368,7 @@ document.querySelector("#app").innerHTML = `
       <a href="/docs">Docs</a>
     </nav>
 
-    <a class="button button--small" href="/quests/meet-nimiq">Start a quest</a>
+    <a class="button button--small" href="/quests/${STARTER_QUEST_ID}">Start Meet Nimiq</a>
     <button class="menu-button" type="button" aria-label="Open navigation" aria-expanded="false">
       <span></span><span></span>
     </button>
@@ -366,7 +386,7 @@ document.querySelector("#app").innerHTML = `
           Complete quick, friendly quests. Learn how NIM works, verify your completion with your wallet, and build a journey you can trust.
         </p>
         <div class="hero__actions">
-          <a class="button" href="/quests/meet-nimiq">Start your first quest <span aria-hidden="true">→</span></a>
+          <a class="button" href="/quests/${STARTER_QUEST_ID}">Start Meet Nimiq <span aria-hidden="true">→</span></a>
           <a class="button button--quiet" href="#how">See how it works</a>
         </div>
         <div class="hero__proof" aria-label="Product qualities">
@@ -488,7 +508,7 @@ document.querySelector("#app").innerHTML = `
       <p class="eyebrow">Your first quest is ready</p>
       <h2>One minute can make Nimiq <span>click.</span></h2>
       <p>Start with the basics, keep your wallet safe, and leave with proof you earned.</p>
-      <a class="button button--dark" href="/quests">Choose your first quest <span aria-hidden="true">→</span></a>
+      <a class="button button--dark" href="/quests/${STARTER_QUEST_ID}">Start Meet Nimiq <span aria-hidden="true">→</span></a>
     </section>
   </main>
 
@@ -681,6 +701,42 @@ function badgeGridMarkup(completionByQuest) {
     .join("");
 }
 
+function setDocumentTitle({
+  normalizedPath,
+  questSessionMatch,
+  walletProofMatch,
+  completionMatch,
+  documentationMatch,
+  isJourney,
+  isLeaderboard,
+  isQuestTrail
+}) {
+  const questId = questSessionMatch?.[1] || walletProofMatch?.[1];
+  const quest = questId ? quests.find((item) => item.id === questId) : null;
+  const documentationTitles = {
+    overview: "Documentation",
+    architecture: "Architecture",
+    integration: "Nimiq Pay Integration",
+    security: "Security and Privacy",
+    setup: "Local Setup"
+  };
+
+  let title = "Learn Nimiq by Doing";
+  if (completionMatch) title = "Completion Receipt";
+  else if (documentationMatch) {
+    title = documentationTitles[documentationMatch[1] || "overview"] || "Documentation";
+  } else if (isLeaderboard) title = "Leaderboard";
+  else if (isJourney) title = "My Journey";
+  else if (normalizedPath === "/privacy") title = "Privacy Notice";
+  else if (normalizedPath === "/terms") title = "Terms of Use";
+  else if (walletProofMatch) title = quest ? `${quest.title} Wallet Proof` : "Wallet Proof";
+  else if (questSessionMatch) title = quest?.title || "Quest Unavailable";
+  else if (isQuestTrail) title = "Quest Trail";
+  else if (normalizedPath !== "/") title = "Page Not Found";
+
+  document.title = `${title} | NimQuest`;
+}
+
 function renderNotFound() {
   document.querySelector("#app").innerHTML = `
     <main class="session-not-found">
@@ -702,7 +758,7 @@ function renderQuestTrail() {
   const completionByQuest = new Map(completions.map((proof) => [proof.questId, proof]));
   const completedQuestIds = new Set(completionByQuest.keys());
   const completedCount = completedQuestIds.size;
-  const recommendedQuest = quests.find((quest) => !completedQuestIds.has(quest.id));
+  const recommendedQuest = getNextQuest(completedQuestIds);
   const trailCards = quests
     .map(
       (quest, index) => `
@@ -730,7 +786,7 @@ function renderQuestTrail() {
             <p class="trail-card__description">${quest.description}</p>
             <div class="trail-card__footer">
               <span>3 quick questions</span>
-              <a class="trail-action" href="/quests/${quest.id}">
+              <a class="trail-action" href="/quests/${quest.id}" aria-label="${completedQuestIds.has(quest.id) ? "Review" : "Start"} ${quest.title}">
                 ${completedQuestIds.has(quest.id) ? "Review quest" : "Start quest"} <span aria-hidden="true">→</span>
               </a>
             </div>
@@ -1653,7 +1709,7 @@ function renderJourney() {
   const completions = readVerifiedCompletions();
   const completionByQuest = new Map(completions.map((proof) => [proof.questId, proof]));
   const completedCount = completionByQuest.size;
-  const nextQuest = quests.find((quest) => !completionByQuest.has(quest.id));
+  const nextQuest = getNextQuest(new Set(completionByQuest.keys()));
   const latestCompletion = [...completions].sort(
     (a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime()
   )[0];
@@ -1675,8 +1731,8 @@ function renderJourney() {
           </div>
           ${
             proof
-              ? `<button class="journey-proof-button" type="button" data-view-proof="${quest.id}">View proof</button>`
-              : `<a class="journey-quest__action" href="/quests/${quest.id}">${nextQuest?.id === quest.id && completedCount > 0 ? "Continue trail" : "Start quest"} <span aria-hidden="true">→</span></a>`
+              ? `<button class="journey-proof-button" type="button" data-view-proof="${quest.id}" aria-label="View ${quest.title} proof">View proof</button>`
+              : `<a class="journey-quest__action" href="/quests/${quest.id}" aria-label="Start ${quest.title}">${nextQuest?.id === quest.id && completedCount > 0 ? "Continue trail" : "Start quest"} <span aria-hidden="true">→</span></a>`
           }
         </article>
       `;
