@@ -4,6 +4,8 @@ import os from "node:os";
 import path from "node:path";
 import { createClaimIntent } from "../src/claim-service.js";
 import { CompletionStore } from "../src/completion-store.js";
+import { listQuestPools } from "../src/pool-service.js";
+import { getPublicProgress } from "../src/progress-service.js";
 import {
   getCompletionStore,
   getQuest,
@@ -25,9 +27,10 @@ describe("quest service", () => {
   it("lists public quests without exposing answer keys", () => {
     const quests = listQuests();
 
-    assert.equal(quests.length, 3);
+    assert.equal(quests.length, 7);
     assert.equal(quests[0].questions.length, 3);
     assert.equal("answerIndex" in quests[0].questions[0], false);
+    assert.equal(typeof quests[0].ecosystemUseCase, "string");
   });
 
   it("returns one public quest", () => {
@@ -153,5 +156,31 @@ describe("quest service", () => {
 
     assert.equal(result.ok, false);
     assert.equal(result.status, 403);
+  });
+
+  it("lists sponsor-ready quest pools", () => {
+    const pools = listQuestPools();
+
+    assert.equal(pools.length, 2);
+    assert.equal(pools[0].asset, "NIM");
+    assert.equal(pools[0].fundingModel, "sponsor-funded quest pool");
+    assert.equal(pools[0].questIds.includes("wallet-basics"), true);
+  });
+
+  it("returns public progress without exposing wallets", () => {
+    gradeQuest({
+      questId: "wallet-basics",
+      walletAddress: validNimiqAddress,
+      deviceId: validDeviceId,
+      answers: [0, 1, 1]
+    });
+
+    const progress = getPublicProgress(getCompletionStore());
+
+    assert.equal(progress.totalQuests, 7);
+    assert.equal(progress.totalCompletions, 1);
+    assert.equal(progress.uniqueWallets, 1);
+    assert.equal(progress.rewardNimPrepared, 1);
+    assert.equal("walletAddress" in progress.quests[0], false);
   });
 });
