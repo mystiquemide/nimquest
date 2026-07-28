@@ -17,6 +17,11 @@
     "screenshots": "node scripts/capture-screenshots.mjs",
     "test:worker-integration": "node scripts/worker-integration.mjs",
     "qa": "npm test && npm run build:web && npm run test:browser && npm run worker:check",
+    "cli": "node cli/index.mjs",
+    "doctor": "node cli/index.mjs doctor",
+    "qa:cli": "node cli/index.mjs qa",
+    "qa:full": "node cli/index.mjs qa full",
+    "deploy:check": "node cli/index.mjs deploy check",
     "worker:types": "wrangler types",
     "worker:check": "npm run build:web && wrangler deploy --dry-run"
   },

@@ -40,3 +40,14 @@ jobs:
 
       - name: Check Worker bundle
         run: npm run worker:check
+
+      - name: Run QA CLI
+        run: node cli/index.mjs qa --ci
+
+      - name: Upload QA artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-report
+          path: artifacts/qa/
+          if-no-files-found: ignore

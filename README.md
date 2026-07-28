@@ -159,6 +159,19 @@ Run the Worker with local D1:
 npx wrangler d1 migrations apply nimquest --local && npm run dev:worker
 ```
 
+## QA CLI
+
+A scriptable QA and diagnostics interface. Every check runs against a real server or the live deployment and returns evidence, not just an HTTP 200.
+
+```bash
+npm run cli -- qa            # fast release-blocking checks (local)
+npm run qa:full              # tests, build, smoke, local flows, live deploy check
+npm run cli -- deploy check  # read-only checks against production
+npm run cli -- diagnose      # find and explain failures
+```
+
+Live and deploy checks are read-only, secrets are never printed, and failures return a non-zero exit code. Full reference in [docs/cli.md](docs/cli.md), design notes in [docs/cli-architecture.md](docs/cli-architecture.md).
+
 ## API
 
 ```text
