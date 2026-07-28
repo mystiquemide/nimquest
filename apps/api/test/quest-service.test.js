@@ -1,186 +1,192 @@
 import assert from "node:assert/strict";
-import { describe, it, beforeEach } from "node:test";
 import os from "node:os";
 import path from "node:path";
-import { createClaimIntent } from "../src/claim-service.js";
+import { beforeEach, describe, it } from "node:test";
+import { KeyPair } from "@nimiq/core";
+import { ChallengeStore } from "../src/challenge-store.js";
 import { CompletionStore } from "../src/completion-store.js";
-import { listQuestPools } from "../src/pool-service.js";
-import { getPublicProgress } from "../src/progress-service.js";
 import {
-  getCompletionStore,
+  createCompletionChallenge,
   getQuest,
   gradeQuest,
   listQuests,
-  resetCompletionStore,
+  useChallengeStore,
   useCompletionStore
 } from "../src/quest-service.js";
+import { normalizeWalletAddress } from "../src/validation.js";
 
-const validNimiqAddress = "NQ12 ABCD EFGH IJKL MNOP QRST UVWX YZ12 3456";
-const validDeviceId = "a".repeat(64);
+const encoder = new TextEncoder();
+const deviceId = "a".repeat(64);
+let keyPair;
+let walletAddress;
 
 describe("quest service", () => {
   beforeEach(() => {
+    keyPair = KeyPair.generate();
+    walletAddress = keyPair.toAddress().toUserFriendlyAddress();
     const storePath = path.join(os.tmpdir(), `nimquest-test-${crypto.randomUUID()}.json`);
     useCompletionStore(new CompletionStore(storePath));
+    useChallengeStore(new ChallengeStore());
   });
 
-  it("lists public quests without exposing answer keys", () => {
+  it("publishes three sourced quests without answer keys", () => {
     const quests = listQuests();
 
-    assert.equal(quests.length, 7);
-    assert.equal(quests[0].questions.length, 3);
+    assert.equal(quests.length, 3);
     assert.equal("answerIndex" in quests[0].questions[0], false);
-    assert.equal(typeof quests[0].ecosystemUseCase, "string");
+    assert.match(quests[0].sourceUrl, /^https:\/\/nimiq/);
+    assert.equal(quests[0].reward.status, "unavailable");
   });
 
-  it("returns one public quest", () => {
-    const quest = getQuest("wallet-basics");
+  it("returns one public quest with answer explanations", () => {
+    const quest = getQuest("meet-nimiq");
 
-    assert.equal(quest.id, "wallet-basics");
-    assert.equal(quest.rewardNim, 1);
+    assert.equal(quest.id, "meet-nimiq");
+    assert.equal(typeof quest.questions[0].explanation, "string");
     assert.equal("answerIndex" in quest.questions[0], false);
   });
 
-  it("grades a passing quest and returns completion proof", () => {
-    const result = gradeQuest({
-      questId: "wallet-basics",
-      walletAddress: validNimiqAddress,
-      deviceId: validDeviceId,
-      answers: [0, 1, 1]
+  it("accepts generated Nimiq addresses and rejects EVM addresses", () => {
+    assert.equal(normalizeWalletAddress(walletAddress), walletAddress);
+    assert.equal(
+      normalizeWalletAddress("0x1111111111111111111111111111111111111111"),
+      null
+    );
+  });
+
+  it("issues a short-lived challenge bound to quest and wallet", () => {
+    const result = createCompletionChallenge({
+      questId: "meet-nimiq",
+      walletAddress,
+      deviceId
     });
 
     assert.equal(result.ok, true);
-    assert.equal(result.passed, true);
-    assert.equal(result.rewardEligible, true);
-    assert.equal(result.proof.status, "ready_for_wallet_claim");
+    assert.match(result.challenge.message, /Quest: meet-nimiq/);
+    assert.match(result.challenge.message, new RegExp(walletAddress));
+    assert.ok(Date.parse(result.challenge.expiresAt) > Date.now());
   });
 
-  it("blocks duplicate reward eligibility for the same wallet and quest", () => {
-    const payload = {
-      questId: "wallet-basics",
-      walletAddress: validNimiqAddress,
-      deviceId: validDeviceId,
-      answers: [0, 1, 1]
-    };
+  it("rejects challenges for unknown quests", () => {
+    const result = createCompletionChallenge({
+      questId: "missing",
+      walletAddress
+    });
 
-    assert.equal(gradeQuest(payload).rewardEligible, true);
-    assert.equal(gradeQuest(payload).rewardEligible, false);
+    assert.equal(result.status, 404);
   });
 
-  it("fails incomplete answers", () => {
+  it("returns question-level guidance without consuming proof on a failed quiz", () => {
+    const challenge = issueChallenge();
+    const signed = sign(challenge.message);
     const result = gradeQuest({
-      questId: "wallet-basics",
-      walletAddress: validNimiqAddress,
-      answers: [0]
+      questId: "meet-nimiq",
+      walletAddress,
+      challengeId: challenge.id,
+      answers: [1, 0, 0],
+      ...signed
     });
 
-    assert.equal(result.ok, false);
-    assert.equal(result.status, 400);
+    assert.equal(result.passed, false);
+    assert.equal(result.verified, false);
+    assert.equal(result.feedback.length, 3);
   });
 
-  it("rejects invalid wallet addresses", () => {
-    const result = gradeQuest({
-      questId: "wallet-basics",
-      walletAddress: "NQ00 TEST WALLET",
-      answers: [0, 1, 1]
-    });
-
-    assert.equal(result.ok, false);
-    assert.equal(result.status, 400);
-  });
-
-  it("rejects invalid device identifiers when provided", () => {
-    const result = gradeQuest({
-      questId: "wallet-basics",
-      walletAddress: validNimiqAddress,
-      deviceId: "device-1",
-      answers: [0, 1, 1]
-    });
-
-    assert.equal(result.ok, false);
-    assert.equal(result.status, 400);
-  });
-
-  it("persists completions across store instances", () => {
-    const storePath = path.join(os.tmpdir(), `nimquest-persist-${crypto.randomUUID()}.json`);
-    useCompletionStore(new CompletionStore(storePath));
-
-    const payload = {
-      questId: "wallet-basics",
-      walletAddress: validNimiqAddress,
-      deviceId: validDeviceId,
-      answers: [0, 1, 1]
-    };
-
-    assert.equal(gradeQuest(payload).rewardEligible, true);
-
-    useCompletionStore(new CompletionStore(storePath));
-
-    assert.equal(gradeQuest(payload).rewardEligible, false);
-    resetCompletionStore();
-  });
-
-  it("creates a claim intent from a valid completion proof", () => {
-    const completeResult = gradeQuest({
-      questId: "wallet-basics",
-      walletAddress: validNimiqAddress,
-      deviceId: validDeviceId,
-      answers: [0, 1, 1]
-    });
-
-    const result = createClaimIntent({
-      proofKey: completeResult.proof.key,
-      walletAddress: validNimiqAddress,
-      completionStore: getCompletionStore()
-    });
+  it("verifies a real Nimiq signature before storing completion", () => {
+    const challenge = issueChallenge();
+    const result = complete(challenge);
 
     assert.equal(result.ok, true);
-    assert.equal(result.claimIntent.asset, "NIM");
-    assert.equal(result.claimIntent.amount, 1);
-    assert.equal(result.claimIntent.status, "prepared");
+    assert.equal(result.verified, true);
+    assert.equal(result.newlyCompleted, true);
+    assert.equal(result.proof.status, "verified");
+    assert.equal(result.proof.verificationMethod, "nimiq_message_signature");
+    assert.equal(result.proof.reward.status, "unavailable");
   });
 
-  it("blocks claim intents for mismatched wallets", () => {
-    const completeResult = gradeQuest({
-      questId: "wallet-basics",
-      walletAddress: validNimiqAddress,
-      deviceId: validDeviceId,
-      answers: [0, 1, 1]
+  it("rejects a signature created by a different wallet", () => {
+    const challenge = issueChallenge();
+    const otherKeyPair = KeyPair.generate();
+    const result = gradeQuest({
+      questId: "meet-nimiq",
+      walletAddress,
+      challengeId: challenge.id,
+      answers: [0, 0, 0],
+      publicKey: otherKeyPair.publicKey.toHex(),
+      signature: otherKeyPair.sign(encoder.encode(challenge.message)).toHex()
     });
 
-    const result = createClaimIntent({
-      proofKey: completeResult.proof.key,
-      walletAddress: "0x1111111111111111111111111111111111111111",
-      completionStore: getCompletionStore()
-    });
-
-    assert.equal(result.ok, false);
-    assert.equal(result.status, 403);
+    assert.equal(result.status, 401);
+    assert.match(result.error, /does not belong/);
   });
 
-  it("lists sponsor-ready quest pools", () => {
-    const pools = listQuestPools();
-
-    assert.equal(pools.length, 2);
-    assert.equal(pools[0].asset, "NIM");
-    assert.equal(pools[0].fundingModel, "sponsor-funded quest pool");
-    assert.equal(pools[0].questIds.includes("wallet-basics"), true);
-  });
-
-  it("returns public progress without exposing wallets", () => {
-    gradeQuest({
-      questId: "wallet-basics",
-      walletAddress: validNimiqAddress,
-      deviceId: validDeviceId,
-      answers: [0, 1, 1]
+  it("rejects a signature over a changed message", () => {
+    const challenge = issueChallenge();
+    const result = gradeQuest({
+      questId: "meet-nimiq",
+      walletAddress,
+      challengeId: challenge.id,
+      answers: [0, 0, 0],
+      publicKey: keyPair.publicKey.toHex(),
+      signature: keyPair.sign(encoder.encode(`${challenge.message} changed`)).toHex()
     });
 
-    const progress = getPublicProgress(getCompletionStore());
+    assert.equal(result.status, 401);
+    assert.match(result.error, /invalid/);
+  });
 
-    assert.equal(progress.totalQuests, 7);
-    assert.equal(progress.totalCompletions, 1);
-    assert.equal(progress.uniqueWallets, 1);
-    assert.equal(progress.rewardNimPrepared, 1);
-    assert.equal("walletAddress" in progress.quests[0], false);
+  it("blocks replay of an already consumed challenge", () => {
+    const challenge = issueChallenge();
+    assert.equal(complete(challenge).verified, true);
+
+    const replay = complete(challenge);
+    assert.equal(replay.status, 400);
+    assert.match(replay.error, /already been used/);
+  });
+
+  it("blocks expired challenges", () => {
+    let now = Date.now();
+    useChallengeStore(new ChallengeStore({ ttlMs: 100, now: () => now }));
+    const challenge = issueChallenge();
+    now += 101;
+
+    const result = complete(challenge);
+    assert.equal(result.status, 400);
+    assert.match(result.error, /expired/);
+  });
+
+  it("returns the existing verified proof for a duplicate quest completion", () => {
+    const first = complete(issueChallenge());
+    const second = complete(issueChallenge());
+
+    assert.equal(first.newlyCompleted, true);
+    assert.equal(second.newlyCompleted, false);
+    assert.equal(second.proof.key, first.proof.key);
   });
 });
+
+function issueChallenge() {
+  const result = createCompletionChallenge({
+    questId: "meet-nimiq",
+    walletAddress,
+    deviceId
+  });
+  return result.challenge;
+}
+
+function sign(message) {
+  return {
+    publicKey: keyPair.publicKey.toHex(),
+    signature: keyPair.sign(encoder.encode(message)).toHex()
+  };
+}
+
+function complete(challenge) {
+  return gradeQuest({
+    questId: "meet-nimiq",
+    walletAddress,
+    challengeId: challenge.id,
+    answers: [0, 0, 0],
+    ...sign(challenge.message)
+  });
+}
