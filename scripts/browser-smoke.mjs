@@ -24,20 +24,20 @@ const browser = await chromium.launch({
 });
 
 const routes = [
-  ["/", /Nimiq/],
-  ["/quests", /Pick a skill/],
-  ["/quests/meet-nimiq", /Meet Nimiq/],
-  ["/proof/meet-nimiq", /wallet proof/i],
-  ["/journey", /Small wins/],
-  ["/leaderboard", /verified wallet proof/i],
-  ["/docs", /Learn how NimQuest works/],
-  ["/docs/architecture", /Architecture/],
-  ["/docs/integration", /Nimiq Pay integration/],
-  ["/docs/security", /Security and privacy/],
-  ["/docs/setup", /Run NimQuest locally/],
-  ["/privacy", /Privacy Notice/],
-  ["/terms", /Terms of Use/],
-  ["/does-not-exist", /This path ends here/]
+  ["/", /Nimiq/, "Learn Nimiq by Doing | NimQuest"],
+  ["/quests", /Pick a skill/, "Quest Trail | NimQuest"],
+  ["/quests/meet-nimiq", /Meet Nimiq/, "Meet Nimiq | NimQuest"],
+  ["/proof/meet-nimiq", /wallet proof/i, "Meet Nimiq Wallet Proof | NimQuest"],
+  ["/journey", /Small wins/, "My Journey | NimQuest"],
+  ["/leaderboard", /verified wallet proof/i, "Leaderboard | NimQuest"],
+  ["/docs", /Learn how NimQuest works/, "Documentation | NimQuest"],
+  ["/docs/architecture", /Architecture/, "Architecture | NimQuest"],
+  ["/docs/integration", /Nimiq Pay integration/, "Nimiq Pay Integration | NimQuest"],
+  ["/docs/security", /Security and privacy/, "Security and Privacy | NimQuest"],
+  ["/docs/setup", /Run NimQuest locally/, "Local Setup | NimQuest"],
+  ["/privacy", /Privacy Notice/, "Privacy Notice | NimQuest"],
+  ["/terms", /Terms of Use/, "Terms of Use | NimQuest"],
+  ["/does-not-exist", /This path ends here/, "Page Not Found | NimQuest"]
 ];
 const widths = [320, 375, 390, 430];
 const evidence = [];
@@ -48,13 +48,31 @@ try {
     const errors = [];
     page.on("pageerror", (error) => errors.push(error.message));
 
-    for (const [route, heading] of routes) {
+    for (const [route, heading, title] of routes) {
       await page.goto(`${baseUrl}${route}`, { waitUntil: "networkidle" });
       const h1 = page.locator("h1").first();
       await h1.waitFor({ state: "visible" });
       assert.match(await h1.textContent(), heading, `${route} has the wrong heading`);
+      assert.equal(await page.title(), title, `${route} has the wrong document title`);
 
       if (route === "/") {
+        const previewLabels = await page.locator("[data-preview]").evaluateAll((buttons) =>
+          buttons.map((button) => button.getAttribute("aria-label"))
+        );
+        assert.equal(new Set(previewLabels).size, previewLabels.length);
+        assert.ok(previewLabels.every((label) => label?.startsWith("Preview ")));
+        for (const selector of [
+          ".announcement a",
+          ".site-header > .button",
+          ".hero__actions .button:first-child",
+          ".final-cta .button"
+        ]) {
+          assert.equal(
+            await page.locator(selector).getAttribute("href"),
+            "/quests/meet-nimiq",
+            `${selector} must open the canonical first quest`
+          );
+        }
         const menu = page.locator(".menu-button");
         if (await menu.isVisible()) {
           await menu.click();
@@ -93,7 +111,7 @@ try {
         console.error(JSON.stringify({ route, width, offenders }, null, 2));
       }
       assert.equal(overflows, false, `${route} overflows at ${width}px`);
-      evidence.push({ route, width, heading: (await h1.textContent()).trim() });
+      evidence.push({ route, width, heading: (await h1.textContent()).trim(), title });
     }
 
     assert.deepEqual(errors, [], `browser errors at ${width}px`);
