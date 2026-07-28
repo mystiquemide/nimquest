@@ -589,6 +589,7 @@ Implemented after the re-audit:
 
 - Added STARTER_QUEST_ID with meet-nimiq as the canonical first quest.
 - Pointed the announcement, header, hero, final CTA, Trail recommendation, and Journey recommendation to the same starter quest.
+- Normalized catalog track ordering so Meet Nimiq is physically first in the Home grid, Quest Trail, and Journey.
 - Added unique accessible names to quest preview, start, close, review, and proof actions.
 - Added route-specific document titles for Home, Quest Trail, quests, wallet proof, Journey, leaderboard, docs, legal pages, receipts, and 404.
 - Added browser regression coverage for canonical starter links, unique preview labels, and route titles.
@@ -608,6 +609,8 @@ Release commits:
 
 - 84acdadcc911f01687fe0ce9f03bd6fde408c092 added the regression checks.
 - eb6c0c8c335ace4b13d4bc9e9164bbc0756efdcd added the canonical onboarding and accessibility fixes.
+- f2bfa774752a769864be2a15c5d4b719ac6ec6c0 added starter-order regression coverage.
+- f8b659c5ea089046dca183a3d854761baed18ba1 fixed catalog ordering across all learner entry points.
 
 ## Database History
 
@@ -679,3 +682,5 @@ Recommended next order:
 - `74ba7a3b293bf60946aa572d82cc77194be4a990` - complete public project memory
 - `84acdadcc911f01687fe0ce9f03bd6fde408c092` - onboarding and accessibility regression checks
 - `eb6c0c8c335ace4b13d4bc9e9164bbc0756efdcd` - canonical first quest, accessible labels, and route titles
+- `f2bfa774752a769864be2a15c5d4b719ac6ec6c0` - starter-order regression coverage
+- `f8b659c5ea089046dca183a3d854761baed18ba1` - Meet Nimiq ordering across Home, Trail, and Journey
