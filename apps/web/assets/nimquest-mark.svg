@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <title>NimQuest</title>
+  <path d="M32 3 56.5 17v30L32 61 7.5 47V17L32 3Z" fill="#F8CF36" stroke="#19182A" stroke-width="3"/>
+  <path d="M21 44V20l22 24V20" stroke="#19182A" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="m44.5 43.5 7 7" stroke="#7557D5" stroke-width="6" stroke-linecap="round"/>
+  <path d="M50.5 11.5 53 14l-2.5 2.5L48 14l2.5-2.5Z" fill="#FFFDF8" stroke="#19182A" stroke-width="1.5"/>
+</svg>

@@ -8,9 +8,12 @@
     "start": "node apps/api/src/server.js",
     "dev:web": "vite --host 0.0.0.0",
     "dev:worker": "wrangler dev",
+    "generate:web-catalog": "node scripts/generate-web-catalog.mjs",
+    "prebuild:web": "npm run generate:web-catalog",
     "build:web": "vite build",
     "preview:web": "vite preview --host 0.0.0.0",
     "test": "node --test",
+    "test:worker-integration": "node scripts/worker-integration.mjs",
     "worker:types": "wrangler types",
     "worker:check": "npm run build:web && wrangler deploy --dry-run"
   },

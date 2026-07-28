@@ -28,12 +28,12 @@ describe("api server", () => {
     assert.equal(body.ok, true);
   });
 
-  it("serves three public quests without answer keys", async () => {
+  it("serves twenty public quests without answer keys", async () => {
     const response = await fetch(`${baseUrl}/api/quests`);
     const body = await response.json();
 
     assert.equal(response.status, 200);
-    assert.equal(body.quests.length, 3);
+    assert.equal(body.quests.length, 20);
     assert.equal("answerIndex" in body.quests[0].questions[0], false);
   });
 
@@ -70,6 +70,29 @@ describe("api server", () => {
     assert.equal(completionResponse.status, 200);
     assert.equal(completion.verified, true);
     assert.equal(completion.proof.status, "verified");
+
+    const [walletResponse, receiptResponse, feedbackResponse] = await Promise.all([
+      fetch(`${baseUrl}/api/completions?wallet=${encodeURIComponent(walletAddress)}`),
+      fetch(`${baseUrl}/api/completions/${encodeURIComponent(completion.proof.key)}`),
+      fetch(`${baseUrl}/api/feedback`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          proofKey: completion.proof.key,
+          rating: 3
+        })
+      })
+    ]);
+    const walletProofs = await walletResponse.json();
+    const receipt = await receiptResponse.json();
+
+    assert.equal(walletResponse.status, 200);
+    assert.equal(walletProofs.completions.length, 1);
+    assert.equal(receiptResponse.status, 200);
+    assert.equal(receipt.proof.key, completion.proof.key);
+    assert.equal("publicKey" in receipt.proof, false);
+    assert.equal("deviceId" in receipt.proof, false);
+    assert.equal(feedbackResponse.status, 201);
   });
 
   it("grades a quiz before wallet access is requested", async () => {

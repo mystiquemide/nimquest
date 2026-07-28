@@ -390,3 +390,11 @@ Current boundary:
 - The production D1 database has not been created or migrated.
 - No public deployment has occurred.
 - Native Nimiq Pay approval remains the final runtime proof.
+# 2026-07-28 - Post-proof product layer
+
+- Native Nimiq Pay completion succeeded in production with D1 persistence.
+- Expanded the verified quest catalog to 20 sourced quests across NIM basics, payments, wallet safety, network, staking, Mini Apps, and ecosystem paths.
+- Added eight proof-backed badges, next-quest recommendations, D1 Journey recovery, durable completion receipts, proof sharing, feedback persistence, 404 recovery, and offline status.
+- Replaced the old generic mark with a reusable SVG NimQuest identity.
+- Verification passed: 24 Node tests, production build, Worker dry run, both D1 migrations, and full local Worker integration.
+- This checkpoint is local only and has not been pushed or deployed.

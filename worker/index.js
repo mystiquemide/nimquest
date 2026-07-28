@@ -67,6 +67,15 @@ async function routeRequest(request, env, url) {
     return json({ quests: listQuests() });
   }
 
+  if (request.method === "GET" && url.pathname === "/api/completions") {
+    return listWalletCompletions(env.DB, url.searchParams.get("wallet"));
+  }
+
+  const completionMatch = url.pathname.match(/^\/api\/completions\/([^/]+)$/);
+  if (request.method === "GET" && completionMatch) {
+    return getCompletion(env.DB, decodeURIComponent(completionMatch[1]));
+  }
+
   const questMatch = url.pathname.match(/^\/api\/quests\/([^/]+)$/);
   if (request.method === "GET" && questMatch) {
     const quest = getQuest(decodeURIComponent(questMatch[1]));
@@ -90,7 +99,75 @@ async function routeRequest(request, env, url) {
     return completeQuest(env.DB, await readJson(request));
   }
 
+  if (request.method === "POST" && url.pathname === "/api/feedback") {
+    return submitFeedback(env.DB, await readJson(request));
+  }
+
   return json({ error: "Route not found." }, 404);
+}
+
+async function listWalletCompletions(database, walletValue) {
+  const walletAddress = normalizeWalletAddress(walletValue);
+  if (!walletAddress) {
+    return json({ error: "A valid Nimiq wallet address is required." }, 400);
+  }
+
+  const result = await database.prepare(
+    `SELECT proof_key, quest_id, wallet_address, verification_method,
+            completed_at, status, reward_status
+     FROM completions
+     WHERE wallet_address = ?
+     ORDER BY completed_at DESC`
+  ).bind(walletAddress).all();
+
+  return json({
+    completions: result.results.map(toPublicProof)
+  });
+}
+
+async function getCompletion(database, proofKey) {
+  const record = await database.prepare(
+    `SELECT proof_key, quest_id, wallet_address, verification_method,
+            completed_at, status, reward_status
+     FROM completions
+     WHERE proof_key = ?`
+  ).bind(proofKey).first();
+
+  return record
+    ? json({ proof: toPublicProof(record) })
+    : json({ error: "Verified completion not found." }, 404);
+}
+
+async function submitFeedback(database, body) {
+  if (typeof body.proofKey !== "string" || !body.proofKey) {
+    return json({ error: "A verified proof is required." }, 400);
+  }
+  if (!Number.isInteger(body.rating) || body.rating < 1 || body.rating > 3) {
+    return json({ error: "Feedback rating must be between 1 and 3." }, 400);
+  }
+
+  const proof = await database.prepare(
+    "SELECT proof_key FROM completions WHERE proof_key = ?"
+  ).bind(body.proofKey).first();
+  if (!proof) {
+    return json({ error: "Verified completion not found." }, 404);
+  }
+
+  await database.prepare(
+    `INSERT INTO completion_feedback (proof_key, rating, note, submitted_at)
+     VALUES (?, ?, ?, ?)
+     ON CONFLICT (proof_key) DO UPDATE SET
+       rating = excluded.rating,
+       note = excluded.note,
+       submitted_at = excluded.submitted_at`
+  ).bind(
+    body.proofKey,
+    body.rating,
+    typeof body.note === "string" ? body.note.trim().slice(0, 280) : "",
+    new Date().toISOString()
+  ).run();
+
+  return json({ ok: true, message: "Feedback saved." }, 201);
 }
 
 async function createCompletionChallenge(database, body) {
@@ -273,6 +350,22 @@ function toProof(record) {
     walletAddress: record.wallet_address,
     deviceId: record.device_id,
     publicKey: record.public_key,
+    verificationMethod: record.verification_method,
+    completedAt: record.completed_at,
+    status: record.status,
+    reward: {
+      status: record.reward_status,
+      asset: null,
+      amount: null
+    }
+  };
+}
+
+function toPublicProof(record) {
+  return {
+    key: record.proof_key,
+    questId: record.quest_id,
+    walletAddress: record.wallet_address,
     verificationMethod: record.verification_method,
     completedAt: record.completed_at,
     status: record.status,

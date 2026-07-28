@@ -1,8 +1,10 @@
 import "./styles.css";
 import heroImage from "./assets/nimquest-hero.jpg";
+import brandMark from "./assets/nimquest-mark.svg";
 import { init, requestDeviceIdentifier } from "@nimiq/mini-app-sdk";
+import { catalogQuests } from "./quest-catalog.generated.js";
 
-const quests = [
+const questPresentation = [
   {
     id: "meet-nimiq",
     number: "01",
@@ -103,18 +105,177 @@ const quests = [
         ]
       }
     ]
+  },
+  {
+    id: "receive-nim-safely",
+    number: "04",
+    title: "Receive NIM safely",
+    track: "Payments",
+    duration: "1 min",
+    color: "mint",
+    icon: "↓",
+    description: "Share the right address and confirm an incoming payment in your own wallet.",
+    goals: ["Share a public address", "Choose the intended account", "Confirm funds in your wallet"],
+    lesson:
+      "Your Nimiq address is public and can be shared with someone who wants to send you NIM. Check that you are showing the address for the account you intend to use. A screenshot or promise is not final proof of payment, so confirm the incoming transfer in your wallet.",
+    sourceUrl: "https://wallet.nimiq.com/",
+    questions: [
+      {
+        id: "receive-detail",
+        prompt: "What should you share to receive NIM?",
+        options: ["Your public Nimiq address", "Your recovery words", "Your private key"]
+      },
+      {
+        id: "receive-account",
+        prompt: "What should you check before sharing an address?",
+        options: ["It belongs to the account you want to use", "It matches a stranger’s address", "It contains your password"]
+      },
+      {
+        id: "receive-confirmation",
+        prompt: "What confirms that an incoming payment arrived?",
+        options: ["The transfer appearing in your wallet", "A sender’s screenshot alone", "A message saying it was sent"]
+      }
+    ]
+  },
+  {
+    id: "protect-recovery-access",
+    number: "05",
+    title: "Protect recovery access",
+    track: "Wallet safety",
+    duration: "1 min",
+    color: "coral",
+    icon: "◆",
+    description: "Treat recovery material like full account access and keep it away from strangers.",
+    goals: ["Know what recovery can do", "Reject unexpected requests", "Keep a safe backup"],
+    lesson:
+      "Recovery Words and complete Nimiq Backup Codes can restore control of an account. Anyone who gets them can take the funds. Keep recovery material private, never enter it after following an unexpected link, and maintain a safe recovery option you can still access if your device is lost.",
+    sourceUrl: "https://www.nimiq.com/blog/worry-free-backup-codes/",
+    questions: [
+      {
+        id: "recovery-power",
+        prompt: "What can complete recovery material allow someone to do?",
+        options: ["Take control of the account", "Only view a public address", "Only change the wallet colour"]
+      },
+      {
+        id: "recovery-request",
+        prompt: "What should you do if an unexpected site asks for your Recovery Words?",
+        options: ["Leave without entering them", "Enter them to continue", "Send them to support"]
+      },
+      {
+        id: "recovery-loss",
+        prompt: "Why keep a safe recovery option?",
+        options: ["To regain access if a device is lost", "To make payments public", "To avoid checking wallet requests"]
+      }
+    ]
+  },
+  {
+    id: "read-wallet-requests",
+    number: "06",
+    title: "Read wallet requests",
+    track: "Wallet safety",
+    duration: "1 min",
+    color: "pink",
+    icon: "!",
+    description: "Match every approval prompt to an action you deliberately started.",
+    goals: ["Match prompts to actions", "Read sensitive details", "Reject unclear requests"],
+    lesson:
+      "Nimiq Pay shows native approval dialogs for sensitive actions. A Mini App can ask, but it cannot approve for you or access private keys. Read the app origin, action, message, recipient, and amount where relevant. Reject anything you did not intentionally start or do not understand.",
+    sourceUrl: "https://nimiq.dev/mini-apps/",
+    questions: [
+      {
+        id: "request-origin",
+        prompt: "When is a wallet request safest to approve?",
+        options: ["When it matches an action you intentionally started", "Whenever it appears", "When someone pressures you"]
+      },
+      {
+        id: "request-control",
+        prompt: "Who makes the final approval inside Nimiq Pay?",
+        options: ["You", "The Mini App", "The website server"]
+      },
+      {
+        id: "request-unclear",
+        prompt: "What should you do with an unclear signing or payment request?",
+        options: ["Reject it", "Approve it to see what happens", "Share your recovery words"]
+      }
+    ]
+  },
+  {
+    id: "understand-mini-app-permissions",
+    number: "07",
+    title: "Mini App permissions",
+    track: "Mini Apps",
+    duration: "1 min",
+    color: "blue",
+    icon: "◫",
+    description: "See what Mini Apps can request and what always stays inside Nimiq Pay.",
+    goals: ["Understand the sandbox", "Recognize native approval", "Know what device IDs mean"],
+    lesson:
+      "Mini Apps run inside a sandbox and request wallet actions through Nimiq Pay. Viewing accounts, signing messages, and sending NIM require native approval. A device identifier is pseudonymous and scoped to the Mini App origin. It identifies the device, not the person or wallet.",
+    sourceUrl: "https://nimiq.dev/mini-apps/",
+    questions: [
+      {
+        id: "permission-private-key",
+        prompt: "Can a Mini App directly read your private key?",
+        options: ["No", "Yes, after opening", "Yes, when it knows your address"]
+      },
+      {
+        id: "permission-approval",
+        prompt: "Which actions require native approval?",
+        options: ["Account access, signing, and payments", "Changing page colour", "Reading public lesson text"]
+      },
+      {
+        id: "device-identifier",
+        prompt: "What does a Mini App device identifier represent?",
+        options: ["A device scoped to that app origin", "A person’s legal identity", "A wallet private key"]
+      }
+    ]
   }
 ];
+
+const presentationById = new Map(questPresentation.map((quest) => [quest.id, quest]));
+const trackPresentation = {
+  onboarding: { label: "NIM basics", color: "yellow", icon: "✦" },
+  payments: { label: "Payments", color: "blue", icon: "↗" },
+  security: { label: "Wallet safety", color: "violet", icon: "✓" },
+  network: { label: "Network", color: "mint", icon: "◎" },
+  staking: { label: "Staking", color: "coral", icon: "◇" },
+  ecosystem: { label: "Ecosystem", color: "pink", icon: "◫" },
+  "mini-apps": { label: "Mini Apps", color: "blue", icon: "◫" }
+};
+
+const trackOrder = ["onboarding", "payments", "security", "network", "staking", "mini-apps", "ecosystem"];
+const quests = [...catalogQuests]
+  .sort((a, b) => trackOrder.indexOf(a.track) - trackOrder.indexOf(b.track))
+  .map((quest, index) => {
+  const existing = presentationById.get(quest.id);
+  const track = trackPresentation[quest.track] || trackPresentation.onboarding;
+  return {
+    ...quest,
+    number: String(index + 1).padStart(2, "0"),
+    track: existing?.track || track.label,
+    duration: `${Math.max(1, Math.round(quest.estimatedSeconds / 60))} min`,
+    color: existing?.color || track.color,
+    icon: existing?.icon || track.icon,
+    description:
+      existing?.description ||
+      quest.learningGoals[0].replace(/\.$/, ""),
+    goals: existing?.goals || quest.learningGoals,
+    questions: quest.questions
+    };
+  });
 
 const normalizedPath = window.location.pathname.replace(/\/+$/, "") || "/";
 const questSessionMatch = normalizedPath.match(/^\/quests\/([^/]+)$/);
 const walletProofMatch = normalizedPath.match(/^\/proof\/([^/]+)$/);
+const completionMatch = normalizedPath.match(/^\/completions\/([^/]+)$/);
 const isJourney = normalizedPath === "/journey";
 const isQuestTrail =
   normalizedPath === "/quests" ||
   new URLSearchParams(window.location.search).get("screen") === "quests";
 
-if (isJourney) {
+if (completionMatch) {
+  renderCompletionDetail(decodeURIComponent(completionMatch[1]));
+} else if (isJourney) {
   renderJourney();
 } else if (walletProofMatch) {
   renderWalletProof(walletProofMatch[1]);
@@ -122,8 +283,9 @@ if (isJourney) {
   renderQuestSession(questSessionMatch[1]);
 } else if (isQuestTrail) {
   renderQuestTrail();
-} else {
+} else if (normalizedPath === "/") {
 const questCards = quests
+  .slice(0, 6)
   .map(
     (quest) => `
       <article class="quest-card quest-card--${quest.color}" data-quest="${quest.id}">
@@ -164,12 +326,7 @@ document.querySelector("#app").innerHTML = `
 
   <header class="site-header">
     <a class="brand" href="/" aria-label="NimQuest home">
-      <span class="brand-mark" aria-hidden="true">
-        <svg viewBox="0 0 40 40" role="img">
-          <path d="M20 2 36 11v18L20 38 4 29V11L20 2Z" fill="currentColor"/>
-          <path d="m13 25 7-13 7 13h-4l-3-6-3 6h-4Z" fill="#18172b"/>
-        </svg>
-      </span>
+      <span class="brand-mark" aria-hidden="true"><img src="${brandMark}" alt=""></span>
       <span>NimQuest</span>
     </a>
 
@@ -201,7 +358,7 @@ document.querySelector("#app").innerHTML = `
           <a class="button button--quiet" href="#how">See how it works</a>
         </div>
         <div class="hero__proof" aria-label="Product qualities">
-          <span><b>3</b> starter quests</span>
+          <span><b>${quests.length}</b> starter quests</span>
           <span><b>60s</b> each</span>
           <span><b>0</b> NIM required</span>
         </div>
@@ -273,7 +430,7 @@ document.querySelector("#app").innerHTML = `
           <p class="eyebrow">Your first trail</p>
           <h2>Start with what <span class="word-highlight word-highlight--blue">matters.</span></h2>
         </div>
-        <p>Three focused quests take you from the basics of NIM to a safer wallet habit.</p>
+        <p>Six featured quests give you a quick start. The full trail contains 20 wallet-verifiable Nimiq skills.</p>
       </div>
       <div class="quest-grid">${questCards}</div>
       <p class="quest-note"><span aria-hidden="true">✦</span> Every quest is free. No NIM payment is required to learn or create a completion proof.</p>
@@ -325,10 +482,7 @@ document.querySelector("#app").innerHTML = `
 
   <footer>
     <a class="brand brand--footer" href="/">
-      <span class="brand-mark" aria-hidden="true">
-        <svg viewBox="0 0 40 40"><path d="M20 2 36 11v18L20 38 4 29V11L20 2Z" fill="currentColor"/><path d="m13 25 7-13 7 13h-4l-3-6-3 6h-4Z" fill="#18172b"/></svg>
-      </span>
-      <span>NimQuest</span>
+      ${brandMarkup()}
     </a>
     <p>Learn Nimiq by doing.</p>
     <div class="footer-links">
@@ -383,26 +537,165 @@ document.querySelectorAll("[data-close]").forEach((button) => {
     document.querySelector(`[data-preview="${questId}"]`).setAttribute("aria-expanded", "false");
   });
 });
+} else {
+  renderNotFound();
+}
+
+installConnectivityBanner();
+
+function installConnectivityBanner() {
+  const banner = document.createElement("div");
+  banner.className = "connectivity-banner";
+  banner.setAttribute("role", "status");
+  banner.innerHTML = `<span>You’re offline. Saved lessons still work, but grading, proof, sync, and shared receipts need a connection.</span><button type="button">Retry</button>`;
+  banner.querySelector("button").addEventListener("click", () => window.location.reload());
+  document.body.append(banner);
+
+  const update = () => {
+    banner.classList.toggle("is-visible", !navigator.onLine);
+  };
+  window.addEventListener("online", update);
+  window.addEventListener("offline", update);
+  update();
 }
 
 function brandMarkup() {
   return `
-    <span class="brand-mark" aria-hidden="true">
-      <svg viewBox="0 0 40 40" role="img">
-        <path d="M20 2 36 11v18L20 38 4 29V11L20 2Z" fill="currentColor"/>
-        <path d="m13 25 7-13 7 13h-4l-3-6-3 6h-4Z" fill="#18172b"/>
-      </svg>
-    </span>
+    <span class="brand-mark" aria-hidden="true"><img src="${brandMark}" alt=""></span>
     <span>NimQuest</span>
   `;
 }
 
+const badgeDefinitions = [
+  {
+    id: "first-proof",
+    name: "First Proof",
+    description: "Verify any quest with your wallet.",
+    icon: "✦",
+    unlock: (completed) => completed.size >= 1
+  },
+  {
+    id: "payment-ready",
+    name: "Payment Ready",
+    description: "Verify the four payment quests.",
+    icon: "↗",
+    unlock: (completed) =>
+      ["pay-with-nim", "receive-nim-safely", "send-a-cashlink", "choose-payment-method"].every(
+        (id) => completed.has(id)
+      )
+  },
+  {
+    id: "wallet-guard",
+    name: "Wallet Guard",
+    description: "Verify the six wallet-safety quests.",
+    icon: "◆",
+    unlock: (completed) =>
+      [
+        "prove-wallet-control",
+        "protect-recovery-access",
+        "read-wallet-requests",
+        "use-a-login-file",
+        "separate-backup-codes",
+        "understand-self-custody"
+      ].every((id) => completed.has(id))
+  },
+  {
+    id: "network-aware",
+    name: "Network Aware",
+    description: "Verify transaction, fee, and Proof-of-Stake basics.",
+    icon: "◎",
+    unlock: (completed) =>
+      ["read-transaction-status", "understand-network-fees", "meet-proof-of-stake"].every((id) =>
+        completed.has(id)
+      )
+  },
+  {
+    id: "staking-ready",
+    name: "Staking Ready",
+    description: "Verify all three staking quests.",
+    icon: "◇",
+    unlock: (completed) =>
+      ["stake-nim", "choose-staking-pool", "understand-validators"].every((id) => completed.has(id))
+  },
+  {
+    id: "ecosystem-explorer",
+    name: "Ecosystem Explorer",
+    description: "Verify NIM, Bitcoin, and atomic swap basics.",
+    icon: "◫",
+    unlock: (completed) =>
+      ["use-nim-and-bitcoin", "understand-atomic-swaps"].every((id) => completed.has(id))
+  },
+  {
+    id: "mini-app-ready",
+    name: "Mini App Ready",
+    description: "Verify the Mini App permissions quest.",
+    icon: "◫",
+    unlock: (completed) => completed.has("understand-mini-app-permissions")
+  },
+  {
+    id: "trail-complete",
+    name: "Trail Complete",
+    description: "Verify all 20 starter quests.",
+    icon: "✓",
+    unlock: (completed) => completed.size === quests.length
+  }
+];
+
+function getBadgeStates(completionByQuest) {
+  const completed = new Set(completionByQuest.keys());
+  return badgeDefinitions.map((badge) => ({
+    ...badge,
+    unlocked: badge.unlock(completed)
+  }));
+}
+
+function badgeGridMarkup(completionByQuest) {
+  return getBadgeStates(completionByQuest)
+    .map(
+      (badge) => `
+        <article class="achievement ${badge.unlocked ? "is-unlocked" : ""}">
+          <span class="achievement__mark" aria-hidden="true">${badge.unlocked ? badge.icon : "·"}</span>
+          <div>
+            <p>${badge.unlocked ? "Verified badge" : "Locked badge"}</p>
+            <h3>${badge.name}</h3>
+            <span>${badge.description}</span>
+          </div>
+        </article>
+      `
+    )
+    .join("");
+}
+
+function renderNotFound() {
+  document.querySelector("#app").innerHTML = `
+    <main class="session-not-found">
+      <a class="brand not-found-brand" href="/" aria-label="NimQuest home">${brandMarkup()}</a>
+      <span class="session-not-found__mark">404</span>
+      <p class="eyebrow">Trail marker missing</p>
+      <h1>This path ends here.</h1>
+      <p>The link may be old or incomplete. Return to the verified quest trail and keep moving.</p>
+      <div class="not-found-actions">
+        <a class="button" href="/quests">Open Quest Trail</a>
+        <a class="button button--quiet" href="/">Back home</a>
+      </div>
+    </main>
+  `;
+}
+
 function renderQuestTrail() {
-  const completedQuestIds = new Set(readVerifiedCompletions().map((proof) => proof.questId));
+  const completions = readVerifiedCompletions();
+  const completionByQuest = new Map(completions.map((proof) => [proof.questId, proof]));
+  const completedQuestIds = new Set(completionByQuest.keys());
   const completedCount = completedQuestIds.size;
+  const recommendedQuest = quests.find((quest) => !completedQuestIds.has(quest.id));
   const trailCards = quests
     .map(
       (quest, index) => `
+        ${
+          index === 0 || quests[index - 1].track !== quest.track
+            ? `<div class="quest-path__heading"><span>${quest.track}</span><b>${quests.filter((item) => item.track === quest.track).length} quests</b></div>`
+            : ""
+        }
         <article class="trail-card trail-card--${quest.color} ${completedQuestIds.has(quest.id) ? "is-complete" : ""}" data-track="${quest.track.toLowerCase()}">
           <div class="trail-card__marker" aria-hidden="true">
             <span>${index + 1}</span>
@@ -437,13 +730,9 @@ function renderQuestTrail() {
 
     <header class="app-header">
       <a class="brand" href="/" aria-label="NimQuest home">${brandMarkup()}</a>
-      <div class="app-header__trail" aria-label="Journey progress">
-        <span class="app-header__dot app-header__dot--active"></span>
-        <span></span>
-        <span class="app-header__dot ${completedCount > 0 ? "app-header__dot--active" : ""}"></span>
-        <span></span>
-        <span class="app-header__dot ${completedCount > 1 ? "app-header__dot--active" : ""}"></span>
-        <b>${completedCount} of 3 complete</b>
+      <div class="app-header__trail" aria-label="${completedCount} of ${quests.length} quests complete">
+        <span class="app-header__trail-meter"><i style="width: ${(completedCount / quests.length) * 100}%"></i></span>
+        <b>${completedCount} of ${quests.length} complete</b>
       </div>
       <a class="back-link" href="/"><span aria-hidden="true">←</span> Back home</a>
     </header>
@@ -453,7 +742,7 @@ function renderQuestTrail() {
         <div class="trail-hero__copy">
           <p class="eyebrow eyebrow--large">Your Nimiq Quest Trail</p>
           <h1>Pick a skill.<br><span class="word-highlight word-highlight--yellow">Start moving.</span></h1>
-          <p>Three short quests take you from NIM basics to safer wallet habits. Start anywhere, or follow the trail in order.</p>
+          <p>Twenty short quests cover NIM basics, payments, wallet safety, network concepts, staking, and Mini Apps. Start anywhere, or follow the trail in order.</p>
         </div>
         <aside class="journey-ticket" aria-label="Current journey status">
           <div class="journey-ticket__top">
@@ -461,7 +750,7 @@ function renderQuestTrail() {
             <span class="ticket-star">✦</span>
           </div>
           <div class="journey-ticket__score">
-            <strong>${completedCount}<span>/3</span></strong>
+            <strong>${completedCount}<span>/${quests.length}</span></strong>
             <p>verified quests</p>
           </div>
           <div class="journey-ticket__bar"><span style="width: ${(completedCount / quests.length) * 100}%"></span></div>
@@ -473,20 +762,50 @@ function renderQuestTrail() {
         <div class="quest-browser__top">
           <div>
             <p class="eyebrow">Starter path</p>
-            <h2>Three skills worth knowing.</h2>
+            <h2>Twenty skills worth knowing.</h2>
           </div>
           <div class="quest-filters" aria-label="Filter quests">
             <button class="filter-chip is-active" type="button" data-filter="all" aria-pressed="true">All</button>
             <button class="filter-chip" type="button" data-filter="nim basics" aria-pressed="false">Basics</button>
             <button class="filter-chip" type="button" data-filter="payments" aria-pressed="false">Payments</button>
             <button class="filter-chip" type="button" data-filter="wallet safety" aria-pressed="false">Safety</button>
+            <button class="filter-chip" type="button" data-filter="network" aria-pressed="false">Network</button>
+            <button class="filter-chip" type="button" data-filter="staking" aria-pressed="false">Staking</button>
+            <button class="filter-chip" type="button" data-filter="ecosystem" aria-pressed="false">Ecosystem</button>
+            <button class="filter-chip" type="button" data-filter="mini apps" aria-pressed="false">Mini Apps</button>
           </div>
         </div>
+
+        ${
+          recommendedQuest
+            ? `<aside class="recommendation-card">
+                <span class="recommendation-card__mark" aria-hidden="true">${recommendedQuest.icon}</span>
+                <div>
+                  <p class="eyebrow">Recommended next</p>
+                  <h3>${recommendedQuest.title}</h3>
+                  <p>${completedCount ? "This is the next missing skill in your verified trail." : "Start here for the clearest introduction to Nimiq."}</p>
+                </div>
+                <a class="button button--small" href="/quests/${recommendedQuest.id}">Start quest <span aria-hidden="true">→</span></a>
+              </aside>`
+            : `<aside class="recommendation-card recommendation-card--complete">
+                <span class="recommendation-card__mark" aria-hidden="true">✓</span>
+                <div><p class="eyebrow">Trail complete</p><h3>All 20 quests are verified.</h3><p>Your starter trail is complete and every badge is available.</p></div>
+                <a class="button button--small" href="/journey">View Journey</a>
+              </aside>`
+        }
 
         <div class="quest-path">
           <div class="quest-path__line" aria-hidden="true"></div>
           ${trailCards}
         </div>
+      </section>
+
+      <section class="badge-section" aria-labelledby="trail-badges-title">
+        <div class="section-heading section-heading--split">
+          <div><p class="eyebrow">Proof-backed achievements</p><h2 id="trail-badges-title">Badges you actually earn.</h2></div>
+          <p>Each badge unlocks only when the required quests have verified wallet proofs.</p>
+        </div>
+        <div class="achievement-grid">${badgeGridMarkup(completionByQuest)}</div>
       </section>
 
       <section class="trail-help">
@@ -529,7 +848,7 @@ function renderQuestSession(questId) {
         <span class="session-not-found__mark">?</span>
         <p class="eyebrow">Trail marker missing</p>
         <h1>That quest isn’t here.</h1>
-        <p>Choose one of the three available quests and keep moving.</p>
+        <p>Choose one of the 20 available quests and keep moving.</p>
         <a class="button" href="/quests">Return to Quest Trail</a>
       </main>
     `;
@@ -1022,7 +1341,46 @@ function renderWalletProof(questId) {
           <span>Payment <b>None</b></span>
           <span>Reward <b>Unavailable</b></span>
         </div>
+        <div class="completion-feedback">
+          <div><p class="eyebrow">One quick check</p><h3>How clear was this quest?</h3></div>
+          <div class="completion-feedback__choices" aria-label="Rate this quest">
+            <button type="button" data-feedback-rating="1">Needs work</button>
+            <button type="button" data-feedback-rating="2">Clear</button>
+            <button type="button" data-feedback-rating="3">Very clear</button>
+          </div>
+          <p data-feedback-status></p>
+        </div>
       `;
+      gate.querySelectorAll("[data-feedback-rating]").forEach((button) => {
+        button.addEventListener("click", async () => {
+          const status = gate.querySelector("[data-feedback-status]");
+          gate.querySelectorAll("[data-feedback-rating]").forEach((item) => {
+            item.disabled = true;
+          });
+          status.textContent = "Saving feedback…";
+          try {
+            const response = await fetch(`${apiBase}/api/feedback`, {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({
+                proofKey: state.proof.key,
+                rating: Number(button.dataset.feedbackRating)
+              })
+            });
+            const result = await response.json();
+            if (!response.ok) {
+              throw new Error(result.error || "Feedback couldn’t be saved.");
+            }
+            status.textContent = "Thanks. Your feedback was saved.";
+            button.classList.add("is-selected");
+          } catch (error) {
+            status.textContent = error instanceof Error ? error.message : "Feedback couldn’t be saved.";
+            gate.querySelectorAll("[data-feedback-rating]").forEach((item) => {
+              item.disabled = false;
+            });
+          }
+        });
+      });
       return;
     }
 
@@ -1164,7 +1522,124 @@ function renderWalletProof(questId) {
   renderGate();
 }
 
+async function renderCompletionDetail(proofKey) {
+  const isLocalPreview = ["localhost", "127.0.0.1"].includes(window.location.hostname);
+  const apiBase =
+    import.meta.env.VITE_API_BASE_URL || (isLocalPreview ? "http://localhost:8787" : "");
+
+  document.querySelector("#app").innerHTML = `
+    <header class="app-header">
+      <a class="brand" href="/" aria-label="NimQuest home">${brandMarkup()}</a>
+      <span class="receipt-header-label">Verified receipt</span>
+      <a class="back-link" href="/journey"><span aria-hidden="true">←</span> My Journey</a>
+    </header>
+    <main class="completion-page" aria-live="polite">
+      <div class="completion-loading"><span class="wallet-loader" aria-hidden="true"><span></span><span></span><span></span></span><p>Loading verified proof…</p></div>
+    </main>
+  `;
+
+  const page = document.querySelector(".completion-page");
+  let proof = readVerifiedCompletions().find((item) => item.key === proofKey);
+
+  try {
+    if (!proof) {
+      if (!navigator.onLine) {
+        throw new Error("This proof isn’t cached on this device. Reconnect to load it from NimQuest.");
+      }
+      const response = await fetch(`${apiBase}/api/completions/${encodeURIComponent(proofKey)}`);
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.error || "Verified completion not found.");
+      }
+      proof = result.proof;
+    }
+
+    const quest = quests.find((item) => item.id === proof.questId);
+    if (!quest || proof.status !== "verified") {
+      throw new Error("Verified completion not found.");
+    }
+
+    const shareUrl = window.location.href;
+    page.innerHTML = `
+      <section class="completion-card">
+        <div class="completion-card__seal" aria-hidden="true">${brandMarkup()}</div>
+        <p class="eyebrow">Wallet-verified completion</p>
+        <h1>${quest.title}</h1>
+        <p class="completion-card__lead">This quest was completed and verified with a one-time Nimiq wallet signature.</p>
+        <div class="completion-card__status"><span aria-hidden="true">✓</span><div><b>Verified</b><small>No NIM was sent</small></div></div>
+        <dl>
+          <div><dt>Quest</dt><dd>${quest.number} · ${quest.title}</dd></div>
+          <div><dt>Wallet</dt><dd>${escapeHtml(proof.walletAddress)}</dd></div>
+          <div><dt>Completed</dt><dd>${formatCompletionDate(proof.completedAt)}</dd></div>
+          <div><dt>Method</dt><dd>Nimiq signed message</dd></div>
+          <div><dt>Proof key</dt><dd>${escapeHtml(proof.key)}</dd></div>
+          <div><dt>Reward</dt><dd>Unavailable</dd></div>
+        </dl>
+        <div class="completion-card__actions">
+          <button class="button" type="button" data-share-detail>Share verified proof</button>
+          <a class="button button--quiet" href="/quests/${quest.id}">Review quest</a>
+        </div>
+        <p class="completion-card__share-status" data-share-status></p>
+      </section>
+      <aside class="completion-trust">
+        <p class="eyebrow">What this proves</p>
+        <h2>A wallet approved this specific completion.</h2>
+        <ul>
+          <li><span>✓</span>The quiz passed before wallet access.</li>
+          <li><span>✓</span>The signature matched the public Nimiq address.</li>
+          <li><span>✓</span>The one-time challenge was consumed after verification.</li>
+          <li><span>✓</span>No payment or private key was required.</li>
+        </ul>
+      </aside>
+    `;
+
+    page.querySelector("[data-share-detail]").addEventListener("click", async (event) => {
+      const copied = await shareProof({ title: quest.title, url: shareUrl });
+      page.querySelector("[data-share-status]").textContent = copied
+        ? "Proof link copied."
+        : "Share sheet opened.";
+      if (copied) {
+        event.currentTarget.textContent = "Link copied";
+      }
+    });
+  } catch (error) {
+    page.innerHTML = `
+      <section class="completion-error">
+        <span aria-hidden="true">!</span>
+        <p class="eyebrow">Receipt unavailable</p>
+        <h1>We couldn’t load this proof.</h1>
+        <p>${escapeHtml(error instanceof Error ? error.message : "The receipt could not be loaded.")}</p>
+        <div><button class="button" type="button" data-retry-proof>Try again</button><a class="button button--quiet" href="/journey">My Journey</a></div>
+      </section>
+    `;
+    page.querySelector("[data-retry-proof]").addEventListener("click", () => window.location.reload());
+  }
+}
+
+async function shareProof({ title, url }) {
+  if (navigator.share) {
+    try {
+      await navigator.share({
+        title: `${title} · NimQuest`,
+        text: `I completed ${title} on NimQuest with a verified Nimiq wallet proof.`,
+        url
+      });
+      return false;
+    } catch (error) {
+      if (error?.name === "AbortError") {
+        return false;
+      }
+    }
+  }
+
+  await navigator.clipboard.writeText(url);
+  return true;
+}
+
 function renderJourney() {
+  const isLocalPreview = ["localhost", "127.0.0.1"].includes(window.location.hostname);
+  const apiBase =
+    import.meta.env.VITE_API_BASE_URL || (isLocalPreview ? "http://localhost:8787" : "");
   const completions = readVerifiedCompletions();
   const completionByQuest = new Map(completions.map((proof) => [proof.questId, proof]));
   const completedCount = completionByQuest.size;
@@ -1246,17 +1721,35 @@ function renderJourney() {
         <div class="journey-content__heading">
           <div>
             <p class="eyebrow">Starter trail</p>
-            <h2>${completedCount ? "Your proof trail is growing." : "Three markers are waiting."}</h2>
+            <h2>${completedCount ? "Your proof trail is growing." : "Twenty markers are waiting."}</h2>
           </div>
           ${nextQuest
             ? `<a class="button button--quiet" href="/quests/${nextQuest.id}">${completedCount ? "Continue journey" : "Start first quest"} <span aria-hidden="true">→</span></a>`
             : `<a class="button button--quiet" href="/quests">Review quests <span aria-hidden="true">→</span></a>`}
         </div>
 
+        <div class="journey-sync" role="status">
+          <div>
+            <p class="eyebrow">Cross-device recovery</p>
+            <h3>Bring back proofs from your wallet.</h3>
+            <p>Nimiq Pay shares the selected public account only after you approve access. NimQuest then restores verified D1 records for that address.</p>
+          </div>
+          <button class="button button--quiet" type="button" data-sync-journey>Sync from Nimiq Pay</button>
+          <p class="journey-sync__status" data-sync-status></p>
+        </div>
+
         <div class="journey-list">
           <div class="journey-list__line" aria-hidden="true"></div>
           ${journeyRows}
         </div>
+      </section>
+
+      <section class="badge-section badge-section--journey" aria-labelledby="journey-badges-title">
+        <div class="section-heading section-heading--split">
+          <div><p class="eyebrow">Verified badges</p><h2 id="journey-badges-title">Your earned skills.</h2></div>
+          <p>Locked badges show what to learn next. Unlocked badges are backed by your verified completion records.</p>
+        </div>
+        <div class="achievement-grid">${badgeGridMarkup(completionByQuest)}</div>
       </section>
 
       <section class="journey-truth">
@@ -1288,6 +1781,10 @@ function renderJourney() {
         <div><dt>Payment</dt><dd>None</dd></div>
         <div><dt>Reward</dt><dd>Unavailable</dd></div>
       </dl>
+      <div class="journey-proof-dialog__actions">
+        <a class="button button--small" data-proof-link href="#">Open receipt</a>
+        <button class="button button--small button--quiet" type="button" data-share-proof>Share proof</button>
+      </div>
     </dialog>
   `;
 
@@ -1299,6 +1796,10 @@ function renderJourney() {
       proofDialog.querySelector("#journey-proof-title").textContent = quest.title;
       proofDialog.querySelector("[data-proof-wallet]").textContent = compactAddress(proof.walletAddress);
       proofDialog.querySelector("[data-proof-date]").textContent = formatCompletionDate(proof.completedAt);
+      const proofUrl = `/completions/${encodeURIComponent(proof.key)}`;
+      proofDialog.querySelector("[data-proof-link]").href = proofUrl;
+      proofDialog.querySelector("[data-share-proof]").dataset.shareUrl = proofUrl;
+      proofDialog.querySelector("[data-share-proof]").dataset.shareTitle = quest.title;
       proofDialog.showModal();
     });
   });
@@ -1306,6 +1807,55 @@ function renderJourney() {
   proofDialog.addEventListener("click", (event) => {
     if (event.target === proofDialog) {
       proofDialog.close();
+    }
+  });
+
+  proofDialog.querySelector("[data-share-proof]").addEventListener("click", async (event) => {
+    const button = event.currentTarget;
+    const shareUrl = new URL(button.dataset.shareUrl, window.location.origin).href;
+    const copied = await shareProof({
+      title: button.dataset.shareTitle,
+      url: shareUrl
+    });
+    if (copied) {
+      button.textContent = "Link copied";
+    }
+  });
+
+  document.querySelector("[data-sync-journey]").addEventListener("click", async (event) => {
+    const button = event.currentTarget;
+    const status = document.querySelector("[data-sync-status]");
+    button.disabled = true;
+    status.textContent = "Waiting for Nimiq Pay approval…";
+
+    try {
+      if (!navigator.onLine) {
+        throw new Error("You’re offline. Reconnect and try again.");
+      }
+      const nimiq = await init({ timeout: 5000 });
+      const accounts = unwrapWalletResult(await nimiq.listAccounts(), "Account access was rejected.");
+      if (!Array.isArray(accounts) || !accounts[0]) {
+        throw new Error("No Nimiq account was selected.");
+      }
+      const response = await fetch(
+        `${apiBase}/api/completions?wallet=${encodeURIComponent(accounts[0])}`
+      );
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.error || "NimQuest couldn’t recover this journey.");
+      }
+      result.completions.forEach((proof) => {
+        localStorage.setItem(`nimquest:completion:${proof.questId}`, JSON.stringify(proof));
+      });
+      status.textContent = result.completions.length
+        ? `${result.completions.length} verified proof${result.completions.length === 1 ? "" : "s"} restored.`
+        : "No verified proofs were found for this wallet.";
+      if (result.completions.length) {
+        window.setTimeout(() => window.location.reload(), 700);
+      }
+    } catch (error) {
+      status.textContent = error instanceof Error ? error.message : "Journey sync failed.";
+      button.disabled = false;
     }
   });
 }

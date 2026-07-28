@@ -87,7 +87,7 @@ Status: Done
 
 ## Checkpoint 7 - Nimiq Pay Runtime Proof
 
-Status: In progress
+Status: Done
 
 - [x] Initialize the Mini Apps SDK in the Wallet Proof screen.
 - [x] Check consensus and block height.
@@ -95,13 +95,13 @@ Status: In progress
 - [x] Serve the production frontend and API from one origin.
 - [x] Verify production deep links and absolute asset paths.
 - [x] Pass an injected-provider browser flow with a real Nimiq key and signature.
-- [ ] Verify one real completion inside Nimiq Pay.
+- [x] Verify one real completion inside Nimiq Pay.
 - [x] Implement rejection, timeout, and browser fallback states.
 - [x] Stop and send each screen screenshot for approval.
 
 ## Checkpoint 7B - Cloudflare Worker Runtime
 
-Status: Done, awaiting Cloudflare deployment
+Status: Done
 
 - [x] Add a Cloudflare Worker API entrypoint.
 - [x] Configure Workers Static Assets with SPA deep-link routing.
@@ -109,13 +109,13 @@ Status: Done, awaiting Cloudflare deployment
 - [x] Make challenge consumption and proof insertion atomic.
 - [x] Replace incompatible Nimiq WebAssembly in Workers with Web Crypto Ed25519 verification.
 - [x] Cross-test Worker address derivation against 25 `@nimiq/core` key pairs.
-- [x] Pass 23 Node tests.
+- [x] Pass 24 Node tests.
 - [x] Pass Wrangler dry-run bundling.
 - [x] Pass a full signed completion in local `workerd`.
 - [x] Push the verified source checkpoint to GitHub.
-- [ ] Create and migrate the production D1 database.
-- [ ] Deploy the Worker to public HTTPS.
-- [ ] Complete one native Nimiq Pay phone test.
+- [x] Create and migrate the production D1 database.
+- [x] Deploy the Worker to public HTTPS.
+- [x] Complete one native Nimiq Pay phone test.
 
 ## Checkpoint 8 - Screen-by-Screen Frontend
 
@@ -166,3 +166,18 @@ Status: Pending
 - [ ] Run final QA.
 - [ ] Update `MEMORY.md`.
 - [ ] Push through GitHub plugin.
+
+## Checkpoint 8C - Post-Proof Product Layer
+
+Status: Done locally, not pushed
+
+- [x] Expand the catalog to 20 sourced quests across seven paths.
+- [x] Keep the landing page curated to six featured quests.
+- [x] Add path filters and progress-based next-quest recommendations.
+- [x] Add eight badges backed only by verified completion records.
+- [x] Add backend-backed Journey recovery after Nimiq Pay account approval.
+- [x] Add durable `/completions/:proofKey` receipts and safe sharing.
+- [x] Add proof-linked completion feedback with D1 persistence.
+- [x] Add proper 404 and offline recovery states.
+- [x] Replace the old mark with a reusable vector NimQuest identity.
+- [x] Pass 24 Node tests, production build, Worker dry run, migrations, and full Worker integration.

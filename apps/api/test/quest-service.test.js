@@ -30,10 +30,10 @@ describe("quest service", () => {
     useChallengeStore(new ChallengeStore());
   });
 
-  it("publishes three sourced quests without answer keys", () => {
+  it("publishes twenty sourced quests without answer keys", () => {
     const quests = listQuests();
 
-    assert.equal(quests.length, 3);
+    assert.equal(quests.length, 20);
     assert.equal("answerIndex" in quests[0].questions[0], false);
     assert.match(quests[0].sourceUrl, /^https:\/\/nimiq/);
     assert.equal(quests[0].reward.status, "unavailable");

@@ -5,10 +5,12 @@ import { fileURLToPath } from "node:url";
 import {
   checkQuestAnswers,
   createCompletionChallenge,
+  getCompletionStore,
   getQuest,
   gradeQuest,
   listQuests
 } from "./quest-service.js";
+import { normalizeWalletAddress } from "./validation.js";
 
 const PORT = Number.parseInt(process.env.PORT || "8787", 10);
 const PROJECT_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
@@ -44,6 +46,26 @@ export function createServer() {
         return sendJson(response, 200, {
           quests: listQuests()
         });
+      }
+
+      if (request.method === "GET" && url.pathname === "/api/completions") {
+        const wallet = normalizeWalletAddress(url.searchParams.get("wallet"));
+        if (!wallet) {
+          return sendJson(response, 400, { error: "A valid Nimiq wallet address is required." });
+        }
+        const completions = getCompletionStore()
+          .values()
+          .filter((proof) => proof.walletAddress === wallet)
+          .map(toPublicProof);
+        return sendJson(response, 200, { completions });
+      }
+
+      const completionMatch = url.pathname.match(/^\/api\/completions\/([^/]+)$/);
+      if (request.method === "GET" && completionMatch) {
+        const proof = getCompletionStore().get(decodeURIComponent(completionMatch[1]));
+        return proof
+          ? sendJson(response, 200, { proof: toPublicProof(proof) })
+          : sendJson(response, 404, { error: "Verified completion not found." });
       }
 
       const questMatch = url.pathname.match(/^\/api\/quests\/([^/]+)$/);
@@ -96,6 +118,18 @@ export function createServer() {
         return sendJson(response, 200, result);
       }
 
+      if (request.method === "POST" && url.pathname === "/api/feedback") {
+        const body = await readJson(request);
+        const proof = getCompletionStore().get(body.proofKey);
+        if (!proof) {
+          return sendJson(response, 404, { error: "Verified completion not found." });
+        }
+        if (!Number.isInteger(body.rating) || body.rating < 1 || body.rating > 3) {
+          return sendJson(response, 400, { error: "Feedback rating must be between 1 and 3." });
+        }
+        return sendJson(response, 201, { ok: true, message: "Feedback saved." });
+      }
+
       if (url.pathname.startsWith("/api/")) {
         return sendJson(response, 404, {
           error: "Route not found."
@@ -114,6 +148,18 @@ export function createServer() {
       });
     }
   });
+}
+
+function toPublicProof(proof) {
+  return {
+    key: proof.key,
+    questId: proof.questId,
+    walletAddress: proof.walletAddress,
+    verificationMethod: proof.verificationMethod,
+    completedAt: proof.completedAt,
+    status: proof.status,
+    reward: proof.reward
+  };
 }
 
 function sendFrontend(request, response, pathname) {

@@ -127,7 +127,9 @@ button {
   color: var(--yellow);
 }
 
-.brand-mark svg {
+.brand-mark svg,
+.brand-mark img {
+  display: block;
   width: 100%;
   height: 100%;
 }
@@ -4261,6 +4263,612 @@ footer > p {
   margin: 0;
   font-weight: 900;
   text-align: right;
+}
+
+/* Post-proof product layer */
+
+.connectivity-banner {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 120;
+  display: none;
+  max-width: 520px;
+  padding: 13px 14px 13px 18px;
+  align-items: center;
+  gap: 18px;
+  border: 2px solid var(--ink);
+  border-radius: 14px;
+  background: var(--coral);
+  box-shadow: 5px 5px 0 var(--ink);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.connectivity-banner.is-visible {
+  display: flex;
+}
+
+.connectivity-banner button {
+  padding: 7px 11px;
+  border: 1.5px solid var(--ink);
+  border-radius: 8px;
+  background: white;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.not-found-brand {
+  position: absolute;
+  top: 30px;
+  left: 34px;
+}
+
+.not-found-actions,
+.journey-proof-dialog__actions,
+.completion-card__actions {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+}
+
+.app-header__trail {
+  gap: 7px;
+}
+
+.app-header__trail .app-header__dot {
+  flex: none;
+}
+
+.app-header__trail-meter {
+  width: 116px;
+  height: 9px;
+  overflow: hidden;
+  border: 1.5px solid var(--ink);
+  border-radius: 99px;
+  background: white;
+}
+
+.app-header__trail-meter i {
+  display: block;
+  height: 100%;
+  background: var(--yellow);
+}
+
+.quest-path__heading {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  margin: 28px 0 2px 75px;
+  padding: 11px 16px;
+  justify-content: space-between;
+  border: 1.5px solid var(--ink);
+  border-radius: 11px;
+  background: var(--ink);
+  color: white;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.quest-path__heading:first-of-type {
+  margin-top: 0;
+}
+
+.quest-path__heading b {
+  color: var(--yellow);
+}
+
+.trail-card--mint .trail-card__body {
+  background: #effaf1;
+}
+
+.trail-card--coral .trail-card__body {
+  background: #fff0eb;
+}
+
+.trail-card--pink .trail-card__body {
+  background: #fff1f6;
+}
+
+.lesson-panel--mint::after,
+.wallet-ticket--mint {
+  background: var(--mint);
+}
+
+.lesson-panel--coral::after,
+.wallet-ticket--coral {
+  background: #ffd0c2;
+}
+
+.lesson-panel--pink::after,
+.wallet-ticket--pink {
+  background: #fbd3df;
+}
+
+.lesson-panel--mint .lesson-panel__icon {
+  background: var(--mint);
+}
+
+.lesson-panel--coral .lesson-panel__icon {
+  background: #ffd0c2;
+}
+
+.lesson-panel--pink .lesson-panel__icon {
+  background: #fbd3df;
+}
+
+.recommendation-card {
+  display: grid;
+  margin: 0 0 48px 75px;
+  padding: 22px 24px;
+  grid-template-columns: 58px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 20px;
+  border: 2px solid var(--ink);
+  border-radius: 20px;
+  background: var(--yellow-light);
+  box-shadow: 5px 5px 0 rgba(25, 24, 42, 0.12);
+}
+
+.recommendation-card--complete {
+  background: var(--mint);
+}
+
+.recommendation-card__mark {
+  display: grid;
+  width: 54px;
+  height: 54px;
+  place-items: center;
+  border: 2px solid var(--ink);
+  border-radius: 17px;
+  background: white;
+  font-size: 23px;
+  font-weight: 900;
+}
+
+.recommendation-card h3,
+.journey-sync h3 {
+  font-size: 22px;
+}
+
+.recommendation-card p:last-child,
+.journey-sync p {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.badge-section {
+  width: min(calc(100% - 48px), var(--max));
+  margin: 76px auto 20px;
+}
+
+.badge-section--journey {
+  width: 100%;
+}
+
+.achievement-grid {
+  display: grid;
+  margin-top: 32px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.achievement {
+  min-height: 190px;
+  padding: 20px;
+  border: 1.5px dashed #aaa6af;
+  border-radius: 19px;
+  background: rgba(255, 255, 255, 0.45);
+  color: #898691;
+}
+
+.achievement.is-unlocked {
+  border: 2px solid var(--ink);
+  background: white;
+  box-shadow: 4px 4px 0 rgba(25, 24, 42, 0.1);
+  color: var(--ink);
+}
+
+.achievement__mark {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  margin-bottom: 18px;
+  place-items: center;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  background: #eeebe4;
+  font-size: 21px;
+  font-weight: 900;
+}
+
+.achievement.is-unlocked .achievement__mark {
+  background: var(--yellow);
+}
+
+.achievement p {
+  margin: 0 0 3px;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.achievement h3 {
+  font-size: 18px;
+}
+
+.achievement div > span {
+  display: block;
+  margin-top: 8px;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.journey-sync {
+  display: grid;
+  margin: 34px 0 6px;
+  padding: 20px 22px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 20px;
+  border: 1.5px dashed #a8a398;
+  border-radius: 16px;
+  background: var(--cream);
+}
+
+.journey-sync__status {
+  min-height: 18px;
+  grid-column: 1 / -1;
+  color: var(--violet-dark) !important;
+  font-weight: 800;
+}
+
+.journey-quest--mint.is-verified .journey-quest__marker {
+  background: var(--mint);
+}
+
+.journey-quest--coral.is-verified .journey-quest__marker {
+  background: #ffd0c2;
+}
+
+.journey-quest--pink.is-verified .journey-quest__marker {
+  background: #fbd3df;
+}
+
+.journey-proof-dialog__actions {
+  margin-top: 26px;
+}
+
+.completion-feedback {
+  display: grid;
+  width: 100%;
+  padding: 18px 20px;
+  grid-column: 1 / -1;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  border-top: 1px dashed #b8b2a7;
+}
+
+.completion-feedback h3 {
+  font-size: 19px;
+}
+
+.completion-feedback__choices {
+  display: flex;
+  gap: 8px;
+}
+
+.completion-feedback__choices button {
+  padding: 8px 10px;
+  border: 1.5px solid var(--ink);
+  border-radius: 9px;
+  background: white;
+  font-size: 10px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.completion-feedback__choices button:hover,
+.completion-feedback__choices button.is-selected {
+  background: var(--yellow);
+}
+
+.completion-feedback > p {
+  min-height: 18px;
+  margin: 0;
+  grid-column: 1 / -1;
+  color: var(--violet-dark);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.receipt-header-label {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.completion-page {
+  display: grid;
+  width: min(calc(100% - 48px), 1040px);
+  min-height: calc(100vh - 86px);
+  margin: 0 auto;
+  padding: 64px 0 90px;
+  grid-template-columns: minmax(0, 1fr) 330px;
+  align-items: start;
+  gap: 36px;
+}
+
+.completion-loading,
+.completion-error {
+  display: grid;
+  min-height: 430px;
+  grid-column: 1 / -1;
+  place-items: center;
+  align-content: center;
+  gap: 20px;
+  text-align: center;
+}
+
+.completion-error > span {
+  display: grid;
+  width: 72px;
+  height: 72px;
+  place-items: center;
+  border: 3px solid var(--ink);
+  border-radius: 50%;
+  background: var(--coral);
+  font-size: 30px;
+  font-weight: 900;
+}
+
+.completion-error h1 {
+  font-size: 48px;
+}
+
+.completion-error p {
+  max-width: 540px;
+  margin: 0;
+  color: var(--muted);
+}
+
+.completion-error > div {
+  display: flex;
+  gap: 14px;
+}
+
+.completion-card,
+.completion-trust {
+  border: 2px solid var(--ink);
+  border-radius: 25px;
+  background: white;
+}
+
+.completion-card {
+  position: relative;
+  padding: 42px;
+  overflow: hidden;
+  box-shadow: 8px 8px 0 rgba(25, 24, 42, 0.12);
+}
+
+.completion-card::before {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 9px;
+  background: linear-gradient(90deg, var(--yellow) 0 33%, var(--violet) 33% 66%, var(--mint) 66%);
+  content: "";
+}
+
+.completion-card__seal .brand > span:last-child,
+.completion-card__seal > span:last-child {
+  display: none;
+}
+
+.completion-card__seal .brand-mark {
+  width: 66px;
+  height: 66px;
+  margin-bottom: 26px;
+}
+
+.completion-card h1 {
+  font-size: clamp(42px, 6vw, 66px);
+}
+
+.completion-card__lead {
+  max-width: 600px;
+  margin: 18px 0 28px;
+  color: var(--muted);
+}
+
+.completion-card__status {
+  display: flex;
+  padding: 16px 18px;
+  align-items: center;
+  gap: 13px;
+  border-radius: 14px;
+  background: var(--mint);
+}
+
+.completion-card__status > span {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border: 2px solid var(--ink);
+  border-radius: 50%;
+  background: white;
+  font-weight: 900;
+}
+
+.completion-card__status b,
+.completion-card__status small {
+  display: block;
+}
+
+.completion-card dl {
+  margin: 30px 0;
+}
+
+.completion-card dl > div {
+  display: grid;
+  padding: 13px 0;
+  grid-template-columns: 120px minmax(0, 1fr);
+  gap: 20px;
+  border-bottom: 1px dashed #cbc6bb;
+  font-size: 12px;
+}
+
+.completion-card dt {
+  color: var(--muted);
+}
+
+.completion-card dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-weight: 800;
+}
+
+.completion-card__actions {
+  justify-content: flex-start;
+}
+
+.completion-card__share-status {
+  min-height: 20px;
+  color: var(--violet-dark);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.completion-trust {
+  position: sticky;
+  top: 28px;
+  padding: 28px 25px;
+  background: var(--yellow-light);
+}
+
+.completion-trust h2 {
+  font-size: 27px;
+}
+
+.completion-trust ul {
+  display: grid;
+  margin: 24px 0 0;
+  padding: 0;
+  gap: 16px;
+  list-style: none;
+}
+
+.completion-trust li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 12px;
+}
+
+.completion-trust li span {
+  color: var(--violet-dark);
+  font-weight: 900;
+}
+
+@media (max-width: 900px) {
+  .achievement-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .completion-page {
+    grid-template-columns: 1fr;
+  }
+
+  .completion-trust {
+    position: static;
+  }
+}
+
+@media (max-width: 700px) {
+  .recommendation-card {
+    margin-left: 0;
+    grid-template-columns: 50px minmax(0, 1fr);
+  }
+
+  .quest-path__heading {
+    margin-left: 55px;
+  }
+
+  .recommendation-card .button {
+    width: 100%;
+    grid-column: 1 / -1;
+  }
+
+  .badge-section {
+    width: calc(100% - 32px);
+  }
+
+  .achievement-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .journey-sync {
+    grid-template-columns: 1fr;
+  }
+
+  .journey-sync .button {
+    width: 100%;
+  }
+
+  .completion-feedback {
+    grid-template-columns: 1fr;
+  }
+
+  .completion-feedback__choices {
+    flex-wrap: wrap;
+  }
+
+  .completion-page {
+    width: calc(100% - 32px);
+    padding-top: 36px;
+  }
+
+  .completion-card {
+    padding: 34px 22px;
+  }
+
+  .completion-card dl > div {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+
+  .completion-card__actions,
+  .journey-proof-dialog__actions,
+  .not-found-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .connectivity-banner {
+    right: 12px;
+    bottom: 12px;
+    left: 12px;
+  }
+}
+
+@media (max-width: 430px) {
+  .achievement-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .achievement {
+    min-height: 150px;
+  }
 }
 
 @media (max-width: 900px) {

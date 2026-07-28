@@ -16,9 +16,10 @@
 | `/` | Understand NimQuest and start quickly | Complete | First quest, Quest Trail, wallet-safety quest |
 | `/quests` | Choose a quest and see verified progress | Complete | Quest Session, landing-page safety section |
 | `/quests/:id` | Learn, answer, review, and prepare proof | Complete | Wallet Proof, Quest Trail |
-| `/proof/:id` | Sign and verify quest completion | Implemented, real Nimiq Pay validation pending | My Journey, Quest Session |
-| `/journey` | Review verified completions and continue | Complete for local-device proof cache | Quest Session, Quest Trail, proof dialog |
-| Unknown route | Recover from a bad or expired URL | Missing | Must offer home and Quest Trail |
+| `/proof/:id` | Sign and verify quest completion | Complete and validated in Nimiq Pay | My Journey, Quest Session |
+| `/journey` | Review, recover, and continue verified completions | Complete with D1 wallet recovery | Quest Session, Quest Trail, proof receipt |
+| `/completions/:proofKey` | Inspect and share a verified proof | Complete | My Journey, quest review |
+| Unknown route | Recover from a bad or expired URL | Complete | Home and Quest Trail |
 
 ## Current journey
 
@@ -33,19 +34,13 @@
 
 ## Current gaps
 
-### Foundation gaps
+### Foundation status
 
-1. Real Nimiq Pay runtime proof still needs validation inside the host app.
-2. Pre-wallet quiz grading and correction guidance are complete.
-3. My Journey depends on the proof returned to one browser. A returning user on another device cannot recover backend-stored proofs.
-4. Unknown routes render the landing page instead of a clear not-found state.
-5. Offline and API-unavailable states are handled as general wallet errors rather than distinct recovery states.
-6. A completion proof exists only in the Journey dialog. There is no durable, linkable proof detail surface.
+The real Nimiq Pay proof, pre-wallet grading, D1 Journey recovery, explicit 404 and offline states, and durable completion receipts are complete.
 
 ### Later product gaps
 
-- More quest tracks and recommendations.
-- Badge collection based on verified completions.
+- Deeper role-specific quest tracks based on usage evidence.
 - Real funded rewards and transaction receipts.
 - Public community progress based on durable production data.
 - Sponsored quest campaigns.
@@ -68,10 +63,8 @@ No settings page is needed yet. Wallet context and disconnect controls should re
 
 ### P1: Cycle II expansion
 
-- Expand from three to seven polished quests.
-- Add track filters and progress-based recommendations to `/quests`.
-- Add verified badges inside `/journey`.
-- Add a share action to completion proof detail.
+- The catalog now contains 20 polished starter quests.
+- Track filters, recommendations, verified badges, proof sharing, and feedback are complete.
 - Add funded reward status and transaction receipt only after the payout rail is real.
 - Add lightweight feedback collection after a verified completion.
 
@@ -90,7 +83,7 @@ Only add these after real usage and funding exist:
 | Surface | Loading | Empty | Error | Success | Recovery |
 |---|---|---|---|---|---|
 | Landing | Image loading | Not applicable | Image fallback | CTA enters quest | Quest Trail link |
-| Quest Trail | Quest loading when API-backed | No available quests | Catalog unavailable | Three quest choices | Retry |
+| Quest Trail | Quest loading when API-backed | No available quests | Catalog unavailable | Twenty quest choices across seven paths | Retry |
 | Quest Session | Draft restore | Fresh lesson | Quest missing, grading failed | Answers pass review | Edit answers, return to trail |
 | Wallet Proof | Connecting, signing, verifying | Quiz not saved | Rejected, expired, offline, provider unavailable | Verified completion | Retry, return to quest, open in Nimiq Pay |
 | My Journey | Proof recovery | Zero verified quests | Recovery unavailable | Verified trail | Retry, start first quest |
