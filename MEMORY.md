@@ -126,3 +126,39 @@ Risks:
 Next checkpoint:
 
 - Define the Nimiq integration contract between frontend, wallet provider, and backend before UI work.
+
+## Checkpoint 3 - Nimiq Integration Contract
+
+Date: 2026-07-28
+
+Phase: Backend integration contract.
+
+Deliverables:
+
+- Added `INTEGRATION.md`.
+- Defined frontend wallet flow.
+- Defined Nimiq Pay provider success state.
+- Defined browser fallback state.
+- Defined completion request and response payloads.
+- Added claim-intent contract.
+- Added `POST /api/claim-intents`.
+- Added claim intent service.
+- Added tests for successful claim intent creation.
+- Added tests for mismatched wallet rejection.
+- Updated README, architecture, and task tracker.
+
+Verification:
+
+- Command: `npm test`
+- Result: pass
+- Evidence: 10 tests passed, 0 failed.
+
+Risks:
+
+- Claim intent does not execute a real NIM transfer yet.
+- Real provider behavior must still be verified inside Nimiq Pay.
+- Frontend must avoid presenting browser fallback claims as real NIM payments.
+
+Next checkpoint:
+
+- Start frontend MVP with Nimiq Pay provider detection, browser fallback, quest flow, and backend integration.
