@@ -57,7 +57,20 @@ Status: Done
 - [x] Update `MEMORY.md`.
 - [x] Push through GitHub plugin.
 
-## Checkpoint 5 - Frontend MVP
+## Checkpoint 5 - Backend API Hardening
+
+Status: Done
+
+- [x] Add HTTP server route tests.
+- [x] Verify health route.
+- [x] Verify public quest route hides answer keys.
+- [x] Verify quest pool route.
+- [x] Verify public progress route.
+- [x] Verify CORS preflight route.
+- [x] Update `MEMORY.md`.
+- [x] Push through GitHub plugin.
+
+## Checkpoint 6 - Frontend MVP
 
 Status: Next
 
@@ -69,7 +82,7 @@ Status: Next
 - [ ] Update `MEMORY.md`.
 - [ ] Push through GitHub plugin.
 
-## Checkpoint 6 - Submission Package
+## Checkpoint 7 - Submission Package
 
 Status: Pending
 
