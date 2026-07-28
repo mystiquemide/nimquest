@@ -1,37 +1,32 @@
 # NimQuest Architecture
 
-## System Shape
-
-NimQuest is built as a small web app with a backend API first and frontend last.
+## System
 
 ```mermaid
 flowchart TD
-  User["User in Nimiq Pay"] --> Frontend["Mini App Frontend"]
+  User["User in Nimiq Pay"] --> Frontend["Mini App"]
+  Frontend --> Provider["Nimiq Pay Provider"]
   Frontend --> API["NimQuest API"]
-  API --> Store["Completion Store"]
-  Frontend --> Wallet["Nimiq Pay Provider"]
+  API --> Verify["Nimiq Signature Verification"]
+  Verify --> Store["Completion Store"]
 ```
 
 ## Backend
 
-Current backend stack:
-
-- Node.js native HTTP server.
-- Dependency-free API for speed and low risk.
-- JSON completion store.
+- Native Node.js HTTP API.
+- Official `@nimiq/core` cryptography.
+- Atomic JSON completion storage for the MVP.
 - Node test runner.
 
-Backend responsibilities:
+Responsibilities:
 
-- Serve public quest data.
-- Serve sponsor-ready quest pool metadata.
-- Serve aggregate public progress stats without exposing wallet addresses.
-- Keep answer keys server-side.
-- Grade submitted answers.
-- Validate wallet address and device identifier inputs.
-- Store completion proofs.
-- Block duplicate reward eligibility per quest and wallet.
-- Prepare NIM claim intents for frontend wallet execution.
+- Serve sourced public quest content without answer keys.
+- Grade quiz submissions on the server.
+- Issue five-minute, wallet-bound signing challenges.
+- Derive a Nimiq address from the submitted public key.
+- Verify the signature over the exact challenge.
+- Consume each nonce once and reject expired or replayed challenges.
+- Persist only verified completion proofs.
 
 Routes:
 
@@ -39,95 +34,36 @@ Routes:
 GET  /health
 GET  /api/quests
 GET  /api/quests/:id
-GET  /api/pools
-GET  /api/pools/:id
-GET  /api/progress
+POST /api/completion-challenges
 POST /api/complete
-POST /api/claim-intents
 ```
-
-## Frontend
-
-Frontend comes after backend stability.
-
-Planned frontend responsibilities:
-
-- Mobile-first quest flow.
-- Nimiq Pay provider detection.
-- Wallet account access.
-- Device identifier request if available.
-- Quiz submission.
-- Completion proof display.
-- Browser fallback for judges testing outside Nimiq Pay.
 
 ## Trust Boundaries
 
 | Boundary | Rule |
 |---|---|
-| Frontend to backend | Frontend cannot grade itself. |
-| Backend to store | Backend owns completion state. |
-| Frontend to wallet | Sensitive actions require Nimiq Pay approval. |
-| Repo to secrets | No private keys or secrets in source control. |
+| Frontend to backend | The frontend cannot grade itself or create proof. |
+| Backend to wallet proof | An address string alone never proves control. |
+| Frontend to provider | Account access and signing require user approval. |
+| Backend to store | Only signature-verified completion is persisted. |
+| Repository to secrets | No private keys or API secrets enter source control. |
 
-## Data Model
-
-Quest:
-
-- `id`
-- `title`
-- `track`
-- `audience`
-- `difficulty`
-- `ecosystemUseCase`
-- `lesson`
-- `rewardNim`
-- `estimatedSeconds`
-- `questions`
-
-Quest pool:
-
-- `id`
-- `title`
-- `sponsor`
-- `purpose`
-- `asset`
-- `status`
-- `fundingModel`
-- `budgetNim`
-- `totalRewardNim`
-- `questIds`
-
-Completion proof:
+## Completion Proof
 
 - `key`
 - `questId`
 - `walletAddress`
 - `deviceId`
-- `rewardNim`
+- `publicKey`
+- `verificationMethod`
 - `completedAt`
 - `status`
+- `reward`
 
-Claim intent:
+## Current Limits
 
-- `type`
-- `asset`
-- `amount`
-- `recipient`
-- `questId`
-- `proofKey`
-- `memo`
-- `status`
-
-## Current Limitations
-
-- Completion store is file-based.
-- Real NIM transfer is not integrated yet.
-- Claim intents prepare metadata but do not execute transfers yet.
-- Wallet proof currently depends on submitted wallet address until Nimiq Pay frontend integration is added.
-- No frontend yet.
-
-## Deployment Notes
-
-- API can run with `npm start`.
-- Tests run with `npm test`.
-- `NIMQUEST_COMPLETION_STORE` can override the JSON completion file path.
+- Nimiq Pay runtime behaviour still needs testing inside the real Mini App environment.
+- Rewards are unavailable until a funded, server-owned payout rail exists.
+- Challenges are stored in process memory and expire after five minutes.
+- Completion persistence is file-based and suitable for the MVP.
+- No frontend has been built.
