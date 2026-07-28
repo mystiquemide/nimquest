@@ -10,6 +10,8 @@ The goal is simple: help a new Nimiq user learn one concept, prove completion wi
 - Quiz validation without exposing answer keys.
 - Wallet-address completion proof.
 - Duplicate completion guard per quest and wallet.
+- Durable JSON completion store.
+- Wallet and device identifier validation.
 - Frontend comes last.
 
 ## Backend API
@@ -31,6 +33,13 @@ npm start
 ## Competition Fit
 
 NimQuest is built around Nimiq onboarding, NIM-native completion, and a mobile-first Mini App flow.
+
+## Project Docs
+
+- `PRD.md`
+- `ARCHITECTURE.md`
+- `TASKS.md`
+- `MEMORY.md`
 
 ## License
 
