@@ -1,0 +1,15 @@
+{
+  "name": "nimquest",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Nimiq Pay mini app for onboarding quests with wallet-based completion proof.",
+  "type": "module",
+  "scripts": {
+    "start": "node apps/api/src/server.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT"
+}
