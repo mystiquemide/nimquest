@@ -48,6 +48,43 @@ export function createServer() {
         });
       }
 
+      if (request.method === "GET" && url.pathname === "/api/leaderboard") {
+        const leaderboard = getCompletionStore()
+          .values()
+          .filter((proof) => proof.status === "verified")
+          .reduce((wallets, proof) => {
+            const existing = wallets.get(proof.walletAddress);
+            if (!existing) {
+              wallets.set(proof.walletAddress, {
+                walletAddress: proof.walletAddress,
+                verifiedQuests: 1,
+                firstVerifiedAt: proof.completedAt,
+                latestVerifiedAt: proof.completedAt
+              });
+              return wallets;
+            }
+
+            existing.verifiedQuests += 1;
+            if (proof.completedAt < existing.firstVerifiedAt) {
+              existing.firstVerifiedAt = proof.completedAt;
+            }
+            if (proof.completedAt > existing.latestVerifiedAt) {
+              existing.latestVerifiedAt = proof.completedAt;
+            }
+            return wallets;
+          }, new Map());
+        const ranked = Array.from(leaderboard.values())
+          .sort((a, b) =>
+            b.verifiedQuests - a.verifiedQuests ||
+            a.firstVerifiedAt.localeCompare(b.firstVerifiedAt) ||
+            a.walletAddress.localeCompare(b.walletAddress)
+          )
+          .slice(0, 100)
+          .map((entry, index) => ({ rank: index + 1, ...entry }));
+
+        return sendJson(response, 200, { leaderboard: ranked });
+      }
+
       if (request.method === "GET" && url.pathname === "/api/completions") {
         const wallet = normalizeWalletAddress(url.searchParams.get("wallet"));
         if (!wallet) {
