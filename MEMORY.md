@@ -234,3 +234,41 @@ Risks:
 Next checkpoint:
 
 - Start frontend MVP with Nimiq Pay provider detection, browser fallback, quest flow, and backend integration.
+
+## Checkpoint 6 - Backend Truth and Wallet Proof
+
+Date: 2026-07-28
+
+Phase: Backend security and product truth.
+
+Deliverables:
+
+- Replaced seven uneven quests with three sourced onboarding quests: `meet-nimiq`, `pay-with-nim`, and `prove-wallet-control`.
+- Removed demo pool, public progress, and claim-intent routes.
+- Removed automatic `1 NIM` promises and EVM address support.
+- Added five-minute wallet-bound signing challenges with random nonces.
+- Added official `@nimiq/core` signature verification.
+- Derived the signer address from the public key and matched it to the challenge wallet.
+- Added nonce expiry and single-use replay protection.
+- Persisted only signature-verified completions.
+- Added question-level feedback for failed quizzes.
+- Updated PRD, architecture, integration contract, task tracker, and README.
+
+Verification:
+
+- Command: `npm test`
+- Result: pass.
+- Evidence: 17 tests passed, 0 failed.
+- Coverage includes real Nimiq keys and signatures, wrong-wallet rejection, changed-message rejection, expiry, replay protection, duplicate completion handling, and the full HTTP flow.
+
+Truth status:
+
+- Backend wallet proof is cryptographically valid.
+- Nimiq Pay runtime integration is not yet proven.
+- Rewards remain unavailable until a funded payout rail exists.
+- No pool or ecosystem analytics are exposed as live product data.
+
+Next checkpoint:
+
+- Prove SDK initialization, account access, challenge signing, and completion inside Nimiq Pay.
+- Build frontend one screen at a time, sending mobile and desktop screenshots for approval before moving on.
