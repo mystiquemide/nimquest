@@ -202,4 +202,35 @@ Risks:
 
 Next checkpoint:
 
+- Harden API route coverage before frontend work.
+
+## Checkpoint 5 - Backend API Hardening
+
+Date: 2026-07-28
+
+Phase: Backend QA.
+
+Deliverables:
+
+- Added `apps/api/test/server.test.js`.
+- Added route-level test for `GET /health`.
+- Added route-level test for `GET /api/quests`.
+- Added route-level test confirming answer keys stay hidden over HTTP.
+- Added route-level test for `GET /api/pools`.
+- Added route-level test for `GET /api/progress`.
+- Added route-level test for CORS `OPTIONS` preflight.
+
+Verification:
+
+- Command: `npm test`
+- Result: pass
+- Evidence: 17 tests passed, 0 failed.
+
+Risks:
+
+- Route tests still do not prove Nimiq Pay provider behavior.
+- Real frontend runtime remains the next critical integration point.
+
+Next checkpoint:
+
 - Start frontend MVP with Nimiq Pay provider detection, browser fallback, quest flow, and backend integration.
