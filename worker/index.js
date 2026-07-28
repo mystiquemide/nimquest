@@ -67,6 +67,10 @@ async function routeRequest(request, env, url) {
     return json({ quests: listQuests() });
   }
 
+  if (request.method === "GET" && url.pathname === "/api/leaderboard") {
+    return listLeaderboard(env.DB);
+  }
+
   if (request.method === "GET" && url.pathname === "/api/completions") {
     return listWalletCompletions(env.DB, url.searchParams.get("wallet"));
   }
@@ -104,6 +108,30 @@ async function routeRequest(request, env, url) {
   }
 
   return json({ error: "Route not found." }, 404);
+}
+
+async function listLeaderboard(database) {
+  const result = await database.prepare(
+    `SELECT wallet_address,
+            COUNT(*) AS verified_quests,
+            MIN(completed_at) AS first_verified_at,
+            MAX(completed_at) AS latest_verified_at
+     FROM completions
+     WHERE status = 'verified'
+     GROUP BY wallet_address
+     ORDER BY verified_quests DESC, first_verified_at ASC, wallet_address ASC
+     LIMIT 100`
+  ).all();
+
+  return json({
+    leaderboard: result.results.map((record, index) => ({
+      rank: index + 1,
+      walletAddress: record.wallet_address,
+      verifiedQuests: Number(record.verified_quests),
+      firstVerifiedAt: record.first_verified_at,
+      latestVerifiedAt: record.latest_verified_at
+    }))
+  });
 }
 
 async function listWalletCompletions(database, walletValue) {
