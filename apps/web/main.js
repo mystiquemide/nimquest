@@ -243,10 +243,26 @@ const trackPresentation = {
   "mini-apps": { label: "Mini Apps", color: "blue", icon: "◫" }
 };
 
-const trackOrder = ["onboarding", "payments", "security", "network", "staking", "mini-apps", "ecosystem"];
 const STARTER_QUEST_ID = "meet-nimiq";
+const trackOrder = [
+  "onboarding",
+  "payments",
+  "security",
+  "wallet safety",
+  "network",
+  "staking",
+  "mini-apps",
+  "mini apps",
+  "ecosystem"
+];
+const trackRank = new Map(trackOrder.map((track, index) => [track, index]));
 const quests = [...catalogQuests]
-  .sort((a, b) => trackOrder.indexOf(a.track) - trackOrder.indexOf(b.track))
+  .sort((a, b) => {
+    if (a.id === STARTER_QUEST_ID) return -1;
+    if (b.id === STARTER_QUEST_ID) return 1;
+    return (trackRank.get(a.track) ?? trackOrder.length) -
+      (trackRank.get(b.track) ?? trackOrder.length);
+  })
   .map((quest, index) => {
   const existing = presentationById.get(quest.id);
   const track = trackPresentation[quest.track] || trackPresentation.onboarding;
