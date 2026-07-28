@@ -2,8 +2,10 @@ import assert from "node:assert/strict";
 import { describe, it, beforeEach } from "node:test";
 import os from "node:os";
 import path from "node:path";
+import { createClaimIntent } from "../src/claim-service.js";
 import { CompletionStore } from "../src/completion-store.js";
 import {
+  getCompletionStore,
   getQuest,
   gradeQuest,
   listQuests,
@@ -113,5 +115,43 @@ describe("quest service", () => {
 
     assert.equal(gradeQuest(payload).rewardEligible, false);
     resetCompletionStore();
+  });
+
+  it("creates a claim intent from a valid completion proof", () => {
+    const completeResult = gradeQuest({
+      questId: "wallet-basics",
+      walletAddress: validNimiqAddress,
+      deviceId: validDeviceId,
+      answers: [0, 1, 1]
+    });
+
+    const result = createClaimIntent({
+      proofKey: completeResult.proof.key,
+      walletAddress: validNimiqAddress,
+      completionStore: getCompletionStore()
+    });
+
+    assert.equal(result.ok, true);
+    assert.equal(result.claimIntent.asset, "NIM");
+    assert.equal(result.claimIntent.amount, 1);
+    assert.equal(result.claimIntent.status, "prepared");
+  });
+
+  it("blocks claim intents for mismatched wallets", () => {
+    const completeResult = gradeQuest({
+      questId: "wallet-basics",
+      walletAddress: validNimiqAddress,
+      deviceId: validDeviceId,
+      answers: [0, 1, 1]
+    });
+
+    const result = createClaimIntent({
+      proofKey: completeResult.proof.key,
+      walletAddress: "0x1111111111111111111111111111111111111111",
+      completionStore: getCompletionStore()
+    });
+
+    assert.equal(result.ok, false);
+    assert.equal(result.status, 403);
   });
 });
