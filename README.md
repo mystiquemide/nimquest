@@ -2,6 +2,8 @@
 
 Learn Nimiq by doing, then prove you learned it with your own wallet.
 
+[![CI](https://github.com/mystiquemide/nimquest/actions/workflows/ci.yml/badge.svg)](https://github.com/mystiquemide/nimquest/actions/workflows/ci.yml)
+
 [Open the live Mini App](https://nimquest.artistic-chip.workers.dev) · [In-app docs](https://nimquest.artistic-chip.workers.dev/docs) · [Leaderboard](https://nimquest.artistic-chip.workers.dev/leaderboard)
 
 ![NimQuest landing page](docs/assets/hero.png)
@@ -39,6 +41,10 @@ Quest trail with learning paths and the recommended starter quest:
 Verified wallet leaderboard, masked labels, ranked by verified quest count:
 
 ![Leaderboard](docs/assets/leaderboard.png)
+
+Wallet proof step, no NIM moves and the quiz gate is enforced before signing:
+
+![Wallet proof step](docs/assets/wallet-proof.png)
 
 Mobile layout:
 
@@ -95,6 +101,12 @@ Run them all: `npm test` (25 tests).
 - Deploys automatically from `main`, current commit `7866b5f`
 - No smart contract. Completions are wallet-signed records in D1, not on-chain writes.
 
+Do not trust the screenshots. The leaderboard is not seeded, verify the real signed completions yourself:
+
+```bash
+curl -s https://nimquest.artistic-chip.workers.dev/api/leaderboard
+```
+
 ## Real usage
 
 The leaderboard is live D1 data, not seeded mock rows. At the time of writing it shows two distinct masked wallets, each with two verified quests, the earliest proof timestamped 2026-07-28. The first Meet Nimiq proof was signed natively inside Nimiq Pay on an iPhone. Query it yourself with the leaderboard curl above.
@@ -118,6 +130,8 @@ The pattern: a docs page teaches but proves nothing, a browser quiz proves somet
 ## What's real
 
 The shipped path is real: the quiz grading, the Nimiq signature verification, the address derivation, the D1 persistence, the leaderboard, and the abuse controls all run in this repository. There are no mocked values in the completion flow. Verification owns the pass/fail decision through deterministic code, there is no model deciding truth. What is pending: funded rewards and wider on-device signing coverage.
+
+Boundaries, stated plainly: the code is unaudited, completions are wallet-signed records in Cloudflare D1 rather than on-chain writes, no NIM moves during completion, and the public leaderboard is mandatory after verification with no opt-out.
 
 Verify it:
 
