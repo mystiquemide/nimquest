@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import { ChallengeStore } from "./challenge-store.js";
 import { CompletionStore } from "./completion-store.js";
 import {
@@ -6,13 +7,13 @@ import {
   listQuests
 } from "./quest-content-service.js";
 import { findQuest } from "./quests.js";
-import { normalizeDeviceId, normalizeWalletAddress } from "./validation.js";
+import { normalizeWalletAddress } from "./validation.js";
 import { verifyWalletProof } from "./wallet-proof-service.js";
 
 let completionStore = new CompletionStore();
 let challengeStore = new ChallengeStore();
 
-export function createCompletionChallenge({ questId, walletAddress, deviceId }) {
+export function createCompletionChallenge({ questId, walletAddress }) {
   if (!findQuest(questId)) {
     return { ok: false, status: 404, error: "Quest not found." };
   }
@@ -22,21 +23,11 @@ export function createCompletionChallenge({ questId, walletAddress, deviceId }) 
     return { ok: false, status: 400, error: "A valid Nimiq wallet address is required." };
   }
 
-  const normalizedDevice = normalizeDeviceId(deviceId);
-  if (!normalizedDevice) {
-    return {
-      ok: false,
-      status: 400,
-      error: "Device identifier must be a 64-character hex string when provided."
-    };
-  }
-
   return {
     ok: true,
     challenge: challengeStore.issue({
       questId,
-      walletAddress: normalizedWallet,
-      deviceId: normalizedDevice
+      walletAddress: normalizedWallet
     })
   };
 }
@@ -91,7 +82,12 @@ export function gradeQuest({
   }
 
   const key = `${questId}:${walletProof.walletAddress}`;
+  const feedbackToken = crypto.randomBytes(32).toString("hex");
+  const feedbackTokenHash = crypto.createHash("sha256").update(feedbackToken).digest("hex");
   if (completionStore.has(key)) {
+    const existing = completionStore.get(key);
+    existing.feedbackTokenHash = feedbackTokenHash;
+    completionStore.set(key, existing);
     return {
       ok: true,
       passed: true,
@@ -99,17 +95,18 @@ export function gradeQuest({
       newlyCompleted: false,
       score: grading.score,
       total: grading.total,
-      proof: completionStore.get(key),
+      proof: existing,
+      feedbackToken,
       message: "Quest was already verified for this wallet."
     };
   }
 
   const proof = {
-    key,
+    key: crypto.randomUUID(),
     questId,
     walletAddress: walletProof.walletAddress,
-    deviceId: challenge.deviceId,
     publicKey: walletProof.publicKey,
+    feedbackTokenHash,
     verificationMethod: "nimiq_message_signature",
     completedAt: new Date().toISOString(),
     status: "verified",
@@ -126,6 +123,7 @@ export function gradeQuest({
     score: grading.score,
     total: grading.total,
     proof,
+    feedbackToken,
     message: "Quest completion verified."
   };
 }
