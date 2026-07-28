@@ -390,11 +390,63 @@ Current boundary:
 - The production D1 database has not been created or migrated.
 - No public deployment has occurred.
 - Native Nimiq Pay approval remains the final runtime proof.
-# 2026-07-28 - Post-proof product layer
+## Checkpoint 8 - Production Wallet Proof and Post-Proof Layer
 
-- Native Nimiq Pay completion succeeded in production with D1 persistence.
-- Expanded the verified quest catalog to 20 sourced quests across NIM basics, payments, wallet safety, network, staking, Mini Apps, and ecosystem paths.
-- Added eight proof-backed badges, next-quest recommendations, D1 Journey recovery, durable completion receipts, proof sharing, feedback persistence, 404 recovery, and offline status.
+Date: 2026-07-28
+
+Phase: Production launch and learner-return experience.
+
+Deliverables:
+
+- Deployed NimQuest to Cloudflare Workers with Static Assets and D1.
+- Connected GitHub `main` to Cloudflare automatic builds and deployments.
+- Initialized production D1 challenge and completion tables.
+- Corrected Nimiq Pay message verification to use Nimiq's signed-message prefix and SHA-256 format.
+- Completed a native Nimiq Pay proof on iPhone with no NIM payment.
+- Confirmed production signature verification, D1 persistence, receipt display, and Journey progress.
+- Expanded the verified catalog to 20 sourced quests across NIM basics, payments, wallet safety, network, staking, Mini Apps, and ecosystem paths.
+- Added eight proof-backed badges, next-quest recommendations, D1 Journey recovery, durable completion receipts, proof sharing, 404 recovery, and offline status.
 - Replaced the old generic mark with a reusable SVG NimQuest identity.
-- Verification passed: 24 Node tests, production build, Worker dry run, both D1 migrations, and full local Worker integration.
-- This checkpoint is local only and has not been pushed or deployed.
+- Applied the production `completion_feedback` D1 migration successfully.
+
+Verification:
+
+- Native Nimiq Pay account approval and message signing: pass.
+- Production proof persistence and Journey recovery: pass.
+- `npm test`: 24 passed, 0 failed.
+- `npm run build:web`: pass.
+- `wrangler deploy --dry-run`: pass.
+- Full local Worker integration with both D1 migrations: pass.
+
+Current boundary:
+
+- Rewards remain unavailable until a funded payout rail exists.
+- A custom domain has not been connected.
+
+## Checkpoint 9 - Verified Wallet Leaderboard
+
+Date: 2026-07-28
+
+Phase: Community progress and retention.
+
+Deliverables:
+
+- Added `GET /api/leaderboard` to Node and Cloudflare Worker runtimes.
+- Ranked unique wallet addresses by verified quest count.
+- Added deterministic tie-breaking using first proof time, then wallet address.
+- Limited public ranking output to the top 100 wallets.
+- Added a responsive `/leaderboard` page with wallet, verified quest count, latest proof date, empty state, offline state, and retry recovery.
+- Added Leaderboard navigation from the landing page, Journey, and footer.
+- Kept ranking proof-backed by reading only `status = 'verified'` completion records.
+- Added Node API and Worker integration coverage for leaderboard results.
+
+Verification:
+
+- `npm test`: 24 passed, 0 failed.
+- `npm run build:web`: pass.
+- `wrangler deploy --dry-run`: pass.
+
+Next checkpoint:
+
+- Run the post-deployment mobile check inside Nimiq Pay.
+- Add the competition submission layer: final demo flow, screenshots, README polish, and submission copy.
