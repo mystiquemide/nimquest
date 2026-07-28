@@ -9,7 +9,7 @@ export class ChallengeStore {
     this.records = new Map();
   }
 
-  issue({ questId, walletAddress, deviceId }) {
+  issue({ questId, walletAddress }) {
     this.prune();
 
     const id = crypto.randomUUID();
@@ -29,7 +29,6 @@ export class ChallengeStore {
       id,
       questId,
       walletAddress,
-      deviceId,
       message,
       issuedAt,
       expiresAt,
