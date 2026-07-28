@@ -13,6 +13,7 @@
     {
       "binding": "DB",
       "database_name": "nimquest",
+      "database_id": "d7edd822-dde5-42b5-94c0-b21bf1623e69",
       "migrations_dir": "./migrations"
     }
   ],
