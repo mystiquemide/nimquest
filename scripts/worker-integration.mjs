@@ -50,7 +50,7 @@ assert.equal(completionResponse.status, 200);
 assert.equal(completion.verified, true);
 assert.equal(completion.proof.walletAddress, walletAddress);
 
-const [walletResponse, receiptResponse, feedbackResponse, replayResponse] = await Promise.all([
+const [walletResponse, receiptResponse, feedbackResponse, replayResponse, leaderboardResponse] = await Promise.all([
   fetch(`${baseUrl}/api/completions?wallet=${encodeURIComponent(walletAddress)}`),
   fetch(`${baseUrl}/api/completions/${encodeURIComponent(completion.proof.key)}`),
   fetch(`${baseUrl}/api/feedback`, {
@@ -65,11 +65,16 @@ const [walletResponse, receiptResponse, feedbackResponse, replayResponse] = awai
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(completionPayload)
-  })
+  }),
+  fetch(`${baseUrl}/api/leaderboard`)
 ]);
 const walletProofs = await walletResponse.json();
 const receipt = await receiptResponse.json();
 const replay = await replayResponse.json();
+const leaderboard = await leaderboardResponse.json();
+const leaderboardEntry = leaderboard.leaderboard.find(
+  (entry) => entry.walletAddress === walletAddress
+);
 
 assert.equal(walletResponse.status, 200);
 assert.equal(walletProofs.completions.length, 1);
@@ -80,6 +85,9 @@ assert.equal("deviceId" in receipt.proof, false);
 assert.equal(feedbackResponse.status, 201);
 assert.equal(replayResponse.status, 400);
 assert.match(replay.error, /already been used/);
+assert.equal(leaderboardResponse.status, 200);
+assert.equal(leaderboardEntry.verifiedQuests, 1);
+assert.ok(leaderboardEntry.rank >= 1);
 
 console.log(JSON.stringify({
   health: "passed",
@@ -90,5 +98,6 @@ console.log(JSON.stringify({
   journeyRecovery: "passed",
   sharedReceipt: "passed",
   feedback: "passed",
+  leaderboard: "passed",
   replayProtection: "passed"
 }, null, 2));
