@@ -258,6 +258,36 @@ Verification:
 
 - Command: `npm test`
 - Result: pass.
+
+## Checkpoint 8A - Connected Frontend Polish
+
+Date: 2026-07-28
+
+Phase: Approved-screen integration and product planning.
+
+Deliverables:
+
+- Connected the approved landing page, Quest Trail, Quest Session, Wallet Proof, and My Journey routes.
+- Changed primary landing actions to enter real quest routes.
+- Added direct starts from landing quest previews.
+- Added browser-session quest drafts and restored unfinished answers.
+- Cleared stale drafts after proof handoff and verified completion.
+- Corrected next-quest selection when quests are completed out of order.
+- Filtered Journey records to known quests with Nimiq signature verification.
+- Removed the orphaned Quest Trail dialog and remaining consumer-facing Mini Apps documentation exits.
+- Added `PAGE_PLAN.md` with the current route audit, state matrix, missing surfaces, and priority order.
+
+Verification:
+
+- `npm run build:web`: pass.
+- `npm test`: 17 passed, 0 failed.
+- Local browser QA: desktop and mobile passed.
+- Verified landing-to-quest navigation, draft recovery, review-to-proof handoff, empty Journey state, all five routes, console cleanliness, and no horizontal overflow.
+
+Current boundary:
+
+- No deployment or push was performed.
+- The next proof point is one real completion inside Nimiq Pay.
 - Evidence: 17 tests passed, 0 failed.
 - Coverage includes real Nimiq keys and signatures, wrong-wallet rejection, changed-message rejection, expiry, replay protection, duplicate completion handling, and the full HTTP flow.
 
@@ -272,3 +302,91 @@ Next checkpoint:
 
 - Prove SDK initialization, account access, challenge signing, and completion inside Nimiq Pay.
 - Build frontend one screen at a time, sending mobile and desktop screenshots for approval before moving on.
+
+## Checkpoint 7A - Host-Ready Runtime Proof
+
+Date: 2026-07-28
+
+Phase: Production hosting contract and pre-device wallet verification.
+
+Deliverables:
+
+- Changed Vite assets to root-absolute production paths so direct proof and journey links load correctly.
+- Added production static hosting and SPA fallback to the Node API server.
+- Kept unknown `/api/*` routes as JSON 404 responses.
+- Added frontend and deep-link server coverage.
+- Corrected the quiz note to state that backend grading happens before wallet proof.
+- Ran the built Wallet Proof page with an injected Nimiq-compatible provider, a generated Nimiq key pair, and the real challenge and completion endpoints.
+
+Verification:
+
+- `npm run build:web`: pass.
+- `npm test`: 20 passed, 0 failed.
+- Injected-provider browser flow: pass.
+- Verified account access, consensus, block height, challenge creation, message signing, backend address derivation, signature verification, proof persistence, session cleanup, Journey handoff, and zero console errors.
+
+Current boundary:
+
+- Native Nimiq Pay approval remains unproven until the app is available at a public HTTPS URL and opened through the Nimiq Pay Mini App deeplink.
+- No deployment or push was performed.
+
+## Checkpoint 8B - Pre-Wallet Quiz Grading
+
+Date: 2026-07-28
+
+Phase: Core-flow structure and wallet approval reduction.
+
+Deliverables:
+
+- Added `POST /api/grade` for server-side answer checks before wallet access.
+- Added strict answer-shape validation without returning answer indexes.
+- Added a Quest Session correction state that marks only questions needing work.
+- Added question-level explanations and direct edit actions.
+- Kept correct answers unexposed in the frontend.
+- Prevented the Wallet Proof handoff until all answers pass.
+- Kept `/api/complete` grading as a second trust check before proof persistence.
+
+Verification:
+
+- `npm run build:web`: pass.
+- `npm test`: 20 passed, 0 failed.
+- Desktop and mobile browser flow: failed grade, correction, passed recheck, and proof handoff passed.
+- No console errors or horizontal overflow.
+
+Current boundary:
+
+- Native Nimiq Pay approval still requires a public HTTPS deployment and a real-device deeplink test.
+- No deployment or push was performed.
+
+## Checkpoint 7B - Cloudflare Worker Runtime
+
+Date: 2026-07-28
+
+Phase: Cloudflare production migration and pre-deployment verification.
+
+Deliverables:
+
+- Added `worker/index.js` as the production API entrypoint.
+- Added Workers Static Assets SPA routing for all approved frontend routes.
+- Added D1 schema and migrations for signing challenges and verified completion proofs.
+- Added atomic D1 completion insertion and challenge consumption.
+- Kept the Node server and local JSON store for compatibility.
+- Replaced `@nimiq/core` WebAssembly in the Worker with Web Crypto Ed25519 verification and pure Nimiq address derivation.
+- Cross-tested the Worker derivation against 25 key pairs from the official `@nimiq/core` package.
+- Added Wrangler configuration, generated binding types, observability, and deployment scripts.
+
+Verification:
+
+- `npm test`: 23 passed, 0 failed.
+- `npm run build:web`: pass.
+- `wrangler deploy --dry-run`: pass.
+- `wrangler check startup`: pass.
+- Local D1 migration: pass.
+- Full `workerd` flow: health, three quests, SPA deep link, pre-wallet grading, real Nimiq signature, D1 persistence, and replay rejection all passed.
+
+Current boundary:
+
+- The verified Cloudflare source is included in the Checkpoint 7B GitHub commit.
+- The production D1 database has not been created or migrated.
+- No public deployment has occurred.
+- Native Nimiq Pay approval remains the final runtime proof.

@@ -72,6 +72,24 @@ describe("api server", () => {
     assert.equal(completion.proof.status, "verified");
   });
 
+  it("grades a quiz before wallet access is requested", async () => {
+    const response = await fetch(`${baseUrl}/api/grade`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        questId: "meet-nimiq",
+        answers: [0, 1, 0]
+      })
+    });
+    const body = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.equal(body.passed, false);
+    assert.equal(body.score, 2);
+    assert.equal(body.feedback[1].correct, false);
+    assert.equal("answerIndex" in body.feedback[1], false);
+  });
+
   it("does not expose unverified pool or public progress routes", async () => {
     const [pools, progress, claims] = await Promise.all([
       fetch(`${baseUrl}/api/pools`),
@@ -82,6 +100,18 @@ describe("api server", () => {
     assert.equal(pools.status, 404);
     assert.equal(progress.status, 404);
     assert.equal(claims.status, 404);
+  });
+
+  it("serves the built frontend and supports deep-link routes", async () => {
+    const [home, proof] = await Promise.all([
+      fetch(`${baseUrl}/`),
+      fetch(`${baseUrl}/proof/meet-nimiq`)
+    ]);
+
+    assert.equal(home.status, 200);
+    assert.match(home.headers.get("content-type"), /text\/html/);
+    assert.equal(proof.status, 200);
+    assert.match(await proof.text(), /<div id="app"><\/div>/);
   });
 
   it("handles CORS preflight", async () => {

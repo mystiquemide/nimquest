@@ -1,5 +1,9 @@
 import http from "node:http";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import {
+  checkQuestAnswers,
   createCompletionChallenge,
   getQuest,
   gradeQuest,
@@ -7,6 +11,18 @@ import {
 } from "./quest-service.js";
 
 const PORT = Number.parseInt(process.env.PORT || "8787", 10);
+const PROJECT_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
+const DIST_ROOT = path.join(PROJECT_ROOT, "dist");
+const CONTENT_TYPES = {
+  ".css": "text/css; charset=utf-8",
+  ".html": "text/html; charset=utf-8",
+  ".jpg": "image/jpeg",
+  ".js": "text/javascript; charset=utf-8",
+  ".json": "application/json; charset=utf-8",
+  ".png": "image/png",
+  ".svg": "image/svg+xml",
+  ".webp": "image/webp"
+};
 
 export function createServer() {
   return http.createServer(async (request, response) => {
@@ -56,6 +72,17 @@ export function createServer() {
         return sendJson(response, 201, result);
       }
 
+      if (request.method === "POST" && url.pathname === "/api/grade") {
+        const body = await readJson(request);
+        const result = checkQuestAnswers(body);
+
+        if (!result.ok) {
+          return sendJson(response, result.status, { error: result.error });
+        }
+
+        return sendJson(response, 200, result);
+      }
+
       if (request.method === "POST" && url.pathname === "/api/complete") {
         const body = await readJson(request);
         const result = gradeQuest(body);
@@ -69,9 +96,17 @@ export function createServer() {
         return sendJson(response, 200, result);
       }
 
-      return sendJson(response, 404, {
-        error: "Route not found."
-      });
+      if (url.pathname.startsWith("/api/")) {
+        return sendJson(response, 404, {
+          error: "Route not found."
+        });
+      }
+
+      if (request.method === "GET" || request.method === "HEAD") {
+        return sendFrontend(request, response, url.pathname);
+      }
+
+      return sendJson(response, 404, { error: "Route not found." });
     } catch (error) {
       return sendJson(response, 500, {
         error: "Unexpected server error.",
@@ -79,6 +114,37 @@ export function createServer() {
       });
     }
   });
+}
+
+function sendFrontend(request, response, pathname) {
+  if (!fs.existsSync(DIST_ROOT)) {
+    return sendJson(response, 503, {
+      error: "Frontend build unavailable. Run npm run build:web first."
+    });
+  }
+
+  const requestedPath = pathname === "/" ? "/index.html" : pathname;
+  const relativePath = requestedPath.replace(/^\/+/, "");
+  const candidate = path.resolve(DIST_ROOT, relativePath);
+  const insideDist = candidate === DIST_ROOT || candidate.startsWith(`${DIST_ROOT}${path.sep}`);
+  const filePath = insideDist && fs.existsSync(candidate) && fs.statSync(candidate).isFile()
+    ? candidate
+    : path.join(DIST_ROOT, "index.html");
+  const contentType = CONTENT_TYPES[path.extname(filePath).toLowerCase()] || "application/octet-stream";
+
+  response.writeHead(200, {
+    "content-type": contentType,
+    "cache-control": filePath.endsWith("index.html")
+      ? "no-cache"
+      : "public, max-age=31536000, immutable"
+  });
+
+  if (request.method === "HEAD") {
+    response.end();
+    return;
+  }
+
+  fs.createReadStream(filePath).pipe(response);
 }
 
 function sendJson(response, statusCode, payload) {

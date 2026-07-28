@@ -6,6 +6,7 @@ import { KeyPair } from "@nimiq/core";
 import { ChallengeStore } from "../src/challenge-store.js";
 import { CompletionStore } from "../src/completion-store.js";
 import {
+  checkQuestAnswers,
   createCompletionChallenge,
   getQuest,
   gradeQuest,
@@ -90,6 +91,23 @@ describe("quest service", () => {
     assert.equal(result.passed, false);
     assert.equal(result.verified, false);
     assert.equal(result.feedback.length, 3);
+  });
+
+  it("grades answers before wallet proof without exposing answer indexes", () => {
+    const failed = checkQuestAnswers({
+      questId: "meet-nimiq",
+      answers: [0, 1, 0]
+    });
+    const passed = checkQuestAnswers({
+      questId: "meet-nimiq",
+      answers: [0, 0, 0]
+    });
+
+    assert.equal(failed.passed, false);
+    assert.equal(failed.score, 2);
+    assert.equal(failed.feedback[1].correct, false);
+    assert.equal("answerIndex" in failed.feedback[1], false);
+    assert.equal(passed.passed, true);
   });
 
   it("verifies a real Nimiq signature before storing completion", () => {

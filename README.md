@@ -7,10 +7,10 @@ NimQuest is Nimiq's learn-by-doing onboarding layer. Users complete short, sourc
 - Three sourced Nimiq onboarding quests.
 - Server-side quiz grading with hidden answer keys.
 - Five-minute, wallet-bound signing challenges.
-- Official `@nimiq/core` signature verification.
+- Nimiq Ed25519 signature verification in Node and Cloudflare Workers.
 - Public-key-derived Nimiq address matching.
 - Nonce expiry and replay protection.
-- Durable verified completion records.
+- Cloudflare D1 persistence for challenges and verified completion records.
 - Honest unavailable reward state until a payout rail is funded.
 
 ## API
@@ -28,10 +28,23 @@ POST /api/complete
 ```bash
 npm install
 npm test
+npm run build:web
 npm start
 ```
 
-Current verification: 17 passing tests, including real Nimiq signatures, address derivation, expiry, replay protection, duplicate handling, and HTTP integration.
+`npm start` serves the production frontend and API from one origin. Deep links such as `/proof/meet-nimiq` fall back to the built application while unknown `/api/*` routes remain JSON 404 responses.
+
+For the Cloudflare Worker:
+
+```bash
+npm run build:web
+npx wrangler d1 migrations apply nimquest --local
+npm run dev:worker
+```
+
+`wrangler.jsonc` deploys the Vite build as Workers Static Assets, routes the API through `worker/index.js`, and binds the `nimquest` D1 database.
+
+Current verification: 23 passing Node tests plus a full local Worker runtime flow covering a real Nimiq signature, D1 persistence, replay protection, pre-wallet grading, and SPA deep links.
 
 ## Project Docs
 

@@ -1,0 +1,1492 @@
+import "./styles.css";
+import heroImage from "./assets/nimquest-hero.jpg";
+import { init, requestDeviceIdentifier } from "@nimiq/mini-app-sdk";
+
+const quests = [
+  {
+    id: "meet-nimiq",
+    number: "01",
+    title: "Meet Nimiq",
+    track: "NIM basics",
+    duration: "Under 1 min",
+    color: "yellow",
+    icon: "✦",
+    description: "Meet NIM, learn what your address does, and keep your wallet secrets safe.",
+    goals: ["Know what NIM is", "Share an address safely", "Protect wallet secrets"],
+    lesson:
+      "Nimiq is a payment-focused blockchain designed to make crypto simple. NIM is its native asset. Your public address can receive payments, while your private keys must always stay inside your wallet.",
+    sourceUrl: "https://nimiq.com/",
+    questions: [
+      {
+        id: "native-asset",
+        prompt: "What is the native asset of the Nimiq network?",
+        options: ["NIM", "A wallet password", "A bank account number"]
+      },
+      {
+        id: "safe-to-share",
+        prompt: "What can you share when someone wants to send you NIM?",
+        options: ["Your Nimiq address", "Your private key", "Your recovery words"]
+      },
+      {
+        id: "wallet-role",
+        prompt: "What protects the keys that control your NIM?",
+        options: ["Your wallet", "A public quest page", "A transaction recipient"]
+      }
+    ]
+  },
+  {
+    id: "pay-with-nim",
+    number: "02",
+    title: "Pay with NIM",
+    track: "Payments",
+    duration: "1 min",
+    color: "blue",
+    icon: "↗",
+    description: "Learn the three details to check before you approve any NIM payment.",
+    goals: ["Check payment details", "Spot unexpected requests", "Approve with confidence"],
+    lesson:
+      "Every NIM payment has a recipient, amount, and asset. Nimiq Pay asks you to approve sensitive wallet actions, giving you a clear moment to review every detail.",
+    sourceUrl: "https://nimiq.dev/mini-apps/api-reference/nimiq-provider",
+    questions: [
+      {
+        id: "payment-review",
+        prompt: "Which details should you check before approving a NIM payment?",
+        options: ["Recipient, amount, and asset", "Only the page colour", "Only the app name"]
+      },
+      {
+        id: "unexpected-request",
+        prompt: "What should you do when a wallet request is unexpected?",
+        options: ["Reject it", "Approve it quickly", "Share your recovery words"]
+      },
+      {
+        id: "approval",
+        prompt: "Who approves a sensitive action inside Nimiq Pay?",
+        options: ["The wallet user", "The Mini App automatically", "Any website visitor"]
+      }
+    ]
+  },
+  {
+    id: "prove-wallet-control",
+    number: "03",
+    title: "Prove wallet control",
+    track: "Wallet safety",
+    duration: "1 min",
+    color: "violet",
+    icon: "✓",
+    description: "See how signing proves wallet control without moving any of your NIM.",
+    goals: ["Understand message signing", "Tell proof from payment", "Prevent replay"],
+    lesson:
+      "A signed message proves your wallet approved a specific statement. It doesn't move NIM. NimQuest uses a short-lived, one-time challenge so old signatures can't be replayed.",
+    sourceUrl: "https://nimiq.dev/mini-apps/api-reference/nimiq-provider",
+    questions: [
+      {
+        id: "signing-effect",
+        prompt: "What happens when you sign a NimQuest proof message?",
+        options: [
+          "You prove wallet control without sending NIM",
+          "You transfer your full balance",
+          "You reveal your private key"
+        ]
+      },
+      {
+        id: "read-message",
+        prompt: "What should you do before signing a message?",
+        options: ["Read and understand it", "Ignore its contents", "Share your recovery words"]
+      },
+      {
+        id: "one-time-challenge",
+        prompt: "Why does NimQuest use a one-time challenge?",
+        options: [
+          "To prevent the same signature from being replayed",
+          "To hide the wallet address",
+          "To charge a transaction fee"
+        ]
+      }
+    ]
+  }
+];
+
+const normalizedPath = window.location.pathname.replace(/\/+$/, "") || "/";
+const questSessionMatch = normalizedPath.match(/^\/quests\/([^/]+)$/);
+const walletProofMatch = normalizedPath.match(/^\/proof\/([^/]+)$/);
+const isJourney = normalizedPath === "/journey";
+const isQuestTrail =
+  normalizedPath === "/quests" ||
+  new URLSearchParams(window.location.search).get("screen") === "quests";
+
+if (isJourney) {
+  renderJourney();
+} else if (walletProofMatch) {
+  renderWalletProof(walletProofMatch[1]);
+} else if (questSessionMatch) {
+  renderQuestSession(questSessionMatch[1]);
+} else if (isQuestTrail) {
+  renderQuestTrail();
+} else {
+const questCards = quests
+  .map(
+    (quest) => `
+      <article class="quest-card quest-card--${quest.color}" data-quest="${quest.id}">
+        <div class="quest-card__top">
+          <span class="quest-card__number">${quest.number}</span>
+          <span class="quest-card__icon" aria-hidden="true">${quest.icon}</span>
+        </div>
+        <div>
+          <p class="eyebrow">${quest.track}</p>
+          <h3>${quest.title}</h3>
+          <p>${quest.description}</p>
+        </div>
+        <div class="quest-card__bottom">
+          <span>${quest.duration}</span>
+          <button class="text-button" type="button" data-preview="${quest.id}" aria-expanded="false">
+            Preview quest <span aria-hidden="true">↗</span>
+          </button>
+        </div>
+        <div class="quest-preview" id="preview-${quest.id}" hidden>
+          <p>${quest.lesson}</p>
+          <div class="quest-preview__actions">
+            <button class="preview-close" type="button" data-close="${quest.id}">Close preview</button>
+            <a class="button button--small" href="/quests/${quest.id}">Start quest <span aria-hidden="true">→</span></a>
+          </div>
+        </div>
+      </article>
+    `
+  )
+  .join("");
+
+document.querySelector("#app").innerHTML = `
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <div class="announcement">
+    <span>New to Nimiq?</span>
+    <a href="/quests/meet-nimiq">Take your first 60-second quest <span aria-hidden="true">→</span></a>
+  </div>
+
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="NimQuest home">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 40 40" role="img">
+          <path d="M20 2 36 11v18L20 38 4 29V11L20 2Z" fill="currentColor"/>
+          <path d="m13 25 7-13 7 13h-4l-3-6-3 6h-4Z" fill="#18172b"/>
+        </svg>
+      </span>
+      <span>NimQuest</span>
+    </a>
+
+    <nav aria-label="Main navigation">
+      <a href="#how">How it works</a>
+      <a href="#quests">Quests</a>
+      <a href="#safety">Wallet safety</a>
+    </nav>
+
+    <a class="button button--small" href="/quests/meet-nimiq">Start a quest</a>
+    <button class="menu-button" type="button" aria-label="Open navigation" aria-expanded="false">
+      <span></span><span></span>
+    </button>
+  </header>
+
+  <main id="main">
+    <section class="hero">
+      <div class="hero__copy">
+        <p class="eyebrow eyebrow--large">Nimiq onboarding, made active</p>
+        <h1>
+          Learn Nimiq
+          <span class="word-highlight word-highlight--yellow">by doing.</span>
+        </h1>
+        <p class="hero__lead">
+          Complete quick, friendly quests. Learn how NIM works, prove what you know with your wallet, and build a journey you can trust.
+        </p>
+        <div class="hero__actions">
+          <a class="button" href="/quests/meet-nimiq">Start your first quest <span aria-hidden="true">→</span></a>
+          <a class="button button--quiet" href="#how">See how it works</a>
+        </div>
+        <div class="hero__proof" aria-label="Product qualities">
+          <span><b>3</b> starter quests</span>
+          <span><b>60s</b> each</span>
+          <span><b>0</b> NIM required</span>
+        </div>
+      </div>
+
+      <div class="hero__visual">
+        <div class="shape shape--yellow" aria-hidden="true"></div>
+        <div class="shape shape--violet" aria-hidden="true"></div>
+        <div class="image-frame">
+          <img
+            src="${heroImage}"
+            alt="A learner working on her laptop in a colourful room"
+          />
+        </div>
+        <div class="floating-card floating-card--top">
+          <span class="floating-card__icon">✓</span>
+          <span><b>Quest complete</b>Wallet proof verified</span>
+        </div>
+        <div class="floating-card floating-card--bottom">
+          <span class="mini-badge">NIM</span>
+          <span><b>Learn safely</b>No payment required</span>
+        </div>
+        <span class="spark spark--one" aria-hidden="true">✦</span>
+        <span class="spark spark--two" aria-hidden="true">✦</span>
+      </div>
+    </section>
+
+    <section class="intro-card" aria-label="NimQuest promise">
+      <p>
+        NimQuest turns Nimiq onboarding into a clear trail of small wins.
+        <strong>Learn one thing, prove it, then keep moving.</strong>
+      </p>
+      <a href="#quests">Explore the trail <span aria-hidden="true">↓</span></a>
+    </section>
+
+    <section class="section how" id="how">
+      <div class="section-heading">
+        <p class="eyebrow">A simple learning loop</p>
+        <h2>From curious to confident in <span class="word-highlight word-highlight--pink">three steps.</span></h2>
+        <p>No long manuals. Each quest gives you one useful idea and one clear action.</p>
+      </div>
+
+      <div class="trail" id="trail">
+        <div class="trail__line" aria-hidden="true"></div>
+        <article class="step step--one">
+          <span class="step__marker">1</span>
+          <div class="step__icon">◫</div>
+          <h3>Learn</h3>
+          <p>Read one short lesson focused on a useful Nimiq skill.</p>
+        </article>
+        <article class="step step--two">
+          <span class="step__marker">2</span>
+          <div class="step__icon">?</div>
+          <h3>Prove</h3>
+          <p>Answer a few questions, then sign a one-time wallet message.</p>
+        </article>
+        <article class="step step--three">
+          <span class="step__marker">3</span>
+          <div class="step__icon">✦</div>
+          <h3>Grow</h3>
+          <p>Keep your verified proof and move to the next useful skill.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section quests" id="quests">
+      <div class="section-heading section-heading--split">
+        <div>
+          <p class="eyebrow">Your first trail</p>
+          <h2>Start with what <span class="word-highlight word-highlight--blue">matters.</span></h2>
+        </div>
+        <p>Three focused quests take you from the basics of NIM to a safer wallet habit.</p>
+      </div>
+      <div class="quest-grid">${questCards}</div>
+      <p class="quest-note"><span aria-hidden="true">✦</span> Every quest is free. No NIM payment is required to learn or create a completion proof.</p>
+    </section>
+
+    <section class="section safety" id="safety">
+      <div class="safety__visual">
+        <span class="orbit orbit--one" aria-hidden="true"></span>
+        <span class="orbit orbit--two" aria-hidden="true"></span>
+        <div class="proof-card">
+          <div class="proof-card__head">
+            <span class="proof-card__seal">✓</span>
+            <span>Completion proof</span>
+            <span class="status">Verified</span>
+          </div>
+          <div class="proof-card__body">
+            <p>QUEST 01</p>
+            <h3>Meet Nimiq</h3>
+            <div class="proof-row"><span>Method</span><b>Signed message</b></div>
+            <div class="proof-row"><span>Payment</span><b>None</b></div>
+            <div class="proof-row"><span>Private keys</span><b>Stay in wallet</b></div>
+          </div>
+        </div>
+      </div>
+      <div class="safety__copy">
+        <p class="eyebrow">Wallet proof, explained</p>
+        <h2>Prove progress without <span class="word-highlight word-highlight--yellow">moving your NIM.</span></h2>
+        <p>
+          NimQuest uses a short-lived message for wallet proof. Signing confirms that you control the wallet. It doesn’t send a payment or expose your private key.
+        </p>
+        <ul>
+          <li><span>✓</span> Read every message before signing</li>
+          <li><span>✓</span> One-time challenges prevent replay</li>
+          <li><span>✓</span> Sensitive actions need your approval</li>
+        </ul>
+        <a class="text-link" href="/quests/prove-wallet-control">Try the wallet safety quest <span aria-hidden="true">→</span></a>
+      </div>
+    </section>
+
+    <section class="final-cta">
+      <span class="final-cta__spark final-cta__spark--one" aria-hidden="true">✦</span>
+      <span class="final-cta__spark final-cta__spark--two" aria-hidden="true">✦</span>
+      <p class="eyebrow">Your first quest is ready</p>
+      <h2>One minute can make Nimiq <span>click.</span></h2>
+      <p>Start with the basics, keep your wallet safe, and leave with proof you earned.</p>
+      <a class="button button--dark" href="/quests">Choose your first quest <span aria-hidden="true">→</span></a>
+    </section>
+  </main>
+
+  <footer>
+    <a class="brand brand--footer" href="/">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 40 40"><path d="M20 2 36 11v18L20 38 4 29V11L20 2Z" fill="currentColor"/><path d="m13 25 7-13 7 13h-4l-3-6-3 6h-4Z" fill="#18172b"/></svg>
+      </span>
+      <span>NimQuest</span>
+    </a>
+    <p>Learn Nimiq by doing.</p>
+    <div class="footer-links">
+      <a href="https://nimiq.com/" target="_blank" rel="noreferrer">Nimiq</a>
+      <a href="/quests">Quest Trail</a>
+      <a href="/journey">My Journey</a>
+      <a href="https://github.com/mystiquemide/nimquest" target="_blank" rel="noreferrer">GitHub</a>
+    </div>
+    <p class="photo-credit">
+      Image reference <a href="https://unsplash.com/photos/2WG4jpv0WDY" target="_blank" rel="noreferrer">[1]</a>
+      · <a href="https://unsplash.com/@nazinamari" target="_blank" rel="noreferrer">Marina Nazina</a>, Unsplash
+    </p>
+  </footer>
+`;
+
+const menuButton = document.querySelector(".menu-button");
+const navigation = document.querySelector("nav");
+
+menuButton.addEventListener("click", () => {
+  const isOpen = menuButton.getAttribute("aria-expanded") === "true";
+  menuButton.setAttribute("aria-expanded", String(!isOpen));
+  navigation.classList.toggle("nav--open", !isOpen);
+});
+
+navigation.addEventListener("click", () => {
+  navigation.classList.remove("nav--open");
+  menuButton.setAttribute("aria-expanded", "false");
+});
+
+document.querySelectorAll("[data-preview]").forEach((button) => {
+  button.addEventListener("click", () => {
+    const questId = button.dataset.preview;
+    const preview = document.querySelector(`#preview-${questId}`);
+    const willOpen = preview.hidden;
+
+    document.querySelectorAll(".quest-preview").forEach((item) => {
+      item.hidden = true;
+    });
+    document.querySelectorAll("[data-preview]").forEach((item) => {
+      item.setAttribute("aria-expanded", "false");
+    });
+
+    preview.hidden = !willOpen;
+    button.setAttribute("aria-expanded", String(willOpen));
+  });
+});
+
+document.querySelectorAll("[data-close]").forEach((button) => {
+  button.addEventListener("click", () => {
+    const questId = button.dataset.close;
+    document.querySelector(`#preview-${questId}`).hidden = true;
+    document.querySelector(`[data-preview="${questId}"]`).setAttribute("aria-expanded", "false");
+  });
+});
+}
+
+function brandMarkup() {
+  return `
+    <span class="brand-mark" aria-hidden="true">
+      <svg viewBox="0 0 40 40" role="img">
+        <path d="M20 2 36 11v18L20 38 4 29V11L20 2Z" fill="currentColor"/>
+        <path d="m13 25 7-13 7 13h-4l-3-6-3 6h-4Z" fill="#18172b"/>
+      </svg>
+    </span>
+    <span>NimQuest</span>
+  `;
+}
+
+function renderQuestTrail() {
+  const completedQuestIds = new Set(readVerifiedCompletions().map((proof) => proof.questId));
+  const completedCount = completedQuestIds.size;
+  const trailCards = quests
+    .map(
+      (quest, index) => `
+        <article class="trail-card trail-card--${quest.color} ${completedQuestIds.has(quest.id) ? "is-complete" : ""}" data-track="${quest.track.toLowerCase()}">
+          <div class="trail-card__marker" aria-hidden="true">
+            <span>${index + 1}</span>
+          </div>
+          <div class="trail-card__body">
+            <div class="trail-card__meta">
+              <span class="availability"><i></i> ${completedQuestIds.has(quest.id) ? "Verified" : "Available now"}</span>
+              <span>${quest.duration}</span>
+            </div>
+            <div class="trail-card__title">
+              <span class="trail-card__icon" aria-hidden="true">${quest.icon}</span>
+              <div>
+                <p class="eyebrow">${quest.track}</p>
+                <h2>${quest.title}</h2>
+              </div>
+            </div>
+            <p class="trail-card__description">${quest.description}</p>
+            <div class="trail-card__footer">
+              <span>3 quick questions</span>
+              <a class="trail-action" href="/quests/${quest.id}">
+                ${completedQuestIds.has(quest.id) ? "Review quest" : "Start quest"} <span aria-hidden="true">→</span>
+              </a>
+            </div>
+          </div>
+        </article>
+      `
+    )
+    .join("");
+
+  document.querySelector("#app").innerHTML = `
+    <a class="skip-link" href="#quest-list">Skip to quests</a>
+
+    <header class="app-header">
+      <a class="brand" href="/" aria-label="NimQuest home">${brandMarkup()}</a>
+      <div class="app-header__trail" aria-label="Journey progress">
+        <span class="app-header__dot app-header__dot--active"></span>
+        <span></span>
+        <span class="app-header__dot ${completedCount > 0 ? "app-header__dot--active" : ""}"></span>
+        <span></span>
+        <span class="app-header__dot ${completedCount > 1 ? "app-header__dot--active" : ""}"></span>
+        <b>${completedCount} of 3 complete</b>
+      </div>
+      <a class="back-link" href="/"><span aria-hidden="true">←</span> Back home</a>
+    </header>
+
+    <main class="trail-page">
+      <section class="trail-hero">
+        <div class="trail-hero__copy">
+          <p class="eyebrow eyebrow--large">Your Nimiq Quest Trail</p>
+          <h1>Pick a skill.<br><span class="word-highlight word-highlight--yellow">Start moving.</span></h1>
+          <p>Three short quests take you from NIM basics to safer wallet habits. Start anywhere, or follow the trail in order.</p>
+        </div>
+        <aside class="journey-ticket" aria-label="Current journey status">
+          <div class="journey-ticket__top">
+            <span>YOUR JOURNEY</span>
+            <span class="ticket-star">✦</span>
+          </div>
+          <div class="journey-ticket__score">
+            <strong>${completedCount}<span>/3</span></strong>
+            <p>verified quests</p>
+          </div>
+          <div class="journey-ticket__bar"><span style="width: ${(completedCount / quests.length) * 100}%"></span></div>
+          <p>${completedCount ? "Your verified trail is taking shape." : "Choose your first quest to begin."}</p>
+        </aside>
+      </section>
+
+      <section class="quest-browser" id="quest-list">
+        <div class="quest-browser__top">
+          <div>
+            <p class="eyebrow">Starter path</p>
+            <h2>Three skills worth knowing.</h2>
+          </div>
+          <div class="quest-filters" aria-label="Filter quests">
+            <button class="filter-chip is-active" type="button" data-filter="all" aria-pressed="true">All</button>
+            <button class="filter-chip" type="button" data-filter="nim basics" aria-pressed="false">Basics</button>
+            <button class="filter-chip" type="button" data-filter="payments" aria-pressed="false">Payments</button>
+            <button class="filter-chip" type="button" data-filter="wallet safety" aria-pressed="false">Safety</button>
+          </div>
+        </div>
+
+        <div class="quest-path">
+          <div class="quest-path__line" aria-hidden="true"></div>
+          ${trailCards}
+        </div>
+      </section>
+
+      <section class="trail-help">
+        <div class="trail-help__icon" aria-hidden="true">?</div>
+        <div>
+          <p class="eyebrow">New to wallets?</p>
+          <h2>You can learn without paying.</h2>
+          <p>Every lesson is free. Wallet signing comes after the quiz and proves control without moving NIM.</p>
+        </div>
+        <a class="button button--quiet" href="/#safety">How wallet proof works</a>
+      </section>
+    </main>
+
+  `;
+
+  document.querySelectorAll("[data-filter]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const filter = button.dataset.filter;
+      document.querySelectorAll("[data-filter]").forEach((chip) => {
+        const active = chip === button;
+        chip.classList.toggle("is-active", active);
+        chip.setAttribute("aria-pressed", String(active));
+      });
+      document.querySelectorAll(".trail-card").forEach((card) => {
+        card.hidden = filter !== "all" && card.dataset.track !== filter;
+      });
+    });
+  });
+}
+
+function renderQuestSession(questId) {
+  const quest = quests.find((item) => item.id === questId);
+  const isLocalPreview = ["localhost", "127.0.0.1"].includes(window.location.hostname);
+  const apiBase =
+    import.meta.env.VITE_API_BASE_URL || (isLocalPreview ? "http://localhost:8787" : "");
+
+  if (!quest) {
+    document.querySelector("#app").innerHTML = `
+      <main class="session-not-found">
+        <span class="session-not-found__mark">?</span>
+        <p class="eyebrow">Trail marker missing</p>
+        <h1>That quest isn’t here.</h1>
+        <p>Choose one of the three available quests and keep moving.</p>
+        <a class="button" href="/quests">Return to Quest Trail</a>
+      </main>
+    `;
+    return;
+  }
+
+  const savedDraft = readQuestDraft(quest);
+  const state = savedDraft || {
+    step: "lesson",
+    questionIndex: 0,
+    answers: Array(quest.questions.length).fill(null)
+  };
+  state.grading = false;
+  state.gradeResult = null;
+  state.gradeError = null;
+
+  document.querySelector("#app").innerHTML = `
+    <a class="skip-link" href="#session-content">Skip to quest</a>
+
+    <header class="app-header session-header">
+      <a class="brand" href="/" aria-label="NimQuest home">${brandMarkup()}</a>
+      <div class="session-header__context">
+        <span class="session-header__quest">${quest.number}</span>
+        <span><b>${quest.title}</b>${quest.duration}</span>
+      </div>
+      <a class="back-link" href="/quests"><span aria-hidden="true">←</span> Quest Trail</a>
+    </header>
+
+    <main class="session-page" id="session-content">
+      <aside class="session-map" aria-label="Quest progress">
+        <div class="session-map__top">
+          <p class="eyebrow">Quest ${quest.number}</p>
+          <h2>${quest.title}</h2>
+          <p>${quest.description}</p>
+        </div>
+        <ol class="session-steps">
+          <li class="is-active" data-session-marker="lesson">
+            <span>1</span>
+            <div><b>Learn</b><small>One useful idea</small></div>
+          </li>
+          <li data-session-marker="quiz">
+            <span>2</span>
+            <div><b>Answer</b><small>Three quick questions</small></div>
+          </li>
+          <li data-session-marker="review">
+            <span>3</span>
+            <div><b>Review</b><small>Check before proof</small></div>
+          </li>
+        </ol>
+        <div class="session-map__safety">
+          <span aria-hidden="true">✦</span>
+          <p><b>No NIM required</b>This quest never asks for a payment.</p>
+        </div>
+      </aside>
+
+      <section class="session-stage" aria-live="polite"></section>
+    </main>
+  `;
+
+  const stage = document.querySelector(".session-stage");
+
+  function updateMarkers() {
+    const order = ["lesson", "quiz", "review"];
+    const current = order.indexOf(state.step);
+    document.querySelectorAll("[data-session-marker]").forEach((marker, index) => {
+      marker.classList.toggle("is-active", index === current);
+      marker.classList.toggle("is-done", index < current);
+    });
+  }
+
+  function renderLesson() {
+    state.step = "lesson";
+    saveQuestDraft(quest.id, state);
+    updateMarkers();
+    stage.innerHTML = `
+      <div class="session-progress">
+        <span>Lesson</span>
+        <div><i style="width: 20%"></i></div>
+        <b>1 of 3</b>
+      </div>
+
+      <article class="lesson-panel lesson-panel--${quest.color}">
+        <div class="lesson-panel__top">
+          <span class="lesson-panel__icon" aria-hidden="true">${quest.icon}</span>
+          <div>
+            <p class="eyebrow">${quest.track}</p>
+            <h1>${quest.title}</h1>
+          </div>
+        </div>
+
+        <p class="lesson-panel__lead">${quest.lesson}</p>
+
+        <div class="lesson-takeaways">
+          <p>Keep these three things</p>
+          <div>
+            ${quest.goals
+              .map(
+                (goal, index) => `
+                  <article>
+                    <span>${String(index + 1).padStart(2, "0")}</span>
+                    <p>${goal}</p>
+                  </article>
+                `
+              )
+              .join("")}
+          </div>
+        </div>
+
+      </article>
+
+      <div class="session-actions">
+        <a class="session-exit" href="/quests">Save for later</a>
+        <button class="button" type="button" data-begin-quiz>
+          Begin 3 questions <span aria-hidden="true">→</span>
+        </button>
+      </div>
+    `;
+
+    stage.querySelector("[data-begin-quiz]").addEventListener("click", () => {
+      state.step = "quiz";
+      state.questionIndex = state.answers.findIndex((answer) => answer === null);
+      if (state.questionIndex === -1) {
+        state.questionIndex = 0;
+      }
+      saveQuestDraft(quest.id, state);
+      renderQuestion();
+    });
+  }
+
+  function renderQuestion() {
+    state.step = "quiz";
+    saveQuestDraft(quest.id, state);
+    updateMarkers();
+    const question = quest.questions[state.questionIndex];
+    const selected = state.answers[state.questionIndex];
+    const progress = 36 + state.questionIndex * 17;
+
+    stage.innerHTML = `
+      <div class="session-progress">
+        <span>Question ${state.questionIndex + 1}</span>
+        <div><i style="width: ${progress}%"></i></div>
+        <b>${state.questionIndex + 1} of ${quest.questions.length}</b>
+      </div>
+
+      <article class="question-panel">
+        <div class="question-panel__count">${String(state.questionIndex + 1).padStart(2, "0")}</div>
+        <p class="eyebrow">Choose one answer</p>
+        <h1>${question.prompt}</h1>
+        <div class="answer-list" role="radiogroup" aria-label="${question.prompt}">
+          ${question.options
+            .map(
+              (option, index) => `
+                <button
+                  class="answer-option ${selected === index ? "is-selected" : ""}"
+                  type="button"
+                  role="radio"
+                  aria-checked="${selected === index}"
+                  data-answer="${index}"
+                >
+                  <span>${String.fromCharCode(65 + index)}</span>
+                  <b>${option}</b>
+                  <i aria-hidden="true">✓</i>
+                </button>
+              `
+            )
+            .join("")}
+        </div>
+        <p class="question-panel__truth">Answers are checked by NimQuest’s backend before wallet proof. Correct answers aren’t stored in this page.</p>
+      </article>
+
+      <div class="session-actions">
+        <button class="session-exit" type="button" data-previous>
+          ${state.questionIndex === 0 ? "Back to lesson" : "Previous question"}
+        </button>
+        <button class="button" type="button" data-next ${selected === null ? "disabled" : ""}>
+          ${state.questionIndex === quest.questions.length - 1 ? "Review answers" : "Next question"}
+          <span aria-hidden="true">→</span>
+        </button>
+      </div>
+    `;
+
+    stage.querySelectorAll("[data-answer]").forEach((button) => {
+      button.addEventListener("click", () => {
+        state.answers[state.questionIndex] = Number(button.dataset.answer);
+        saveQuestDraft(quest.id, state);
+        stage.querySelectorAll("[data-answer]").forEach((option) => {
+          const selectedOption = option === button;
+          option.classList.toggle("is-selected", selectedOption);
+          option.setAttribute("aria-checked", String(selectedOption));
+        });
+        stage.querySelector("[data-next]").disabled = false;
+      });
+    });
+
+    stage.querySelector("[data-previous]").addEventListener("click", () => {
+      if (state.questionIndex === 0) {
+        renderLesson();
+        return;
+      }
+      state.questionIndex -= 1;
+      renderQuestion();
+    });
+
+    stage.querySelector("[data-next]").addEventListener("click", () => {
+      if (state.questionIndex < quest.questions.length - 1) {
+        state.questionIndex += 1;
+        renderQuestion();
+        return;
+      }
+      renderReview();
+    });
+  }
+
+  function renderReview() {
+    state.step = "review";
+    saveQuestDraft(quest.id, state);
+    updateMarkers();
+    const passed = state.gradeResult?.passed === true;
+    const failed = state.gradeResult?.passed === false;
+    const feedbackByQuestion = new Map(
+      (state.gradeResult?.feedback || []).map((item) => [item.questionId, item])
+    );
+
+    stage.innerHTML = `
+      <div class="session-progress">
+        <span>${passed ? "Quiz passed" : failed ? "Answer correction" : "Answer review"}</span>
+        <div><i style="width: ${passed ? "100" : "86"}%"></i></div>
+        <b>3 of 3</b>
+      </div>
+
+      <article class="review-panel ${failed ? "review-panel--needs-work" : ""}">
+        <div class="review-panel__stamp ${failed ? "review-panel__stamp--retry" : ""}" aria-hidden="true">${failed ? "!" : "✓"}</div>
+        <p class="eyebrow">${passed ? "Ready for proof" : failed ? `${state.gradeResult.score} of ${state.gradeResult.total} correct` : "Final answer check"}</p>
+        <h1>${passed ? "You passed the quiz." : failed ? "A few answers need another look." : "Check your answers before wallet proof."}</h1>
+        <p class="review-panel__lead">${
+          passed
+            ? "Your answers passed the backend check. You can now create a wallet-signed completion proof."
+            : failed
+              ? "NimQuest marked the questions to revisit. Your wallet hasn’t been opened and nothing has been signed."
+              : "NimQuest checks the quiz first. Wallet access is requested only after every answer passes."
+        }</p>
+        <ol class="review-list">
+          ${quest.questions
+            .map((question, index) => {
+              const feedback = feedbackByQuestion.get(question.id);
+              const needsWork = feedback && !feedback.correct;
+              return `
+                <li class="${needsWork ? "needs-work" : feedback?.correct ? "is-correct" : ""}">
+                  <span>${index + 1}</span>
+                  <div>
+                    <small>${question.prompt}</small>
+                    <b>${question.options[state.answers[index]]}</b>
+                    ${needsWork ? `<p>${escapeHtml(feedback.explanation)}</p>` : ""}
+                  </div>
+                  ${
+                    passed || !failed || needsWork
+                      ? `<button type="button" data-edit="${index}">${needsWork ? "Fix answer" : "Edit"}</button>`
+                      : `<span class="review-list__status" aria-label="Correct answer">✓</span>`
+                  }
+                </li>
+              `;
+            })
+            .join("")}
+        </ol>
+        ${
+          passed
+            ? `<div class="review-proof-note">
+                <span aria-hidden="true">✦</span>
+                <p><b>Next: wallet proof</b>Signing proves wallet control. It doesn’t send NIM or reveal your private key.</p>
+              </div>`
+            : state.gradeError
+              ? `<div class="review-grade-error" role="alert">
+                  <b>Answer check unavailable</b>
+                  <span>${escapeHtml(state.gradeError)}</span>
+                </div>`
+              : ""
+        }
+      </article>
+
+      <div class="session-actions">
+        <button class="session-exit" type="button" data-back-question>Back to questions</button>
+        <button class="button" type="button" ${state.grading ? "disabled" : ""} ${passed ? "data-continue-proof" : "data-check-answers"}>
+          ${state.grading ? "Checking answers…" : passed ? "Continue to wallet proof" : failed ? "Check corrected answers" : "Check my answers"}
+          <span aria-hidden="true">→</span>
+        </button>
+      </div>
+    `;
+
+    stage.querySelectorAll("[data-edit]").forEach((button) => {
+      button.addEventListener("click", () => {
+        state.questionIndex = Number(button.dataset.edit);
+        state.gradeResult = null;
+        state.gradeError = null;
+        renderQuestion();
+      });
+    });
+    stage.querySelector("[data-back-question]").addEventListener("click", () => {
+      state.questionIndex = quest.questions.length - 1;
+      renderQuestion();
+    });
+    const continueButton = stage.querySelector("[data-continue-proof]");
+    if (continueButton) {
+      continueButton.addEventListener("click", () => {
+        sessionStorage.setItem(
+          `nimquest:proof:${quest.id}`,
+          JSON.stringify({
+            questId: quest.id,
+            answers: state.answers,
+            gradedAt: new Date().toISOString(),
+            savedAt: new Date().toISOString()
+          })
+        );
+        sessionStorage.removeItem(`nimquest:draft:${quest.id}`);
+        window.location.assign(`/proof/${quest.id}`);
+      });
+    }
+
+    const checkButton = stage.querySelector("[data-check-answers]");
+    if (checkButton) {
+      checkButton.addEventListener("click", checkAnswers);
+    }
+  }
+
+  async function checkAnswers() {
+    state.grading = true;
+    state.gradeError = null;
+    renderReview();
+
+    try {
+      const response = await fetch(`${apiBase}/api/grade`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          questId: quest.id,
+          answers: state.answers
+        })
+      });
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "NimQuest couldn’t check these answers.");
+      }
+
+      state.gradeResult = result;
+    } catch (error) {
+      state.gradeError =
+        error instanceof Error
+          ? error.message
+          : "Check your connection and try the answer check again.";
+    } finally {
+      state.grading = false;
+      renderReview();
+    }
+  }
+
+  if (state.step === "review") {
+    renderReview();
+  } else if (state.step === "quiz") {
+    renderQuestion();
+  } else {
+    renderLesson();
+  }
+}
+
+function renderWalletProof(questId) {
+  const quest = quests.find((item) => item.id === questId);
+  const stored = readProofSession(questId);
+  const isLocalPreview = ["localhost", "127.0.0.1"].includes(window.location.hostname);
+  const apiBase =
+    import.meta.env.VITE_API_BASE_URL || (isLocalPreview ? "http://localhost:8787" : "");
+  const state = {
+    phase: "ready",
+    account: null,
+    blockHeight: null,
+    error: null,
+    proof: null
+  };
+
+  if (!quest) {
+    document.querySelector("#app").innerHTML = `
+      <main class="session-not-found">
+        <span class="session-not-found__mark">?</span>
+        <p class="eyebrow">Proof marker missing</p>
+        <h1>That proof route isn’t here.</h1>
+        <p>Choose an available quest and complete its questions first.</p>
+        <a class="button" href="/quests">Return to Quest Trail</a>
+      </main>
+    `;
+    return;
+  }
+
+  document.querySelector("#app").innerHTML = `
+    <a class="skip-link" href="#proof-content">Skip to wallet proof</a>
+
+    <header class="app-header proof-header">
+      <a class="brand" href="/" aria-label="NimQuest home">${brandMarkup()}</a>
+      <div class="proof-header__progress" aria-label="Quest progress">
+        <span class="is-done">Learn</span>
+        <i></i>
+        <span class="is-done">Answer</span>
+        <i></i>
+        <span class="is-active">Prove</span>
+      </div>
+      <a class="back-link" href="/quests/${quest.id}"><span aria-hidden="true">←</span> Back to quest</a>
+    </header>
+
+    <main class="proof-page" id="proof-content">
+      <section class="proof-intro">
+        <div class="proof-intro__copy">
+          <p class="eyebrow eyebrow--large">Final step · Quest ${quest.number}</p>
+          <h1>Turn your learning into <span class="word-highlight word-highlight--yellow">wallet proof.</span></h1>
+          <p>Connect Nimiq Pay and approve one clear message. Your wallet signs the completion, NimQuest verifies it, and no NIM moves.</p>
+
+          <div class="proof-promises" aria-label="Wallet proof guarantees">
+            <span><i>0</i><b>NIM sent</b></span>
+            <span><i>1</i><b>message signed</b></span>
+            <span><i>5</i><b>minute expiry</b></span>
+          </div>
+        </div>
+
+        <aside class="wallet-ticket wallet-ticket--${quest.color}" aria-label="Quest ready for proof">
+          <div class="wallet-ticket__top">
+            <span>QUEST READY</span>
+            <span class="wallet-ticket__mark" aria-hidden="true">${quest.icon}</span>
+          </div>
+          <p class="eyebrow">${quest.track}</p>
+          <h2>${quest.title}</h2>
+          <div class="wallet-ticket__score">
+            <span>Quiz answers</span>
+            <b>${stored ? "3 of 3 ready" : "Not saved"}</b>
+          </div>
+          <div class="wallet-ticket__line"></div>
+          <p><span aria-hidden="true">✓</span> Signing proves wallet control. It never reveals your private key.</p>
+        </aside>
+      </section>
+
+      <section class="wallet-gate" aria-live="polite"></section>
+    </main>
+  `;
+
+  const gate = document.querySelector(".wallet-gate");
+
+  function renderGate() {
+    if (!stored) {
+      gate.innerHTML = `
+        <div class="wallet-gate__icon wallet-gate__icon--warning" aria-hidden="true">!</div>
+        <div class="wallet-gate__content">
+          <p class="eyebrow">Quiz required</p>
+          <h2>Finish the quest first.</h2>
+          <p>Your answers stay in this browser session until you’re ready to sign.</p>
+        </div>
+        <a class="button" href="/quests/${quest.id}">Return to quest</a>
+      `;
+      return;
+    }
+
+    if (state.phase === "connecting" || state.phase === "signing" || state.phase === "verifying") {
+      const copy = {
+        connecting: ["Opening Nimiq Pay", "Choose the wallet you want attached to this proof."],
+        signing: ["Review the message", "Nimiq Pay will show the exact one-time completion statement."],
+        verifying: ["Verifying your proof", "Checking the signature and saving this completion securely."]
+      }[state.phase];
+
+      gate.innerHTML = `
+        <div class="wallet-loader" aria-hidden="true"><span></span><span></span><span></span></div>
+        <div class="wallet-gate__content">
+          <p class="eyebrow">One moment</p>
+          <h2>${copy[0]}…</h2>
+          <p>${copy[1]}</p>
+        </div>
+        <button class="button" type="button" disabled>Waiting for approval</button>
+      `;
+      return;
+    }
+
+    if (state.phase === "success") {
+      const shortAddress = compactAddress(state.proof.walletAddress);
+      gate.innerHTML = `
+        <div class="proof-success__stamp" aria-hidden="true">✓</div>
+        <div class="wallet-gate__content">
+          <p class="eyebrow">Proof verified</p>
+          <h2>You completed ${quest.title}.</h2>
+          <p>Your wallet signature matched <b>${shortAddress}</b>${state.blockHeight ? ` at block ${state.blockHeight.toLocaleString()}` : ""}.</p>
+        </div>
+        <div class="next-screen-lock">
+          <a class="button" href="/journey">View my journey →</a>
+        </div>
+        <div class="proof-receipt">
+          <span>Status <b>Verified</b></span>
+          <span>Payment <b>None</b></span>
+          <span>Reward <b>Unavailable</b></span>
+        </div>
+      `;
+      return;
+    }
+
+    const hasError = state.phase === "error";
+    gate.innerHTML = `
+      <div class="wallet-gate__icon ${hasError ? "wallet-gate__icon--warning" : ""}" aria-hidden="true">
+        ${hasError ? "!" : walletShieldMarkup()}
+      </div>
+      <div class="wallet-gate__content">
+        <p class="eyebrow">${hasError ? "Couldn’t finish proof" : "Nimiq Pay required"}</p>
+        <h2>${hasError ? escapeHtml(state.error.title) : "Connect. Read. Sign."}</h2>
+        <p>${hasError ? escapeHtml(state.error.message) : "You’ll approve account access, then sign a short-lived challenge created for this quest and wallet."}</p>
+        ${hasError ? `<small>${escapeHtml(state.error.help)}</small>` : `
+          <ul class="wallet-checklist">
+            <li><span>✓</span>No transaction or network fee</li>
+            <li><span>✓</span>Private keys stay inside Nimiq Pay</li>
+            <li><span>✓</span>The challenge can only be used once</li>
+          </ul>
+        `}
+      </div>
+      <button class="button" type="button" data-connect-proof>
+        ${hasError ? "Try again" : "Connect Nimiq Pay"} <span aria-hidden="true">→</span>
+      </button>
+      ${hasError ? `<a class="wallet-fallback" href="https://pay.nimiq.com/" target="_blank" rel="noreferrer">Open Nimiq Pay</a>` : ""}
+    `;
+
+    gate.querySelector("[data-connect-proof]").addEventListener("click", beginWalletProof);
+  }
+
+  async function beginWalletProof() {
+    state.phase = "connecting";
+    state.error = null;
+    renderGate();
+
+    try {
+      const nimiq = await init({ timeout: 5000 });
+      const consensus = await nimiq.isConsensusEstablished();
+
+      if (!consensus) {
+        throw new WalletFlowError(
+          "Network still syncing",
+          "Nimiq Pay hasn’t established network consensus yet.",
+          "Wait a moment, then try again."
+        );
+      }
+
+      state.blockHeight = await nimiq.getBlockNumber();
+      const accountsResult = await nimiq.listAccounts();
+      const accounts = unwrapWalletResult(accountsResult, "Account access was rejected.");
+
+      if (!Array.isArray(accounts) || accounts.length === 0) {
+        throw new WalletFlowError(
+          "No Nimiq account found",
+          "Nimiq Pay didn’t return an account for this proof.",
+          "Create or select a Nimiq account, then try again."
+        );
+      }
+
+      state.account = accounts[0];
+      let deviceId;
+      try {
+        deviceId = await requestDeviceIdentifier({
+          reason: "Prevent duplicate quest completion claims"
+        });
+      } catch {
+        deviceId = undefined;
+      }
+
+      const challengeResponse = await fetch(`${apiBase}/api/completion-challenges`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          questId: quest.id,
+          walletAddress: state.account,
+          deviceId
+        })
+      });
+      const challengeResult = await challengeResponse.json();
+
+      if (!challengeResponse.ok) {
+        throw new WalletFlowError(
+          "Challenge unavailable",
+          challengeResult.error || "NimQuest couldn’t prepare the signing message.",
+          "Check your connection and try again."
+        );
+      }
+
+      state.phase = "signing";
+      renderGate();
+      const signedResult = await nimiq.sign(challengeResult.challenge.message);
+      const signed = unwrapWalletResult(signedResult, "The signing request was rejected.");
+
+      state.phase = "verifying";
+      renderGate();
+      const completionResponse = await fetch(`${apiBase}/api/complete`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          questId: quest.id,
+          answers: stored.answers,
+          walletAddress: state.account,
+          challengeId: challengeResult.challenge.id,
+          publicKey: signed.publicKey,
+          signature: signed.signature
+        })
+      });
+      const completion = await completionResponse.json();
+
+      if (!completionResponse.ok) {
+        throw new WalletFlowError(
+          "Proof rejected",
+          completion.error || "The signature couldn’t be verified.",
+          "Restart the proof to receive a fresh challenge."
+        );
+      }
+
+      if (!completion.passed) {
+        throw new WalletFlowError(
+          "Review your answers",
+          "One or more answers need another look.",
+          "Return to the quest, edit your answers, and try again."
+        );
+      }
+
+      state.phase = "success";
+      state.proof = completion.proof;
+      sessionStorage.removeItem(`nimquest:proof:${quest.id}`);
+      sessionStorage.removeItem(`nimquest:draft:${quest.id}`);
+      localStorage.setItem(`nimquest:completion:${quest.id}`, JSON.stringify(completion.proof));
+      renderGate();
+    } catch (error) {
+      const flowError = normalizeWalletError(error);
+      state.phase = "error";
+      state.error = flowError;
+      renderGate();
+    }
+  }
+
+  renderGate();
+}
+
+function renderJourney() {
+  const completions = readVerifiedCompletions();
+  const completionByQuest = new Map(completions.map((proof) => [proof.questId, proof]));
+  const completedCount = completionByQuest.size;
+  const nextQuest = quests.find((quest) => !completionByQuest.has(quest.id));
+  const latestCompletion = [...completions].sort(
+    (a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime()
+  )[0];
+  const primaryWallet = latestCompletion?.walletAddress || null;
+
+  const journeyRows = quests
+    .map((quest, index) => {
+      const proof = completionByQuest.get(quest.id);
+      const completedAt = proof ? formatCompletionDate(proof.completedAt) : null;
+      return `
+        <article class="journey-quest journey-quest--${quest.color} ${proof ? "is-verified" : ""}">
+          <div class="journey-quest__marker" aria-hidden="true">
+            ${proof ? "✓" : index + 1}
+          </div>
+          <div class="journey-quest__copy">
+            <p class="eyebrow">${quest.track}</p>
+            <h3>${quest.title}</h3>
+            <p>${proof ? `Verified ${completedAt}` : quest.description}</p>
+          </div>
+          ${
+            proof
+              ? `<button class="journey-proof-button" type="button" data-view-proof="${quest.id}">View proof</button>`
+              : `<a class="journey-quest__action" href="/quests/${quest.id}">${nextQuest?.id === quest.id && completedCount > 0 ? "Continue trail" : "Start quest"} <span aria-hidden="true">→</span></a>`
+          }
+        </article>
+      `;
+    })
+    .join("");
+
+  document.querySelector("#app").innerHTML = `
+    <a class="skip-link" href="#journey-content">Skip to journey</a>
+
+    <header class="app-header journey-header">
+      <a class="brand" href="/" aria-label="NimQuest home">${brandMarkup()}</a>
+      <nav class="journey-nav" aria-label="Product navigation">
+        <a href="/quests">Quest Trail</a>
+        <a href="/journey" aria-current="page">My Journey</a>
+      </nav>
+      <a class="back-link" href="/quests"><span aria-hidden="true">←</span> Quest Trail</a>
+    </header>
+
+    <main class="journey-page" id="journey-content">
+      <section class="journey-hero">
+        <div class="journey-hero__copy">
+          <p class="eyebrow eyebrow--large">Your verified Nimiq journey</p>
+          <h1>Small wins.<br><span class="word-highlight word-highlight--yellow">Real proof.</span></h1>
+          <p>${completedCount
+            ? `You’ve verified ${completedCount} of ${quests.length} starter quests. Every completed marker below came from a wallet-signed proof.`
+            : "Your trail starts empty and fills only when a wallet-signed quest is verified."}</p>
+          <div class="journey-summary" aria-label="Journey summary">
+            <span><b>${completedCount}</b>verified</span>
+            <span><b>${quests.length - completedCount}</b>remaining</span>
+            <span><b>0</b>NIM spent</span>
+          </div>
+        </div>
+
+        <aside class="journey-pass" aria-label="Journey pass">
+          <div class="journey-pass__top">
+            <span>NIMQUEST PASS</span>
+            <span aria-hidden="true">✦</span>
+          </div>
+          <div class="journey-pass__score">
+            <strong>${completedCount}<small>/${quests.length}</small></strong>
+            <span>QUESTS VERIFIED</span>
+          </div>
+          <div class="journey-pass__progress"><span style="width: ${(completedCount / quests.length) * 100}%"></span></div>
+          <div class="journey-pass__wallet">
+            <span>CONNECTED WALLET</span>
+            <b>${primaryWallet ? compactAddress(primaryWallet) : "No proof yet"}</b>
+          </div>
+        </aside>
+      </section>
+
+      <section class="journey-content">
+        <div class="journey-content__heading">
+          <div>
+            <p class="eyebrow">Starter trail</p>
+            <h2>${completedCount ? "Your proof trail is growing." : "Three markers are waiting."}</h2>
+          </div>
+          ${nextQuest
+            ? `<a class="button button--quiet" href="/quests/${nextQuest.id}">${completedCount ? "Continue journey" : "Start first quest"} <span aria-hidden="true">→</span></a>`
+            : `<a class="button button--quiet" href="/quests">Review quests <span aria-hidden="true">→</span></a>`}
+        </div>
+
+        <div class="journey-list">
+          <div class="journey-list__line" aria-hidden="true"></div>
+          ${journeyRows}
+        </div>
+      </section>
+
+      <section class="journey-truth">
+        <div class="journey-truth__icon" aria-hidden="true">✓</div>
+        <div>
+          <p class="eyebrow">Proof status</p>
+          <h2>${latestCompletion ? "Your latest proof is verified." : "No proof has been created yet."}</h2>
+          <p>${latestCompletion
+            ? `${quests.find((quest) => quest.id === latestCompletion.questId)?.title || "Quest"} was signed by ${compactAddress(latestCompletion.walletAddress)} on ${formatCompletionDate(latestCompletion.completedAt)}.`
+            : "Complete a quest and approve its one-time wallet message. NimQuest will add it here after backend verification."}</p>
+        </div>
+        <div class="journey-truth__receipt">
+          <span>Status <b>${latestCompletion ? "Verified" : "Not started"}</b></span>
+          <span>Payment <b>None</b></span>
+          <span>Reward <b>Unavailable</b></span>
+        </div>
+      </section>
+    </main>
+
+    <dialog class="journey-proof-dialog" aria-labelledby="journey-proof-title">
+      <button class="sheet-close" type="button" aria-label="Close proof">×</button>
+      <div class="journey-proof-dialog__stamp" aria-hidden="true">✓</div>
+      <p class="eyebrow">Verified completion</p>
+      <h2 id="journey-proof-title"></h2>
+      <dl>
+        <div><dt>Wallet</dt><dd data-proof-wallet></dd></div>
+        <div><dt>Completed</dt><dd data-proof-date></dd></div>
+        <div><dt>Method</dt><dd>Signed message</dd></div>
+        <div><dt>Payment</dt><dd>None</dd></div>
+        <div><dt>Reward</dt><dd>Unavailable</dd></div>
+      </dl>
+    </dialog>
+  `;
+
+  const proofDialog = document.querySelector(".journey-proof-dialog");
+  document.querySelectorAll("[data-view-proof]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const quest = quests.find((item) => item.id === button.dataset.viewProof);
+      const proof = completionByQuest.get(button.dataset.viewProof);
+      proofDialog.querySelector("#journey-proof-title").textContent = quest.title;
+      proofDialog.querySelector("[data-proof-wallet]").textContent = compactAddress(proof.walletAddress);
+      proofDialog.querySelector("[data-proof-date]").textContent = formatCompletionDate(proof.completedAt);
+      proofDialog.showModal();
+    });
+  });
+  proofDialog.querySelector(".sheet-close").addEventListener("click", () => proofDialog.close());
+  proofDialog.addEventListener("click", (event) => {
+    if (event.target === proofDialog) {
+      proofDialog.close();
+    }
+  });
+}
+
+function readVerifiedCompletions() {
+  const completions = [];
+  const knownQuestIds = new Set(quests.map((quest) => quest.id));
+
+  try {
+    for (let index = 0; index < localStorage.length; index += 1) {
+      const key = localStorage.key(index);
+      if (!key?.startsWith("nimquest:completion:")) {
+        continue;
+      }
+
+      const proof = JSON.parse(localStorage.getItem(key));
+      if (
+        proof?.status === "verified" &&
+        knownQuestIds.has(proof.questId) &&
+        typeof proof.questId === "string" &&
+        typeof proof.walletAddress === "string" &&
+        typeof proof.completedAt === "string" &&
+        proof.verificationMethod === "nimiq_message_signature"
+      ) {
+        completions.push(proof);
+      }
+    }
+  } catch {
+    return [];
+  }
+
+  return completions;
+}
+
+function readQuestDraft(quest) {
+  try {
+    const draft = JSON.parse(sessionStorage.getItem(`nimquest:draft:${quest.id}`));
+    const validAnswers =
+      Array.isArray(draft?.answers) &&
+      draft.answers.length === quest.questions.length &&
+      draft.answers.every(
+        (answer, index) =>
+          answer === null ||
+          (Number.isInteger(answer) &&
+            answer >= 0 &&
+            answer < quest.questions[index].options.length)
+      );
+    const validStep = ["lesson", "quiz", "review"].includes(draft?.step);
+    const validQuestionIndex =
+      Number.isInteger(draft?.questionIndex) &&
+      draft.questionIndex >= 0 &&
+      draft.questionIndex < quest.questions.length;
+
+    if (validAnswers && validStep && validQuestionIndex) {
+      if (draft.step === "review" && draft.answers.some((answer) => answer === null)) {
+        draft.step = "quiz";
+        draft.questionIndex = draft.answers.findIndex((answer) => answer === null);
+      }
+      return draft;
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
+function saveQuestDraft(questId, state) {
+  try {
+    sessionStorage.setItem(
+      `nimquest:draft:${questId}`,
+      JSON.stringify({
+        step: state.step,
+        questionIndex: state.questionIndex,
+        answers: state.answers
+      })
+    );
+  } catch {
+    // The quest still works when private browsing blocks session storage.
+  }
+}
+
+function formatCompletionDate(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "date unavailable";
+  }
+
+  return new Intl.DateTimeFormat("en", {
+    day: "numeric",
+    month: "short",
+    year: "numeric"
+  }).format(date);
+}
+
+function readProofSession(questId) {
+  try {
+    const stored = JSON.parse(sessionStorage.getItem(`nimquest:proof:${questId}`));
+    if (
+      stored?.questId === questId &&
+      Array.isArray(stored.answers) &&
+      stored.answers.length === 3 &&
+      stored.answers.every((answer) => Number.isInteger(answer) && answer >= 0 && answer <= 2)
+    ) {
+      return stored;
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
+function unwrapWalletResult(result, fallbackMessage) {
+  if (result && typeof result === "object" && "error" in result) {
+    throw new WalletFlowError(
+      "Approval declined",
+      result.error?.message || fallbackMessage,
+      "Nothing was signed. You can try again whenever you’re ready."
+    );
+  }
+
+  return result;
+}
+
+function normalizeWalletError(error) {
+  if (error instanceof WalletFlowError) {
+    return error;
+  }
+
+  const message = error instanceof Error ? error.message : String(error);
+  if (/timeout|inject|provider/i.test(message)) {
+    return new WalletFlowError(
+      "Open this inside Nimiq Pay",
+      "This browser can’t access the Nimiq Pay Mini App provider.",
+      "Open NimQuest from Nimiq Pay, then restart the wallet proof."
+    );
+  }
+
+  if (/denied|reject|declin|permission/i.test(message)) {
+    return new WalletFlowError(
+      "Approval declined",
+      "The wallet request was cancelled. Nothing was signed.",
+      "Read the request and try again when you’re ready."
+    );
+  }
+
+  return new WalletFlowError(
+    "Wallet proof paused",
+    "NimQuest couldn’t finish the wallet proof.",
+    "Check your connection and try again."
+  );
+}
+
+class WalletFlowError extends Error {
+  constructor(title, message, help) {
+    super(message);
+    this.title = title;
+    this.help = help;
+  }
+}
+
+function compactAddress(address) {
+  const compact = address.replace(/\s+/g, "");
+  return `${compact.slice(0, 8)}…${compact.slice(-6)}`;
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function walletShieldMarkup() {
+  return `
+    <svg viewBox="0 0 64 64" role="img" aria-label="Wallet shield">
+      <path d="M32 5 54 14v16c0 14-9 24-22 29C19 54 10 44 10 30V14L32 5Z" fill="currentColor"/>
+      <path d="M24 31.5 29.5 37 41 24.5" fill="none" stroke="#19182a" stroke-linecap="round" stroke-linejoin="round" stroke-width="5"/>
+    </svg>
+  `;
+}

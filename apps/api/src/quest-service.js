@@ -1,20 +1,16 @@
 import { ChallengeStore } from "./challenge-store.js";
 import { CompletionStore } from "./completion-store.js";
-import { findQuest, publicQuest, quests } from "./quests.js";
+import {
+  checkQuestAnswers,
+  getQuest,
+  listQuests
+} from "./quest-content-service.js";
+import { findQuest } from "./quests.js";
 import { normalizeDeviceId, normalizeWalletAddress } from "./validation.js";
 import { verifyWalletProof } from "./wallet-proof-service.js";
 
 let completionStore = new CompletionStore();
 let challengeStore = new ChallengeStore();
-
-export function listQuests() {
-  return quests.map(publicQuest);
-}
-
-export function getQuest(questId) {
-  const quest = findQuest(questId);
-  return quest ? publicQuest(quest) : null;
-}
 
 export function createCompletionChallenge({ questId, walletAddress, deviceId }) {
   if (!findQuest(questId)) {
@@ -54,31 +50,16 @@ export function gradeQuest({
   signature
 }) {
   const quest = findQuest(questId);
+  const grading = checkQuestAnswers({ questId, answers });
 
-  if (!quest) {
-    return { ok: false, status: 404, error: "Quest not found." };
+  if (!grading.ok) {
+    return grading;
   }
 
-  if (!Array.isArray(answers) || answers.length !== quest.questions.length) {
-    return { ok: false, status: 400, error: "Submit one answer for every question." };
-  }
-
-  const score = answers.filter(
-    (answer, index) => answer === quest.questions[index].answerIndex
-  ).length;
-
-  if (score !== quest.questions.length) {
+  if (!grading.passed) {
     return {
-      ok: true,
-      passed: false,
+      ...grading,
       verified: false,
-      score,
-      total: quest.questions.length,
-      feedback: quest.questions.map((question, index) => ({
-        questionId: question.id,
-        correct: answers[index] === question.answerIndex,
-        explanation: question.explanation
-      })),
       message: "Review the lesson and try again."
     };
   }
@@ -116,8 +97,8 @@ export function gradeQuest({
       passed: true,
       verified: true,
       newlyCompleted: false,
-      score,
-      total: quest.questions.length,
+      score: grading.score,
+      total: grading.total,
       proof: completionStore.get(key),
       message: "Quest was already verified for this wallet."
     };
@@ -142,8 +123,8 @@ export function gradeQuest({
     passed: true,
     verified: true,
     newlyCompleted: true,
-    score,
-    total: quest.questions.length,
+    score: grading.score,
+    total: grading.total,
     proof,
     message: "Quest completion verified."
   };
@@ -165,3 +146,5 @@ export function useCompletionStore(store) {
 export function useChallengeStore(store) {
   challengeStore = store;
 }
+
+export { checkQuestAnswers, getQuest, listQuests };

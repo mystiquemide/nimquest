@@ -87,24 +87,73 @@ Status: Done
 
 ## Checkpoint 7 - Nimiq Pay Runtime Proof
 
-Status: Next
+Status: In progress
 
-- [ ] Initialize the Mini Apps SDK.
-- [ ] Check consensus and block height.
-- [ ] Request account access and sign a backend challenge.
+- [x] Initialize the Mini Apps SDK in the Wallet Proof screen.
+- [x] Check consensus and block height.
+- [x] Request account access and sign a backend challenge.
+- [x] Serve the production frontend and API from one origin.
+- [x] Verify production deep links and absolute asset paths.
+- [x] Pass an injected-provider browser flow with a real Nimiq key and signature.
 - [ ] Verify one real completion inside Nimiq Pay.
-- [ ] Verify rejection, timeout, and browser fallback.
-- [ ] Stop and send the first screen screenshots for approval.
+- [x] Implement rejection, timeout, and browser fallback states.
+- [x] Stop and send each screen screenshot for approval.
+
+## Checkpoint 7B - Cloudflare Worker Runtime
+
+Status: Done, awaiting Cloudflare deployment
+
+- [x] Add a Cloudflare Worker API entrypoint.
+- [x] Configure Workers Static Assets with SPA deep-link routing.
+- [x] Add D1 migrations for challenges and verified completions.
+- [x] Make challenge consumption and proof insertion atomic.
+- [x] Replace incompatible Nimiq WebAssembly in Workers with Web Crypto Ed25519 verification.
+- [x] Cross-test Worker address derivation against 25 `@nimiq/core` key pairs.
+- [x] Pass 23 Node tests.
+- [x] Pass Wrangler dry-run bundling.
+- [x] Pass a full signed completion in local `workerd`.
+- [x] Push the verified source checkpoint to GitHub.
+- [ ] Create and migrate the production D1 database.
+- [ ] Deploy the Worker to public HTTPS.
+- [ ] Complete one native Nimiq Pay phone test.
 
 ## Checkpoint 8 - Screen-by-Screen Frontend
 
-Status: Pending
+Status: Done
 
-- [ ] Build Entry screen and request approval.
-- [ ] Build Quest Trail screen and request approval.
-- [ ] Build Quest Session screen and request approval.
-- [ ] Build Wallet Proof screen and request approval.
-- [ ] Build My Journey screen and request approval.
+- [x] Build and approve the landing page.
+- [x] Build and approve the Quest Trail screen.
+- [x] Build and approve the Quest Session screen.
+- [x] Build and approve the Wallet Proof screen.
+- [x] Build and approve the My Journey screen.
+
+## Checkpoint 8A - Connected Flow Polish
+
+Status: Done locally, not pushed
+
+- [x] Connect landing actions to real product routes.
+- [x] Add direct quest starts from landing previews.
+- [x] Preserve unfinished quiz answers within the browser session.
+- [x] Clear stale drafts after proof handoff and verification.
+- [x] Correct out-of-order next-quest selection.
+- [x] Remove orphaned preview code and consumer-facing documentation exits.
+- [x] Pass production build.
+- [x] Pass 17 backend tests.
+- [x] Pass full desktop and mobile browser-flow QA.
+- [x] Add `PAGE_PLAN.md`.
+
+## Checkpoint 8B - Pre-Wallet Quiz Grading
+
+Status: Done locally, not pushed
+
+- [x] Add `POST /api/grade`.
+- [x] Validate every submitted answer without exposing answer indexes.
+- [x] Show question-level correction guidance before wallet access.
+- [x] Request Nimiq Pay only after the quiz passes.
+- [x] Keep completion-time server grading as a second trust check.
+- [x] Pass production build and 20 backend tests.
+- [x] Pass desktop and mobile correction-flow browser QA.
+- [x] Send correction-state screenshots for approval.
 
 ## Checkpoint 9 - Submission Package
 
