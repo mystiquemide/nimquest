@@ -4,13 +4,13 @@ Learn Nimiq by doing, then prove you learned it with your own wallet.
 
 [![CI](https://github.com/mystiquemide/nimquest/actions/workflows/ci.yml/badge.svg)](https://github.com/mystiquemide/nimquest/actions/workflows/ci.yml)
 
-[Open the live Mini App](https://nimquest.artistic-chip.workers.dev) · [Watch the demo video](https://youtu.be/iSwB3MyyLZM) · [X submission post](https://x.com/mystiquemide/status/2082365421659820280?s=46) · [In-app docs](https://nimquest.artistic-chip.workers.dev/docs) · [Leaderboard](https://nimquest.artistic-chip.workers.dev/leaderboard)
+[Open the live Mini App](https://nimquest.artistic-chip.workers.dev) · [Watch the product walkthrough](https://youtu.be/iSwB3MyyLZM) · [Launch post](https://x.com/mystiquemide/status/2082365421659820280?s=46) · [In-app docs](https://nimquest.artistic-chip.workers.dev/docs) · [Leaderboard](https://nimquest.artistic-chip.workers.dev/leaderboard)
 
-## Demo video
+## Product walkthrough
 
-[![Watch the NimQuest demo video](public/og-image.png)](https://youtu.be/iSwB3MyyLZM)
+[![Watch the NimQuest product walkthrough](public/og-image.png)](https://youtu.be/iSwB3MyyLZM)
 
-Submission thread: [MystiqueMide on X](https://x.com/mystiquemide/status/2082365421659820280?s=46).
+Launch post: [MystiqueMide on X](https://x.com/mystiquemide/status/2082365421659820280?s=46).
 
 ![NimQuest landing page](docs/assets/hero.png)
 
@@ -62,6 +62,24 @@ Worker verifies Ed25519 signature
 D1 stores verified completion
   ↓
 Masked wallet appears on leaderboard
+```
+
+## Architecture
+
+```mermaid
+flowchart TD
+    A[Learner opens NimQuest] --> B[Quest lesson and quiz UI]
+    B --> C[POST /api/grade]
+    C --> D[Worker grades answers server-side]
+    D -->|pass| E[Wallet proof screen]
+    D -->|fail| B
+    E --> F[Nimiq Pay Mini App provider]
+    F --> G[Approve account access]
+    G --> H[Sign one-time completion challenge]
+    H --> I[POST /api/complete]
+    I --> J[Worker verifies Ed25519 signature]
+    J --> K[Cloudflare D1 stores receipt]
+    K --> L[Journey and masked leaderboard update]
 ```
 
 ## Integrations
@@ -142,7 +160,7 @@ Run them all: `npm test` (25 tests).
 - Public quests API: https://nimquest.artistic-chip.workers.dev/api/quests (20 quests, no answer keys)
 - Live leaderboard API: https://nimquest.artistic-chip.workers.dev/api/leaderboard
 - Storage: Cloudflare D1, three applied migrations in `migrations/`
-- Deploys automatically from `main`, current commit `7866b5f`
+- Deploys automatically from `main`.
 - No smart contract. Completions are wallet-signed records in D1, not on-chain writes.
 
 Do not trust the screenshots. The leaderboard is not seeded, verify the real signed completions yourself:
@@ -170,6 +188,15 @@ How NimQuest compares to the obvious alternatives, capability by capability.
 | Verifiable public receipt | Yes | No | No | Partial | Yes |
 
 The pattern: a docs page teaches but proves nothing, a browser quiz proves something you can cheat, an airdrop farm pays for clicks and invites sybils, and an on-chain contract proves control but charges gas for every completion. NimQuest keeps the proof and drops the gas, the cheating surface, and the payout farm.
+
+## Honest limitations
+
+- The code is unaudited.
+- Completions are wallet-signed records in Cloudflare D1, not on-chain writes.
+- No NIM moves during quest completion.
+- Rewards are not funded or distributed.
+- Public leaderboard participation is mandatory after verification.
+- Nimiq Pay signing needs the Nimiq Pay Mini App provider.
 
 ## What's real
 
