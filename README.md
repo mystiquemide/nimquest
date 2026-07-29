@@ -32,6 +32,17 @@ You start a quest freely and read a short sourced lesson. The quiz is graded ser
 | Duplicate the same quest | Returns the existing proof, no double record |
 | Verified completion | Joins the mandatory masked-wallet leaderboard |
 
+## Integrations
+
+| Integration | How NimQuest uses it |
+|---|---|
+| Nimiq Pay Mini Apps SDK (`@nimiq/mini-app-sdk`) | Requests account access with `listAccounts()`, confirms readiness with `isConsensusEstablished()` and `getBlockNumber()`, and signs the completion message with `sign()` |
+| Nimiq core (`@nimiq/core`) | Verifies the Ed25519 signature and derives the signer address from the public key |
+| Cloudflare Workers with Static Assets | Serves the app and the API, with quiz grading and signature checks running at the edge |
+| Cloudflare D1 | Stores verified completions, one-time challenges, feedback, and rate counters |
+
+Nimiq Pay keeps private keys and recovery data. NimQuest receives only the approved public account, public key, and signature. Full flow in the live [integration docs](https://nimquest.artistic-chip.workers.dev/docs/integration).
+
 ## Product screens
 
 Quest trail with learning paths and the recommended starter quest:
