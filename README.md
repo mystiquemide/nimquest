@@ -32,16 +32,43 @@ You start a quest freely and read a short sourced lesson. The quiz is graded ser
 | Duplicate the same quest | Returns the existing proof, no double record |
 | Verified completion | Joins the mandatory masked-wallet leaderboard |
 
+## Why Nimiq Pay matters
+
+Nimiq Pay turns NimQuest from a quiz into wallet-backed proof of learning. NimQuest teaches and grades; Nimiq Pay lets the learner prove control of the wallet that claims the completion.
+
+After a learner passes the server-graded quiz, NimQuest opens the Nimiq Pay Mini App provider, confirms that consensus is established, asks the learner to approve account access, and then requests one signed message. That message is bound to the quest, wallet, nonce, issue time, and five-minute expiry.
+
+Nimiq Pay keeps the private keys, recovery data, and approval UX. NimQuest receives only what it needs to verify the proof: the selected public account, public key, signature, and signed message result. Signing proves wallet control. It does not send NIM.
+
+```text
+Learn quest
+  ↓
+Server grades answers
+  ↓
+Nimiq Pay approves account access
+  ↓
+Worker creates one-time challenge
+  ↓
+Nimiq Pay signs the challenge
+  ↓
+Worker verifies Ed25519 signature
+  ↓
+D1 stores verified completion
+  ↓
+Masked wallet appears on leaderboard
+```
+
 ## Integrations
 
 | Integration | How NimQuest uses it |
 |---|---|
-| Nimiq Pay Mini Apps SDK (`@nimiq/mini-app-sdk`) | Requests account access with `listAccounts()`, confirms readiness with `isConsensusEstablished()` and `getBlockNumber()`, and signs the completion message with `sign()` |
+| Nimiq Pay Mini Apps SDK (`@nimiq/mini-app-sdk`) | Provides the native wallet context. NimQuest initializes the provider, checks consensus, reads the selected public account, and requests the learner’s signature only after the quiz passes. |
+| Nimiq Pay signing UX | Shows the learner the exact completion message before approval. The signature proves wallet control without sending NIM or exposing private keys. |
 | Nimiq core (`@nimiq/core`) | Verifies the Ed25519 signature and derives the signer address from the public key |
 | Cloudflare Workers with Static Assets | Serves the app and the API, with quiz grading and signature checks running at the edge |
 | Cloudflare D1 | Stores verified completions, one-time challenges, feedback, and rate counters |
 
-Nimiq Pay keeps private keys and recovery data. NimQuest receives only the approved public account, public key, and signature. Full flow in the live [integration docs](https://nimquest.artistic-chip.workers.dev/docs/integration).
+Full wallet flow in the live [integration docs](https://nimquest.artistic-chip.workers.dev/docs/integration).
 
 ## Product screens
 
