@@ -4,11 +4,13 @@ Learn Nimiq by doing, then prove you learned it with your own wallet.
 
 [![CI](https://github.com/mystiquemide/nimquest/actions/workflows/ci.yml/badge.svg)](https://github.com/mystiquemide/nimquest/actions/workflows/ci.yml)
 
-[Open the live Mini App](https://nimquest.artistic-chip.workers.dev) · [Watch the demo video](https://youtu.be/iSwB3MyyLZM) · [In-app docs](https://nimquest.artistic-chip.workers.dev/docs) · [Leaderboard](https://nimquest.artistic-chip.workers.dev/leaderboard)
+[Open the live Mini App](https://nimquest.artistic-chip.workers.dev) · [Watch the demo video](https://youtu.be/iSwB3MyyLZM) · [X submission post](https://x.com/mystiquemide/status/2082365421659820280?s=46) · [In-app docs](https://nimquest.artistic-chip.workers.dev/docs) · [Leaderboard](https://nimquest.artistic-chip.workers.dev/leaderboard)
 
 ## Demo video
 
 [![Watch the NimQuest demo video](public/og-image.png)](https://youtu.be/iSwB3MyyLZM)
+
+Submission thread: [MystiqueMide on X](https://x.com/mystiquemide/status/2082365421659820280?s=46).
 
 ![NimQuest landing page](docs/assets/hero.png)
 
