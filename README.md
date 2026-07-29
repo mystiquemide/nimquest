@@ -109,7 +109,7 @@ curl -s https://nimquest.artistic-chip.workers.dev/api/leaderboard
 
 ## Real usage
 
-The leaderboard is live D1 data, not seeded mock rows. At the time of writing it shows two distinct masked wallets, each with two verified quests, the earliest proof timestamped 2026-07-28. The first Meet Nimiq proof was signed natively inside Nimiq Pay on an iPhone. Query it yourself with the leaderboard curl above.
+The leaderboard is live D1 data, not seeded mock rows. At the time of writing it shows four distinct masked wallets, with the leader at four verified quests and the earliest proof timestamped 2026-07-28. The first Meet Nimiq proof was signed natively inside Nimiq Pay on an iPhone. Query it yourself with the leaderboard curl above.
 
 ## Benchmarks
 
@@ -193,7 +193,7 @@ Write routes reject unsupported browser origins. D1 rate counters limit grading,
 
 - [In-app documentation](https://nimquest.artistic-chip.workers.dev/docs)
 - [Privacy Notice](https://nimquest.artistic-chip.workers.dev/privacy) · [Terms of Use](https://nimquest.artistic-chip.workers.dev/terms)
-- [Architecture](ARCHITECTURE.md) · [Nimiq Pay integration](INTEGRATION.md) · [Product requirements](PRD.md) · [Security](docs/SECURITY.md) · [Contributing](CONTRIBUTING.md)
+- [Architecture](https://nimquest.artistic-chip.workers.dev/docs/architecture) · [Nimiq Pay integration](https://nimquest.artistic-chip.workers.dev/docs/integration) · [Security](docs/SECURITY.md)
 
 ## License
 
