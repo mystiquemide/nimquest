@@ -18,7 +18,7 @@ Launch post: [MystiqueMide on X](https://x.com/mystiquemide/status/2082365421659
 
 Every time I onboard to a new chain, the "learning" is read-only. I skim a docs page, nod, and close the tab with nothing to show I understood any of it. Quizzes that live in the browser are worse, the answers ship in the page and you can cheat in five seconds.
 
-So I built the opposite. You pass a quiz that is graded on the server, then you sign a one-time message with the wallet you actually control. The receipt is the proof. The real receipt so far: one Meet Nimiq completion signed inside Nimiq Pay on an iPhone, stored in D1, visible on the live leaderboard. No NIM moved.
+So I built the opposite. You pass a quiz that is graded on the server, then you sign a one-time message with the wallet you actually control. The receipt is the proof. The real receipt so far: one Meet Nimiq completion signed inside Nimiq Pay on an iPhone, stored in D1, visible on the live leaderboard.
 
 ## One-liner
 
@@ -26,7 +26,7 @@ I did not build a token faucet, an airdrop farm, or a browser quiz you can cheat
 
 ## How it works
 
-You start a quest freely and read a short sourced lesson. The quiz is graded server-side, so the answer key is never in the browser bundle. Only after you pass do you reach the wallet step. You sign a one-time, wallet-bound, expiring message in Nimiq Pay, the Worker verifies the signature and derives the signer address, and the completion is stored in Cloudflare D1. Signing proves control. It does not send NIM.
+You start a quest freely and read a short sourced lesson. The quiz is graded server-side, so the answer key is never in the browser bundle. Only after you pass do you reach the wallet step. You sign a one-time, wallet-bound, expiring message in Nimiq Pay, the Worker verifies the signature and derives the signer address, and the completion is stored in Cloudflare D1. Signing with your NIM wallet through Nimiq Pay is what proves control.
 
 | Operation | Result |
 |---|---|
@@ -34,17 +34,17 @@ You start a quest freely and read a short sourced lesson. The quiz is graded ser
 | Submit quiz answers | Graded server-side, answer key stays hidden |
 | Reach the wallet step | Only after the quiz passes |
 | Request a signing challenge | Wallet-bound, five-minute expiry, single-use |
-| Sign the completion message | Signature verified, address derived, no NIM sent |
+| Sign the completion message | Signature verified, address derived from your NIM wallet |
 | Duplicate the same quest | Returns the existing proof, no double record |
 | Verified completion | Joins the mandatory masked-wallet leaderboard |
 
 ## Why Nimiq Pay matters
 
-Nimiq Pay turns NimQuest from a quiz into wallet-backed proof of learning. NimQuest teaches and grades; Nimiq Pay lets the learner prove control of the wallet that claims the completion.
+Nimiq Pay turns NimQuest from a quiz into wallet-backed proof of learning. NimQuest teaches and grades; Nimiq Pay lets the learner prove control of the wallet that claims the completion. The integration runs on the NIM wallet: NimQuest reads the learner's NIM account through the Nimiq Pay Mini App provider and drives that wallet to sign every completion.
 
 After a learner passes the server-graded quiz, NimQuest opens the Nimiq Pay Mini App provider, confirms that consensus is established, asks the learner to approve account access, and then requests one signed message. That message is bound to the quest, wallet, nonce, issue time, and five-minute expiry.
 
-Nimiq Pay keeps the private keys, recovery data, and approval UX. NimQuest receives only what it needs to verify the proof: the selected public account, public key, signature, and signed message result. Signing proves wallet control. It does not send NIM.
+Nimiq Pay keeps the private keys, recovery data, and approval UX. NimQuest receives only what it needs to verify the proof: the selected public account, public key, signature, and signed message result. Signing proves control of the NIM wallet.
 
 ```text
 Learn quest
@@ -87,7 +87,7 @@ flowchart TD
 | Integration | How NimQuest uses it |
 |---|---|
 | Nimiq Pay Mini Apps SDK (`@nimiq/mini-app-sdk`) | Provides the native wallet context. NimQuest initializes the provider, checks consensus, reads the selected public account, and requests the learner’s signature only after the quiz passes. |
-| Nimiq Pay signing UX | Shows the learner the exact completion message before approval. The signature proves wallet control without sending NIM or exposing private keys. |
+| Nimiq Pay signing UX | Shows the learner the exact completion message before approval. The signature proves control of the NIM wallet without exposing private keys. |
 | Nimiq core (`@nimiq/core`) | Verifies the Ed25519 signature and derives the signer address from the public key |
 | Cloudflare Workers with Static Assets | Serves the app and the API, with quiz grading and signature checks running at the edge |
 | Cloudflare D1 | Stores verified completions, one-time challenges, feedback, and rate counters |
@@ -104,7 +104,7 @@ Verified wallet leaderboard, masked labels, ranked by verified quest count:
 
 ![Leaderboard](docs/assets/leaderboard.png)
 
-Wallet proof step, no NIM moves and the quiz gate is enforced before signing:
+Wallet proof step, the quiz gate is enforced before signing:
 
 ![Wallet proof step](docs/assets/wallet-proof.png)
 
@@ -119,7 +119,7 @@ Native path (full proof):
 1. Open [nimquest.artistic-chip.workers.dev](https://nimquest.artistic-chip.workers.dev) inside Nimiq Pay.
 2. Start Meet Nimiq, read the lesson, answer the three questions.
 3. Select Verify with Nimiq Pay, approve account access, sign the one-time message.
-4. Open My Journey and Leaderboard. The quest shows verified, the count goes up, your masked wallet joins the board. No NIM moves.
+4. Open My Journey and Leaderboard. The quest shows verified, the count goes up, your masked wallet joins the board.
 
 No-wallet path (verify the server logic without signing):
 
@@ -182,7 +182,7 @@ How NimQuest compares to the obvious alternatives, capability by capability.
 | Records that you actually learned | Yes | No | Partial | No | Yes |
 | Answers hidden from the browser | Yes | n/a | No | n/a | Varies |
 | Proves wallet control | Yes | No | No | Partial | Yes |
-| No gas or NIM spent to complete | Yes | Yes | Yes | No | No |
+| No gas or fees to complete | Yes | Yes | Yes | No | No |
 | Resistant to payout sybil farming | Yes | Yes | Yes | No | Varies |
 | Runs natively in Nimiq Pay | Yes | No | No | Varies | Varies |
 | Verifiable public receipt | Yes | No | No | Partial | Yes |
@@ -193,8 +193,7 @@ The pattern: a docs page teaches but proves nothing, a browser quiz proves somet
 
 - The code is unaudited.
 - Completions are wallet-signed records in Cloudflare D1, not on-chain writes.
-- No NIM moves during quest completion.
-- Rewards are not funded or distributed.
+- Completion is a signed NIM-wallet operation through Nimiq Pay, not a token transfer, so no NIM leaves your wallet.
 - Public leaderboard participation is mandatory after verification.
 - Nimiq Pay signing needs the Nimiq Pay Mini App provider.
 
@@ -225,9 +224,9 @@ Every item on this roadmap stays gated by real usage data and real funding. Noth
 
 ## What's real
 
-The shipped path is real: the quiz grading, the Nimiq signature verification, the address derivation, the D1 persistence, the leaderboard, and the abuse controls all run in this repository. There are no mocked values in the completion flow. Verification owns the pass/fail decision through deterministic code, there is no model deciding truth. What is pending: funded rewards and wider on-device signing coverage.
+The shipped path is real: the quiz grading, the Nimiq signature verification, the address derivation, the D1 persistence, the leaderboard, and the abuse controls all run in this repository. There are no mocked values in the completion flow. Verification owns the pass/fail decision through deterministic code, there is no model deciding truth. What is pending: wider on-device signing coverage.
 
-Boundaries, stated plainly: the code is unaudited, completions are wallet-signed records in Cloudflare D1 rather than on-chain writes, no NIM moves during completion, and the public leaderboard is mandatory after verification with no opt-out.
+Boundaries, stated plainly: the code is unaudited, completions are wallet-signed records in Cloudflare D1 rather than on-chain writes, and the public leaderboard is mandatory after verification with no opt-out.
 
 Verify it:
 

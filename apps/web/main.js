@@ -481,7 +481,7 @@ document.querySelector("#app").innerHTML = `
         <p>Six featured quests give you a quick start. The full trail contains 20 wallet-verifiable Nimiq skills.</p>
       </div>
       <div class="quest-grid">${questCards}</div>
-      <p class="quest-note"><span aria-hidden="true">✦</span> Every quest is free. No NIM payment is required to learn or create a completion proof.</p>
+      <p class="quest-note"><span aria-hidden="true">✦</span> Every quest is free. Learning and creating a completion proof never asks you for a payment.</p>
     </section>
 
     <section class="section safety" id="safety">
@@ -995,7 +995,7 @@ function renderQuestSession(questId) {
         </ol>
         <div class="session-map__safety">
           <span aria-hidden="true">✦</span>
-          <p><b>No NIM required</b>This quest never asks for a payment.</p>
+          <p><b>Free to complete</b>This quest never asks for a payment.</p>
         </div>
       </aside>
 
@@ -1362,7 +1362,7 @@ function renderWalletProof(questId) {
         <div class="proof-intro__copy">
           <p class="eyebrow eyebrow--large">Final step · Quest ${quest.number}</p>
           <h1>Turn your learning into <span class="word-highlight word-highlight--yellow">wallet proof.</span></h1>
-          <p>Connect Nimiq Pay and approve one clear message. Your wallet signs the completion, NimQuest verifies it, and no NIM moves.</p>
+          <p>Connect Nimiq Pay and approve one clear message. Your NIM wallet signs the completion and NimQuest verifies it.</p>
 
           <div class="proof-promises" aria-label="Wallet proof guarantees">
             <span><i>0</i><b>NIM sent</b></span>
@@ -1441,7 +1441,6 @@ function renderWalletProof(questId) {
         <div class="proof-receipt">
           <span>Status <b>Verified</b></span>
           <span>Payment <b>None</b></span>
-          <span>Reward <b>Coming soon</b></span>
         </div>
         <div class="completion-feedback">
           <div><p class="eyebrow">One quick check</p><h3>How clear was this quest?</h3></div>
@@ -1665,14 +1664,13 @@ async function renderCompletionDetail(proofKey) {
         <p class="eyebrow">Wallet-verified completion</p>
         <h1>${quest.title}</h1>
         <p class="completion-card__lead">This quest was completed and verified with a one-time Nimiq wallet signature.</p>
-        <div class="completion-card__status"><span aria-hidden="true">✓</span><div><b>Verified</b><small>No NIM was sent</small></div></div>
+        <div class="completion-card__status"><span aria-hidden="true">✓</span><div><b>Verified</b><small>Signed with your NIM wallet</small></div></div>
         <dl>
           <div><dt>Quest</dt><dd>${quest.number} · ${quest.title}</dd></div>
           <div><dt>Wallet</dt><dd>${escapeHtml(compactAddress(proof.walletAddress))}</dd></div>
           <div><dt>Completed</dt><dd>${formatCompletionDate(proof.completedAt)}</dd></div>
           <div><dt>Method</dt><dd>Nimiq signed message</dd></div>
           <div><dt>Receipt ID</dt><dd>${escapeHtml(proof.key)}</dd></div>
-          <div><dt>Reward</dt><dd>Coming soon</dd></div>
         </dl>
         <div class="completion-card__actions">
           <button class="button" type="button" data-share-detail>Share verified proof</button>
@@ -1864,7 +1862,6 @@ function renderJourney() {
         <div class="journey-truth__receipt">
           <span>Status <b>${latestCompletion ? "Verified" : "Not started"}</b></span>
           <span>Payment <b>None</b></span>
-          <span>Reward <b>Coming soon</b></span>
         </div>
       </section>
     </main>
@@ -1879,7 +1876,6 @@ function renderJourney() {
         <div><dt>Completed</dt><dd data-proof-date></dd></div>
         <div><dt>Method</dt><dd>Signed message</dd></div>
         <div><dt>Payment</dt><dd>None</dd></div>
-        <div><dt>Reward</dt><dd>Coming soon</dd></div>
       </dl>
       <div class="journey-proof-dialog__actions">
         <a class="button button--small" data-proof-link href="#">Open receipt</a>
@@ -2312,7 +2308,7 @@ function renderLegalPage(page) {
       </section>
       <section>
         <h2>Rewards</h2>
-        <p>Quest rewards are coming soon. NimQuest does not currently promise, fund, or distribute NIM or any other asset for quest completion.</p>
+        <p>NimQuest's reward is the proof itself. Each completion is a record your NIM wallet signed through Nimiq Pay, verified server-side and shown on the public leaderboard. NimQuest does not run a token payout, so there is nothing to farm.</p>
       </section>
       <section>
         <h2>Acceptable use</h2>
@@ -2383,7 +2379,7 @@ const documentationPages = {
       <section class="docs-section">
         <p class="eyebrow">Product truth</p>
         <h2>What the proof means</h2>
-        <p>A verified completion means that the learner passed a server-graded quiz and approved a one-time message with the selected Nimiq wallet. The signature does not send NIM. The completion record is stored in Cloudflare D1.</p>
+        <p>A verified completion means that the learner passed a server-graded quiz and approved a one-time message with the selected Nimiq wallet. The signature proves control of that NIM wallet through Nimiq Pay. The completion record is stored in Cloudflare D1.</p>
         <div class="docs-facts">
           <article><b>20</b><span>sourced quests</span></article>
           <article><b>5 min</b><span>challenge expiry</span></article>
