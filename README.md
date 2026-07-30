@@ -198,6 +198,31 @@ The pattern: a docs page teaches but proves nothing, a browser quiz proves somet
 - Public leaderboard participation is mandatory after verification.
 - Nimiq Pay signing needs the Nimiq Pay Mini App provider.
 
+## Roadmap
+
+What is next for NimQuest, in priority order.
+
+### Short-term
+
+- **Source answer hardening.** Vary the canonical answer index per question in the source catalog so the quiz grading layer is fully independent of the UI shuffle that already shipped.
+- **Custom domain.** Move from `nimquest.artistic-chip.workers.dev` to a dedicated domain.
+- **Wider on-device signing coverage.** Grow the live leaderboard beyond the initial native Nimiq Pay completions into double-digit verified wallets.
+
+### Medium-term (Cycle II)
+
+- **Funded quest rewards.** Attach real NIM payouts to verified completions, with transaction receipts stored alongside the proof. Gated on a confirmed payout design and funding source. No reward promises until the rail is real.
+- **Community progress.** A `/community` surface showing privacy-safe aggregate learning stats built from production D1 data — quests completed, wallets verified, paths most travelled. No individual exposure beyond the existing masked leaderboard.
+- **Deeper quest catalog.** More advanced and technical quests, driven by real learner data on which concepts need the most reinforcement.
+
+### Long-term (ecosystem)
+
+- **Sponsored quest campaigns.** Let Nimiq projects and builders fund a quest pool with verifiable completion claims, so learners earn from the sponsor and the sponsor gets proof of education.
+- **Quest authoring tools.** A publishing flow so ecosystem contributors can write, review, and ship new quests without touching the core repository.
+- **Merchant and builder onboarding.** Purpose-built quest tracks for Nimiq Pay merchants and Mini App developers.
+- **Multilingual quests.** Community-contributed translations so NimQuest works for Nimiq users regardless of language.
+
+Every item on this roadmap stays gated by real usage data and real funding. Nothing ships as a promise without the rail to back it.
+
 ## What's real
 
 The shipped path is real: the quiz grading, the Nimiq signature verification, the address derivation, the D1 persistence, the leaderboard, and the abuse controls all run in this repository. There are no mocked values in the completion flow. Verification owns the pass/fail decision through deterministic code, there is no model deciding truth. What is pending: funded rewards and wider on-device signing coverage.
