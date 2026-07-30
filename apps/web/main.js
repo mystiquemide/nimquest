@@ -408,7 +408,7 @@ document.querySelector("#app").innerHTML = `
         <div class="hero__proof" aria-label="Product qualities">
           <span><b>${quests.length}</b> starter quests</span>
           <span><b>60s</b> each</span>
-          <span><b>0</b> NIM required</span>
+          <span><b>1</b> NIM wallet signature</span>
         </div>
       </div>
 
@@ -2383,7 +2383,7 @@ const documentationPages = {
         <div class="docs-facts">
           <article><b>20</b><span>sourced quests</span></article>
           <article><b>5 min</b><span>challenge expiry</span></article>
-          <article><b>0 NIM</b><span>required for proof</span></article>
+          <article><b>1</b><span>NIM wallet signature</span></article>
         </div>
       </section>
     `
