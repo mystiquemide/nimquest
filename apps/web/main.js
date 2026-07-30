@@ -4,6 +4,12 @@ import brandMark from "./assets/nimquest-mark.svg";
 import { init } from "@nimiq/mini-app-sdk";
 import { catalogQuests } from "./quest-catalog.generated.js";
 
+// NimQuest tip jar. Set this to NimQuest's own Nimiq (NIM) address to turn on the
+// optional "Send a NIM tip" button, a real NIM transaction through Nimiq Pay.
+// Leave empty and the tip UI stays hidden, so nothing breaks until an address is set.
+const NIMQUEST_TIP_ADDRESS = "";
+const NIMQUEST_TIP_NIM = 1;
+
 const questPresentation = [
   {
     id: "meet-nimiq",
@@ -1451,7 +1457,31 @@ function renderWalletProof(questId) {
           </div>
           <p data-feedback-status></p>
         </div>
+        ${NIMQUEST_TIP_ADDRESS ? `
+        <div class="completion-tip">
+          <div><p class="eyebrow">Optional</p><h3>Send a NIM tip</h3></div>
+          <p>Liked NimQuest? Send a small NIM tip through Nimiq Pay. Quests stay free, this is just a thank you.</p>
+          <button class="button button--quiet" type="button" data-nim-tip>Send ${NIMQUEST_TIP_NIM} NIM tip</button>
+          <p data-tip-status></p>
+        </div>` : ""}
       `;
+      const tipButton = gate.querySelector("[data-nim-tip]");
+      if (tipButton) {
+        tipButton.addEventListener("click", async () => {
+          const status = gate.querySelector("[data-tip-status]");
+          tipButton.disabled = true;
+          status.textContent = "Open Nimiq Pay and approve the tip…";
+          try {
+            await sendNimTip(NIMQUEST_TIP_NIM);
+            status.textContent = "Thanks. Your NIM tip was sent.";
+            tipButton.textContent = "Tip sent ✓";
+          } catch (error) {
+            const walletError = error instanceof WalletFlowError ? error : normalizeWalletError(error);
+            status.textContent = walletError.message;
+            tipButton.disabled = false;
+          }
+        });
+      }
       gate.querySelectorAll("[data-feedback-rating]").forEach((button) => {
         button.addEventListener("click", async () => {
           const status = gate.querySelector("[data-feedback-status]");
@@ -2219,6 +2249,56 @@ class WalletFlowError extends Error {
     super(message);
     this.title = title;
     this.help = help;
+  }
+}
+
+// Sends a real NIM tip from the learner's wallet to NIMQUEST_TIP_ADDRESS through
+// Nimiq Pay. Optional and isolated from the completion flow, so a failure here
+// never affects a verified proof. Value is in Lunas (1 NIM = 100000 Lunas).
+async function sendNimTip(amountNim) {
+  if (!NIMQUEST_TIP_ADDRESS) {
+    throw new WalletFlowError(
+      "Tips not available yet",
+      "NimQuest hasn’t set a tip address yet.",
+      "Check back soon."
+    );
+  }
+
+  const lunas = Math.round(Number(amountNim) * 1e5);
+  if (!Number.isFinite(lunas) || lunas <= 0) {
+    throw new WalletFlowError(
+      "Invalid tip amount",
+      "The tip amount wasn’t a positive number of NIM.",
+      "Pick a small amount and try again."
+    );
+  }
+
+  try {
+    const nimiq = await init({ timeout: 5000 });
+    const consensus = await nimiq.isConsensusEstablished();
+    if (!consensus) {
+      throw new WalletFlowError(
+        "Network still syncing",
+        "Nimiq Pay hasn’t established network consensus yet.",
+        "Wait a moment, then try again."
+      );
+    }
+
+    const accounts = unwrapWalletResult(await nimiq.listAccounts(), "Account access was rejected.");
+    if (!Array.isArray(accounts) || accounts.length === 0) {
+      throw new WalletFlowError(
+        "No Nimiq account found",
+        "Nimiq Pay didn’t return an account to send the tip from.",
+        "Create or select a Nimiq account, then try again."
+      );
+    }
+
+    return unwrapWalletResult(
+      await nimiq.sendBasicTransaction({ recipient: NIMQUEST_TIP_ADDRESS, value: lunas }),
+      "The tip transaction was rejected."
+    );
+  } catch (error) {
+    throw normalizeWalletError(error);
   }
 }
 
