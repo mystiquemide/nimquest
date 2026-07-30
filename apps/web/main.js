@@ -7,7 +7,7 @@ import { catalogQuests } from "./quest-catalog.generated.js";
 // NimQuest tip jar. Set this to NimQuest's own Nimiq (NIM) address to turn on the
 // optional "Send a NIM tip" button, a real NIM transaction through Nimiq Pay.
 // Leave empty and the tip UI stays hidden, so nothing breaks until an address is set.
-const NIMQUEST_TIP_ADDRESS = "";
+const NIMQUEST_TIP_ADDRESS = "NQ20 2U0V Y927 PC3M 33GM E96Y 1J2R RL3P 8CVD";
 const NIMQUEST_TIP_NIM = 1;
 
 const questPresentation = [
