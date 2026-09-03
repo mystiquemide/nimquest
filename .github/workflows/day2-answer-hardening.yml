@@ -190,6 +190,9 @@ jobs:
       - name: Regenerate browser catalog
         run: npm run generate:web-catalog
 
+      - name: Build frontend
+        run: npm run build:web
+
       - name: Run unit and API tests
         run: npm test
 
