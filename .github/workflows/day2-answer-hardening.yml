@@ -1,0 +1,204 @@
+name: Apply Day 2 answer hardening
+
+on:
+  push:
+    branches:
+      - september-dev
+
+permissions:
+  contents: write
+
+jobs:
+  harden:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Harden quiz answer ordering and tests
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path, old, new):
+              file = Path(path)
+              text = file.read_text()
+              if old not in text:
+                  raise SystemExit(f"Expected text not found in {path}: {old[:100]!r}")
+              file.write_text(text.replace(old, new, 1))
+
+          replace_once(
+              "apps/api/src/quests.js",
+              "export const quests = [",
+              "const authoredQuests = ["
+          )
+
+          replace_once(
+              "apps/api/src/quests.js",
+              '''\n];\n\nexport function findQuest(questId) {\n  return quests.find((quest) => quest.id === questId);\n}\n\nexport function publicQuest(quest) {\n  return {\n    ...quest,\n    questions: quest.questions.map(({ answerIndex, ...question }) => question)\n  };\n}\n''',
+              '''\n];\n\nexport const quests = authoredQuests.map((quest) => ({\n  ...quest,\n  questions: quest.questions.map((question) => hardenQuestionOrder(quest.id, question))\n}));\n\nfunction hardenQuestionOrder(questId, question) {\n  const order = stablePermutation(\n    question.options.length,\n    `${questId}:${question.id}:nimquest-answer-order-v1`\n  );\n\n  return {\n    ...question,\n    options: order.map((index) => question.options[index]),\n    answerIndex: order.indexOf(question.answerIndex)\n  };\n}\n\nfunction stablePermutation(length, seedText) {\n  const order = Array.from({ length }, (_, index) => index);\n  let state = hashSeed(seedText);\n\n  for (let index = order.length - 1; index > 0; index -= 1) {\n    state = (Math.imul(state, 1664525) + 1013904223) >>> 0;\n    const swapIndex = state % (index + 1);\n    [order[index], order[swapIndex]] = [order[swapIndex], order[index]];\n  }\n\n  return order;\n}\n\nfunction hashSeed(value) {\n  let hash = 2166136261;\n  for (let index = 0; index < value.length; index += 1) {\n    hash ^= value.charCodeAt(index);\n    hash = Math.imul(hash, 16777619);\n  }\n  return hash >>> 0;\n}\n\nexport function findQuest(questId) {\n  return quests.find((quest) => quest.id === questId);\n}\n\nexport function publicQuest(quest) {\n  return {\n    ...quest,\n    questions: quest.questions.map(({ answerIndex, explanation, ...question }) => question)\n  };\n}\n'''
+          )
+
+          replace_once(
+              "apps/api/test/quest-service.test.js",
+              'import { normalizeWalletAddress } from "../src/validation.js";',
+              'import { findQuest, quests as canonicalQuests } from "../src/quests.js";\nimport { normalizeWalletAddress } from "../src/validation.js";'
+          )
+          replace_once(
+              "apps/api/test/quest-service.test.js",
+              '    assert.equal("answerIndex" in quests[0].questions[0], false);\n    assert.match(quests[0].sourceUrl, /^https:\\/\\/nimiq/);',
+              '    assert.equal("answerIndex" in quests[0].questions[0], false);\n    assert.equal("explanation" in quests[0].questions[0], false);\n    assert.match(quests[0].sourceUrl, /^https:\\/\\/nimiq/);'
+          )
+          replace_once(
+              "apps/api/test/quest-service.test.js",
+              '''  it("returns one public quest with answer explanations", () => {\n    const quest = getQuest("meet-nimiq");\n\n    assert.equal(quest.id, "meet-nimiq");\n    assert.equal(typeof quest.questions[0].explanation, "string");\n    assert.equal("answerIndex" in quest.questions[0], false);\n  });\n''',
+              '''  it("returns one public quest without answer metadata", () => {\n    const quest = getQuest("meet-nimiq");\n\n    assert.equal(quest.id, "meet-nimiq");\n    assert.equal("answerIndex" in quest.questions[0], false);\n    assert.equal("explanation" in quest.questions[0], false);\n  });\n\n  it("distributes canonical correct answers across option positions", () => {\n    const answerIndexes = canonicalQuests.flatMap((quest) =>\n      quest.questions.map((question) => question.answerIndex)\n    );\n\n    assert.deepEqual([...new Set(answerIndexes)].sort(), [0, 1, 2]);\n    assert.ok(answerIndexes.some((answerIndex) => answerIndex !== 0));\n  });\n'''
+          )
+          replace_once(
+              "apps/api/test/quest-service.test.js",
+              '      answers: [1, 0, 0],',
+              '      answers: wrongAnswers("meet-nimiq"),'
+          )
+          replace_once(
+              "apps/api/test/quest-service.test.js",
+              '''  it("grades answers before wallet proof without exposing answer indexes", () => {\n    const failed = checkQuestAnswers({\n      questId: "meet-nimiq",\n      answers: [0, 1, 0]\n    });\n    const passed = checkQuestAnswers({\n      questId: "meet-nimiq",\n      answers: [0, 0, 0]\n    });\n\n    assert.equal(failed.passed, false);\n    assert.equal(failed.score, 2);\n    assert.equal(failed.feedback[1].correct, false);\n    assert.equal("answerIndex" in failed.feedback[1], false);\n    assert.equal(passed.passed, true);\n  });\n''',
+              '''  it("grades answers before wallet proof without exposing answer indexes", () => {\n    const correct = correctAnswers("meet-nimiq");\n    const failedAnswers = [...correct];\n    const secondQuestion = findQuest("meet-nimiq").questions[1];\n    failedAnswers[1] = (failedAnswers[1] + 1) % secondQuestion.options.length;\n\n    const failed = checkQuestAnswers({\n      questId: "meet-nimiq",\n      answers: failedAnswers\n    });\n    const passed = checkQuestAnswers({\n      questId: "meet-nimiq",\n      answers: correct\n    });\n\n    assert.equal(failed.passed, false);\n    assert.equal(failed.score, 2);\n    assert.equal(failed.feedback[1].correct, false);\n    assert.equal("answerIndex" in failed.feedback[1], false);\n    assert.equal(passed.passed, true);\n  });\n'''
+          )
+          path = Path("apps/api/test/quest-service.test.js")
+          text = path.read_text().replace('answers: [0, 0, 0],', 'answers: correctAnswers("meet-nimiq"),')
+          path.write_text(text)
+          replace_once(
+              "apps/api/test/quest-service.test.js",
+              '''function issueChallenge() {''',
+              '''function correctAnswers(questId) {\n  return findQuest(questId).questions.map((question) => question.answerIndex);\n}\n\nfunction wrongAnswers(questId) {\n  return findQuest(questId).questions.map(\n    (question) => (question.answerIndex + 1) % question.options.length\n  );\n}\n\nfunction issueChallenge() {'''
+          )
+
+          replace_once(
+              "apps/api/test/server.test.js",
+              'import { createServer } from "../src/server.js";',
+              'import { createServer } from "../src/server.js";\nimport { findQuest } from "../src/quests.js";'
+          )
+          replace_once(
+              "apps/api/test/server.test.js",
+              '    assert.equal("answerIndex" in body.quests[0].questions[0], false);',
+              '    assert.equal("answerIndex" in body.quests[0].questions[0], false);\n    assert.equal("explanation" in body.quests[0].questions[0], false);'
+          )
+          path = Path("apps/api/test/server.test.js")
+          text = path.read_text().replace('answers: [0, 0, 0],', 'answers: correctAnswers("meet-nimiq"),')
+          path.write_text(text)
+          replace_once(
+              "apps/api/test/server.test.js",
+              '''  it("grades a quiz before wallet access is requested", async () => {\n    const response = await fetch(`${baseUrl}/api/grade`, {\n      method: "POST",\n      headers: { "content-type": "application/json" },\n      body: JSON.stringify({\n        questId: "meet-nimiq",\n        answers: [0, 1, 0]\n      })\n    });\n    const body = await response.json();\n''',
+              '''  it("grades a quiz before wallet access is requested", async () => {\n    const answers = correctAnswers("meet-nimiq");\n    const secondQuestion = findQuest("meet-nimiq").questions[1];\n    answers[1] = (answers[1] + 1) % secondQuestion.options.length;\n\n    const response = await fetch(`${baseUrl}/api/grade`, {\n      method: "POST",\n      headers: { "content-type": "application/json" },\n      body: JSON.stringify({\n        questId: "meet-nimiq",\n        answers\n      })\n    });\n    const body = await response.json();\n'''
+          )
+          replace_once(
+              "apps/api/test/server.test.js",
+              '''function maskWalletAddress(value) {''',
+              '''function correctAnswers(questId) {\n  return findQuest(questId).questions.map((question) => question.answerIndex);\n}\n\nfunction maskWalletAddress(value) {'''
+          )
+
+          replace_once(
+              "scripts/worker-integration.mjs",
+              'import { signNimiqMessage } from "../apps/api/test/nimiq-signature.js";',
+              'import { signNimiqMessage } from "../apps/api/test/nimiq-signature.js";\nimport { findQuest } from "../apps/api/src/quests.js";'
+          )
+          replace_once(
+              "scripts/worker-integration.mjs",
+              '  answers: [0, 0, 0],',
+              '  answers: correctAnswers("receive-nim-safely"),'
+          )
+          replace_once(
+              "scripts/worker-integration.mjs",
+              '''function maskWalletAddress(value) {''',
+              '''function correctAnswers(questId) {\n  return findQuest(questId).questions.map((question) => question.answerIndex);\n}\n\nfunction maskWalletAddress(value) {'''
+          )
+
+          replace_once(
+              "scripts/browser-smoke.mjs",
+              'import { chromium } from "playwright";',
+              'import { chromium } from "playwright";\nimport { findQuest } from "../apps/api/src/quests.js";'
+          )
+          replace_once(
+              "scripts/browser-smoke.mjs",
+              '''  // Answer randomization: options render in a shuffled order per session, but the\n  // correct answer keeps its true source index so backend grading stays correct.\n  const sourceOptions = ["NIM", "A wallet password", "A bank account number"];\n  const correctDisplayPositions = new Set();''',
+              '''  // Browser shuffling changes display position per session while preserving the\n  // hardened canonical index used by backend grading.\n  const firstQuestion = findQuest("meet-nimiq").questions[0];\n  const sourceOptions = firstQuestion.options;\n  const correctCanonicalIndex = firstQuestion.answerIndex;\n  const correctOption = firstQuestion.options[correctCanonicalIndex];\n  const correctDisplayPositions = new Set();'''
+          )
+          replace_once(
+              "scripts/browser-smoke.mjs",
+              '''    // The correct answer for this question is the source option at index 0 ("NIM").\n    // Wherever it lands on screen, its data-answer must remain the true index 0.\n    const nimIndex = shown.indexOf("NIM");\n    const nimDataAnswer = await page.locator(".answer-option").nth(nimIndex).getAttribute("data-answer");\n    assert.equal(nimDataAnswer, "0", "the correct option must keep its true source index for grading");\n    correctDisplayPositions.add(nimIndex);''',
+              '''    const correctDisplayIndex = shown.indexOf(correctOption);\n    const correctDataAnswer = await page.locator(".answer-option").nth(correctDisplayIndex).getAttribute("data-answer");\n    assert.equal(\n      correctDataAnswer,\n      String(correctCanonicalIndex),\n      "the correct option must keep its hardened canonical index for grading"\n    );\n    correctDisplayPositions.add(correctDisplayIndex);'''
+          )
+
+          replace_once(
+              "cli/checks.mjs",
+              'import { runCheck, pass, warn, fail, skip, httpGet, httpPost } from "./lib.mjs";',
+              'import { runCheck, pass, warn, fail, skip, httpGet, httpPost } from "./lib.mjs";\nimport { findQuest } from "../apps/api/src/quests.js";'
+          )
+          replace_once(
+              "cli/checks.mjs",
+              '    if (/answerIndex/.test(res.text)) return fail("Answer keys are exposed in /api/quests", "Regenerate the public catalog; answers must stay server-side.");',
+              '    if (/answerIndex/.test(res.text)) return fail("Answer keys are exposed in /api/quests", "Regenerate the public catalog; answers must stay server-side.");\n    if (/"explanation"\\s*:/.test(res.text)) return fail("Pre-grade answer explanations are exposed in /api/quests", "Keep explanations server-side until grading feedback is returned.");'
+          )
+          replace_once(
+              "cli/checks.mjs",
+              '    const res = await httpPost(`${base}/api/grade`, { questId: "meet-nimiq", answers: [0, 0, 0] });\n    if (res.json?.passed !== true) return fail(`Correct answers did not pass (status ${res.status})`);\n    return pass("meet-nimiq [0,0,0] -> passed");',
+              '    const res = await httpPost(`${base}/api/grade`, { questId: "meet-nimiq", answers: correctAnswers("meet-nimiq") });\n    if (res.json?.passed !== true) return fail(`Correct answers did not pass (status ${res.status})`);\n    return pass("meet-nimiq canonical answers -> passed");'
+          )
+          replace_once(
+              "cli/checks.mjs",
+              '    const res = await httpPost(`${base}/api/grade`, { questId: "meet-nimiq", answers: [1, 1, 1] });\n    if (res.json?.passed !== false) return fail("Wrong answers did not fail grading");\n    return pass("meet-nimiq [1,1,1] -> not passed");',
+              '    const res = await httpPost(`${base}/api/grade`, { questId: "meet-nimiq", answers: wrongAnswers("meet-nimiq") });\n    if (res.json?.passed !== false) return fail("Wrong answers did not fail grading");\n    return pass("meet-nimiq intentionally wrong answers -> not passed");'
+          )
+          replace_once(
+              "cli/checks.mjs",
+              '    if (/answerIndex/.test(res.text)) return fail("Quest detail leaks answerIndex");\n    return pass("Quest detail served without answer keys");',
+              '    if (/answerIndex/.test(res.text)) return fail("Quest detail leaks answerIndex");\n    if (/"explanation"\\s*:/.test(res.text)) return fail("Quest detail leaks pre-grade explanations");\n    return pass("Quest detail served without answer metadata");'
+          )
+          path = Path("cli/checks.mjs")
+          text = path.read_text().replace(
+              '{ questId: "meet-nimiq", answers: [0, 0, 0] }, { headers: { origin: "https://evil.example.com" } }',
+              '{ questId: "meet-nimiq", answers: correctAnswers("meet-nimiq") }, { headers: { origin: "https://evil.example.com" } }'
+          )
+          text = text.replace(
+              'const wrong = await httpPost(`${base}/api/grade`, { questId: "meet-nimiq", answers: [2, 2, 2] });',
+              'const wrong = await httpPost(`${base}/api/grade`, { questId: "meet-nimiq", answers: wrongAnswers("meet-nimiq") });'
+          )
+          text = text.replace(
+              'const right = await httpPost(`${base}/api/grade`, { questId: "meet-nimiq", answers: [0, 0, 0] });',
+              'const right = await httpPost(`${base}/api/grade`, { questId: "meet-nimiq", answers: correctAnswers("meet-nimiq") });'
+          )
+          path.write_text(text)
+          replace_once(
+              "cli/checks.mjs",
+              '''// ---- Deploy ----------------------------------------------------------------\n''',
+              '''function correctAnswers(questId) {\n  return findQuest(questId).questions.map((question) => question.answerIndex);\n}\n\nfunction wrongAnswers(questId) {\n  return findQuest(questId).questions.map(\n    (question) => (question.answerIndex + 1) % question.options.length\n  );\n}\n\n// ---- Deploy ----------------------------------------------------------------\n'''
+          )
+          PY
+
+      - name: Regenerate browser catalog
+        run: npm run generate:web-catalog
+
+      - name: Run unit and API tests
+        run: npm test
+
+      - name: Commit Day 2 hardening
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/api/src/quests.js apps/api/test/quest-service.test.js apps/api/test/server.test.js apps/web/quest-catalog.generated.js scripts/browser-smoke.mjs scripts/worker-integration.mjs cli/checks.mjs
+          git diff --cached --check
+          git commit -m "Harden quiz answer ordering"
+          git push origin HEAD:september-dev
