@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { KeyPair } from "@nimiq/core";
 import { signNimiqMessage } from "../apps/api/test/nimiq-signature.js";
+import { findQuest } from "../apps/api/src/quests.js";
 
 const baseUrl = process.env.NIMQUEST_WORKER_URL || "http://127.0.0.1:8790";
 const keyPair = KeyPair.generate();
@@ -34,7 +35,7 @@ const completionPayload = {
   questId: "receive-nim-safely",
   walletAddress,
   challengeId: challenge.id,
-  answers: [0, 0, 0],
+  answers: correctAnswers("receive-nim-safely"),
   publicKey: keyPair.publicKey.toHex(),
   signature: signNimiqMessage(keyPair, challenge.message)
 };
@@ -114,6 +115,10 @@ console.log(JSON.stringify({
   leaderboard: "passed",
   replayProtection: "passed"
 }, null, 2));
+
+function correctAnswers(questId) {
+  return findQuest(questId).questions.map((question) => question.answerIndex);
+}
 
 function maskWalletAddress(value) {
   return `${value.replace(/\s+/g, "").slice(0, 8)}${"*".repeat(10)}`;

@@ -23,18 +23,18 @@ export const catalogQuests = [
         "id": "native-asset",
         "prompt": "What is the native asset of the Nimiq network?",
         "options": [
-          "NIM",
+          "A bank account number",
           "A wallet password",
-          "A bank account number"
+          "NIM"
         ]
       },
       {
         "id": "safe-to-share",
         "prompt": "What can you share when someone wants to send you NIM?",
         "options": [
+          "Your recovery words",
           "Your Nimiq address",
-          "Your private key",
-          "Your recovery words"
+          "Your private key"
         ]
       },
       {
@@ -42,8 +42,8 @@ export const catalogQuests = [
         "prompt": "What protects the keys that control your NIM?",
         "options": [
           "Your wallet",
-          "A public quest page",
-          "A transaction recipient"
+          "A transaction recipient",
+          "A public quest page"
         ]
       }
     ]
@@ -71,17 +71,17 @@ export const catalogQuests = [
         "id": "payment-review",
         "prompt": "Which details should you check before approving a NIM payment?",
         "options": [
+          "Only the app name",
           "Recipient, amount, and asset",
-          "Only the page colour",
-          "Only the app name"
+          "Only the page colour"
         ]
       },
       {
         "id": "unexpected-request",
         "prompt": "What should you do when a wallet request is unexpected?",
         "options": [
-          "Reject it",
           "Approve it quickly",
+          "Reject it",
           "Share your recovery words"
         ]
       },
@@ -89,9 +89,9 @@ export const catalogQuests = [
         "id": "approval",
         "prompt": "Who approves a sensitive action inside Nimiq Pay?",
         "options": [
-          "The wallet user",
           "The Mini App automatically",
-          "Any website visitor"
+          "Any website visitor",
+          "The wallet user"
         ]
       }
     ]
@@ -119,9 +119,9 @@ export const catalogQuests = [
         "id": "signing-effect",
         "prompt": "What happens when you sign a NimQuest proof message?",
         "options": [
+          "You reveal your private key",
           "You prove wallet control without sending NIM",
-          "You transfer your full balance",
-          "You reveal your private key"
+          "You transfer your full balance"
         ]
       },
       {
@@ -137,9 +137,9 @@ export const catalogQuests = [
         "id": "one-time-challenge",
         "prompt": "Why does NimQuest use a one-time challenge?",
         "options": [
-          "To prevent the same signature from being replayed",
+          "To charge a transaction fee",
           "To hide the wallet address",
-          "To charge a transaction fee"
+          "To prevent the same signature from being replayed"
         ]
       }
     ]
@@ -168,26 +168,26 @@ export const catalogQuests = [
         "prompt": "What should you share to receive NIM?",
         "options": [
           "Your public Nimiq address",
-          "Your recovery words",
-          "Your private key"
+          "Your private key",
+          "Your recovery words"
         ]
       },
       {
         "id": "receive-account",
         "prompt": "What should you check before sharing an address?",
         "options": [
-          "It belongs to the account you want to use",
+          "It contains your password",
           "It matches a stranger’s address",
-          "It contains your password"
+          "It belongs to the account you want to use"
         ]
       },
       {
         "id": "receive-confirmation",
         "prompt": "What confirms that an incoming payment arrived?",
         "options": [
-          "The transfer appearing in your wallet",
+          "A message saying it was sent",
           "A sender’s screenshot alone",
-          "A message saying it was sent"
+          "The transfer appearing in your wallet"
         ]
       }
     ]
@@ -215,27 +215,27 @@ export const catalogQuests = [
         "id": "recovery-power",
         "prompt": "What can complete recovery material allow someone to do?",
         "options": [
+          "Only change the wallet colour",
           "Take control of the account",
-          "Only view a public address",
-          "Only change the wallet colour"
+          "Only view a public address"
         ]
       },
       {
         "id": "recovery-request",
         "prompt": "What should you do if an unexpected site asks for your Recovery Words?",
         "options": [
-          "Leave without entering them",
           "Enter them to continue",
-          "Send them to support"
+          "Send them to support",
+          "Leave without entering them"
         ]
       },
       {
         "id": "recovery-loss",
         "prompt": "Why keep a safe recovery option?",
         "options": [
+          "To avoid checking wallet requests",
           "To regain access if a device is lost",
-          "To make payments public",
-          "To avoid checking wallet requests"
+          "To make payments public"
         ]
       }
     ]
@@ -263,9 +263,9 @@ export const catalogQuests = [
         "id": "request-origin",
         "prompt": "When is a wallet request safest to approve?",
         "options": [
+          "When someone pressures you",
           "When it matches an action you intentionally started",
-          "Whenever it appears",
-          "When someone pressures you"
+          "Whenever it appears"
         ]
       },
       {
@@ -281,8 +281,8 @@ export const catalogQuests = [
         "id": "request-unclear",
         "prompt": "What should you do with an unclear signing or payment request?",
         "options": [
-          "Reject it",
           "Approve it to see what happens",
+          "Reject it",
           "Share your recovery words"
         ]
       }
@@ -312,26 +312,26 @@ export const catalogQuests = [
         "prompt": "Can a Mini App directly read your private key?",
         "options": [
           "No",
-          "Yes, after opening",
-          "Yes, when it knows your address"
+          "Yes, when it knows your address",
+          "Yes, after opening"
         ]
       },
       {
         "id": "permission-approval",
         "prompt": "Which actions require native approval?",
         "options": [
-          "Account access, signing, and payments",
+          "Reading public lesson text",
           "Changing page colour",
-          "Reading public lesson text"
+          "Account access, signing, and payments"
         ]
       },
       {
         "id": "device-identifier",
         "prompt": "What does a Mini App device identifier represent?",
         "options": [
-          "A device scoped to that app origin",
           "A person’s legal identity",
-          "A wallet private key"
+          "A wallet private key",
+          "A device scoped to that app origin"
         ]
       }
     ]
@@ -369,8 +369,8 @@ export const catalogQuests = [
         "prompt": "What does a pending transaction mean?",
         "options": [
           "It was submitted but is not final yet",
-          "It definitely failed",
-          "Your private key was exposed"
+          "Your private key was exposed",
+          "It definitely failed"
         ]
       },
       {
@@ -416,9 +416,9 @@ export const catalogQuests = [
         "id": "fee-recipient",
         "prompt": "Is the network fee the same as the amount sent to the recipient?",
         "options": [
+          "Only when receiving NIM",
           "No",
-          "Yes, always",
-          "Only when receiving NIM"
+          "Yes, always"
         ]
       },
       {
@@ -426,8 +426,8 @@ export const catalogQuests = [
         "prompt": "What should you review before approving a payment?",
         "options": [
           "The amount and displayed fee",
-          "Only the button colour",
-          "Only your wallet balance"
+          "Only your wallet balance",
+          "Only the button colour"
         ]
       }
     ]
@@ -455,9 +455,9 @@ export const catalogQuests = [
         "id": "cashlink-use",
         "prompt": "When is a Cashlink most useful?",
         "options": [
-          "When the recipient does not have a Nimiq address",
           "When publishing recovery words",
-          "When checking a wallet balance"
+          "When checking a wallet balance",
+          "When the recipient does not have a Nimiq address"
         ]
       },
       {
@@ -473,8 +473,8 @@ export const catalogQuests = [
         "id": "cashlink-channel",
         "prompt": "Where should you send a Cashlink?",
         "options": [
-          "Through a trusted private channel",
           "In a public comment",
+          "Through a trusted private channel",
           "To anyone who asks"
         ]
       }
@@ -512,18 +512,18 @@ export const catalogQuests = [
         "id": "cashlink-new-user",
         "prompt": "What can help onboard someone without a Nimiq address?",
         "options": [
-          "A Cashlink",
+          "A duplicate payment",
           "A private key screenshot",
-          "A duplicate payment"
+          "A Cashlink"
         ]
       },
       {
         "id": "cashlink-transactions",
         "prompt": "Why is a direct transfer simpler when an address is known?",
         "options": [
+          "It removes wallet approval",
           "It avoids the Cashlink’s temporary account",
-          "It reveals the recipient’s keys",
-          "It removes wallet approval"
+          "It reveals the recipient’s keys"
         ]
       }
     ]
@@ -551,9 +551,9 @@ export const catalogQuests = [
         "id": "login-file-role",
         "prompt": "What does a Nimiq Login File contain?",
         "options": [
+          "A Cashlink recipient address",
           "Encrypted account access",
-          "A public transaction list only",
-          "A Cashlink recipient address"
+          "A public transaction list only"
         ]
       },
       {
@@ -561,8 +561,8 @@ export const catalogQuests = [
         "prompt": "What is needed with the Login File?",
         "options": [
           "Its password",
-          "A stranger’s wallet",
-          "A public social post"
+          "A public social post",
+          "A stranger’s wallet"
         ]
       },
       {
@@ -570,8 +570,8 @@ export const catalogQuests = [
         "prompt": "How should a Login File be stored?",
         "options": [
           "In a safe location",
-          "Only in a temporary browser tab",
-          "Publicly for easy access"
+          "Publicly for easy access",
+          "Only in a temporary browser tab"
         ]
       }
     ]
@@ -599,26 +599,26 @@ export const catalogQuests = [
         "id": "backup-code-count",
         "prompt": "How many Nimiq Backup Codes are required for recovery?",
         "options": [
+          "No code",
           "Both Code A and Code B",
-          "Only either code",
-          "No code"
+          "Only either code"
         ]
       },
       {
         "id": "backup-code-storage",
         "prompt": "Where should the two codes be stored?",
         "options": [
-          "On two different platforms",
           "Together in one public note",
-          "With an unknown support account"
+          "With an unknown support account",
+          "On two different platforms"
         ]
       },
       {
         "id": "backup-code-owner",
         "prompt": "Who should you share the two codes with?",
         "options": [
-          "No one",
           "Any wallet app",
+          "No one",
           "Anyone promising rewards"
         ]
       }
@@ -648,8 +648,8 @@ export const catalogQuests = [
         "prompt": "Who controls recovery in a self-custody wallet?",
         "options": [
           "The wallet owner",
-          "A bank employee",
-          "A quest website"
+          "A quest website",
+          "A bank employee"
         ]
       },
       {
@@ -657,17 +657,17 @@ export const catalogQuests = [
         "prompt": "Can Nimiq support restore an account without your recovery material?",
         "options": [
           "No",
-          "Yes, from a server copy",
-          "Yes, from a public address"
+          "Yes, from a public address",
+          "Yes, from a server copy"
         ]
       },
       {
         "id": "custody-backups",
         "prompt": "What reduces the risk of losing access?",
         "options": [
-          "Independent recovery options",
+          "Using no backup",
           "Sharing keys publicly",
-          "Using no backup"
+          "Independent recovery options"
         ]
       }
     ]
@@ -695,9 +695,9 @@ export const catalogQuests = [
         "id": "pos-algorithm",
         "prompt": "Which consensus algorithm secures the Nimiq network?",
         "options": [
-          "Albatross Proof-of-Stake",
           "Proof of Work mining",
-          "Proof of Authority"
+          "Proof of Authority",
+          "Albatross Proof-of-Stake"
         ]
       },
       {
@@ -705,8 +705,8 @@ export const catalogQuests = [
         "prompt": "In Albatross, which block type carries user transactions?",
         "options": [
           "Micro blocks",
-          "Macro blocks",
-          "Election blocks"
+          "Election blocks",
+          "Macro blocks"
         ]
       },
       {
@@ -752,8 +752,8 @@ export const catalogQuests = [
         "id": "stake-ownership",
         "prompt": "Who owns delegated NIM?",
         "options": [
-          "The staker",
           "The pool operator",
+          "The staker",
           "NimQuest"
         ]
       },
@@ -761,8 +761,8 @@ export const catalogQuests = [
         "id": "stake-reward",
         "prompt": "Are staking rewards guaranteed to be identical across pools?",
         "options": [
-          "No",
           "Yes",
+          "No",
           "Only on weekends"
         ]
       }
@@ -791,27 +791,27 @@ export const catalogQuests = [
         "id": "pool-compare",
         "prompt": "What should you compare between staking pools?",
         "options": [
-          "Fees, performance, and reliability",
+          "Only the pool name",
           "Only the logo",
-          "Only the pool name"
+          "Fees, performance, and reliability"
         ]
       },
       {
         "id": "pool-operation",
         "prompt": "What does a staking pool handle?",
         "options": [
-          "Validator operations",
+          "Your private messages",
           "Your Recovery Words",
-          "Your private messages"
+          "Validator operations"
         ]
       },
       {
         "id": "pool-decentralization",
         "prompt": "Why consider capable pools with less total stake?",
         "options": [
-          "To support decentralization",
           "To expose private keys",
-          "To avoid all rewards"
+          "To avoid all rewards",
+          "To support decentralization"
         ]
       }
     ]
@@ -839,18 +839,18 @@ export const catalogQuests = [
         "id": "validator-become",
         "prompt": "How does a node become a validator in Nimiq?",
         "options": [
-          "By staking coins as a deposit",
+          "By buying a license",
           "By mining with a GPU",
-          "By buying a license"
+          "By staking coins as a deposit"
         ]
       },
       {
         "id": "validator-slots",
         "prompt": "What does a larger stake give a Nimiq validator?",
         "options": [
-          "More slots and a higher chance to produce blocks",
+          "The power to reverse transactions",
           "A fixed guaranteed reward",
-          "The power to reverse transactions"
+          "More slots and a higher chance to produce blocks"
         ]
       },
       {
@@ -858,8 +858,8 @@ export const catalogQuests = [
         "prompt": "What renews the Nimiq validator set?",
         "options": [
           "Election blocks",
-          "Every micro block",
-          "A manual vote by users"
+          "A manual vote by users",
+          "Every micro block"
         ]
       }
     ]
@@ -887,9 +887,9 @@ export const catalogQuests = [
         "id": "nim-lightning-swap",
         "prompt": "How can Nimiq Pay let you spend where Bitcoin Lightning is accepted?",
         "options": [
-          "Atomic swaps between NIM and BTC Lightning",
+          "By using a custodial exchange to hold your funds",
           "By wrapping NIM as an ERC-20 token",
-          "By using a custodial exchange to hold your funds"
+          "Atomic swaps between NIM and BTC Lightning"
         ]
       },
       {
@@ -897,17 +897,17 @@ export const catalogQuests = [
         "prompt": "What must match before sending?",
         "options": [
           "The selected asset and recipient address type",
-          "The page background",
-          "The wallet nickname only"
+          "The wallet nickname only",
+          "The page background"
         ]
       },
       {
         "id": "asset-review",
         "prompt": "What should you check in the confirmation?",
         "options": [
-          "Asset, recipient, and amount",
+          "Only the time",
           "Only the icon",
-          "Only the time"
+          "Asset, recipient, and amount"
         ]
       }
     ]
@@ -935,9 +935,9 @@ export const catalogQuests = [
         "id": "swap-result",
         "prompt": "What is the key property of an atomic swap?",
         "options": [
-          "Both sides complete or the assets return",
+          "No wallet approval is needed",
           "One side always keeps both assets",
-          "No wallet approval is needed"
+          "Both sides complete or the assets return"
         ]
       },
       {
@@ -945,17 +945,17 @@ export const catalogQuests = [
         "prompt": "Does an atomic swap require one party to control both assets?",
         "options": [
           "No",
-          "Yes",
-          "Only for NIM"
+          "Only for NIM",
+          "Yes"
         ]
       },
       {
         "id": "swap-review",
         "prompt": "What should you review before approving a swap?",
         "options": [
-          "Rate, fees, and final amounts",
           "Only the animation",
-          "Only your account name"
+          "Only your account name",
+          "Rate, fees, and final amounts"
         ]
       }
     ]

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { after, before, describe, it } from "node:test";
 import { KeyPair } from "@nimiq/core";
 import { createServer } from "../src/server.js";
+import { findQuest } from "../src/quests.js";
 import { signNimiqMessage } from "./nimiq-signature.js";
 
 let server;
@@ -35,6 +36,7 @@ describe("api server", () => {
     assert.equal(response.status, 200);
     assert.equal(body.quests.length, 20);
     assert.equal("answerIndex" in body.quests[0].questions[0], false);
+    assert.equal("explanation" in body.quests[0].questions[0], false);
   });
 
   it("creates and verifies a wallet-bound completion over HTTP", async () => {
@@ -59,7 +61,7 @@ describe("api server", () => {
         questId: "meet-nimiq",
         walletAddress,
         challengeId: challenge.id,
-        answers: [0, 0, 0],
+        answers: correctAnswers("meet-nimiq"),
         publicKey: keyPair.publicKey.toHex(),
         signature: signNimiqMessage(keyPair, challenge.message)
       })
@@ -116,12 +118,16 @@ describe("api server", () => {
   });
 
   it("grades a quiz before wallet access is requested", async () => {
+    const answers = correctAnswers("meet-nimiq");
+    const secondQuestion = findQuest("meet-nimiq").questions[1];
+    answers[1] = (answers[1] + 1) % secondQuestion.options.length;
+
     const response = await fetch(`${baseUrl}/api/grade`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
         questId: "meet-nimiq",
-        answers: [0, 1, 0]
+        answers
       })
     });
     const body = await response.json();
@@ -183,6 +189,10 @@ describe("api server", () => {
     assert.equal(response.status, 403);
   });
 });
+
+function correctAnswers(questId) {
+  return findQuest(questId).questions.map((question) => question.answerIndex);
+}
 
 function maskWalletAddress(value) {
   return `${value.replace(/\s+/g, "").slice(0, 8)}${"*".repeat(10)}`;

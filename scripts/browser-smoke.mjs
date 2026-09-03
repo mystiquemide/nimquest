@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { chromium } from "playwright";
+import { findQuest } from "../apps/api/src/quests.js";
 
 const port = Number.parseInt(process.env.NIMQUEST_SMOKE_PORT || "8791", 10);
 const baseUrl = process.env.NIMQUEST_SMOKE_URL || `http://127.0.0.1:${port}`;
@@ -129,9 +130,12 @@ try {
     await page.close();
   }
 
-  // Answer randomization: options render in a shuffled order per session, but the
-  // correct answer keeps its true source index so backend grading stays correct.
-  const sourceOptions = ["NIM", "A wallet password", "A bank account number"];
+  // Browser shuffling changes display position per session while preserving the
+  // hardened canonical index used by backend grading.
+  const firstQuestion = findQuest("meet-nimiq").questions[0];
+  const sourceOptions = firstQuestion.options;
+  const correctCanonicalIndex = firstQuestion.answerIndex;
+  const correctOption = firstQuestion.options[correctCanonicalIndex];
   const correctDisplayPositions = new Set();
   for (let run = 0; run < 6; run += 1) {
     const page = await browser.newPage({ viewport: { width: 390, height: 900 } });
@@ -139,12 +143,14 @@ try {
     await page.getByRole("button", { name: /Begin 3 questions/i }).click();
     const shown = await page.locator(".answer-option b").allTextContents();
     assert.deepEqual([...shown].sort(), [...sourceOptions].sort(), "options must be a permutation of the source");
-    // The correct answer for this question is the source option at index 0 ("NIM").
-    // Wherever it lands on screen, its data-answer must remain the true index 0.
-    const nimIndex = shown.indexOf("NIM");
-    const nimDataAnswer = await page.locator(".answer-option").nth(nimIndex).getAttribute("data-answer");
-    assert.equal(nimDataAnswer, "0", "the correct option must keep its true source index for grading");
-    correctDisplayPositions.add(nimIndex);
+    const correctDisplayIndex = shown.indexOf(correctOption);
+    const correctDataAnswer = await page.locator(".answer-option").nth(correctDisplayIndex).getAttribute("data-answer");
+    assert.equal(
+      correctDataAnswer,
+      String(correctCanonicalIndex),
+      "the correct option must keep its hardened canonical index for grading"
+    );
+    correctDisplayPositions.add(correctDisplayIndex);
     await page.close();
   }
   assert.ok(correctDisplayPositions.size > 1, "correct answer position must vary across sessions");

@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import { runCheck, pass, warn, fail, skip, httpGet, httpPost } from "./lib.mjs";
+import { findQuest } from "../apps/api/src/quests.js";
 
 // ---- Health ----------------------------------------------------------------
 
@@ -24,6 +25,7 @@ export async function healthChecks(base, { live = false } = {}) {
     const count = res.json?.quests?.length;
     if (count !== 20) return fail(`/api/quests returned ${count} quests, expected 20`);
     if (/answerIndex/.test(res.text)) return fail("Answer keys are exposed in /api/quests", "Regenerate the public catalog; answers must stay server-side.");
+    if (/"explanation"\s*:/.test(res.text)) return fail("Pre-grade answer explanations are exposed in /api/quests", "Keep explanations server-side until grading feedback is returned.");
     return pass(`20 quests, no answer keys leaked`);
   }));
 
@@ -134,15 +136,15 @@ export async function apiChecks(base) {
   const results = [];
 
   results.push(await runCheck("api.grade.correct", "Grade correct answers", async () => {
-    const res = await httpPost(`${base}/api/grade`, { questId: "meet-nimiq", answers: [0, 0, 0] });
+    const res = await httpPost(`${base}/api/grade`, { questId: "meet-nimiq", answers: correctAnswers("meet-nimiq") });
     if (res.json?.passed !== true) return fail(`Correct answers did not pass (status ${res.status})`);
-    return pass("meet-nimiq [0,0,0] -> passed");
+    return pass("meet-nimiq canonical answers -> passed");
   }));
 
   results.push(await runCheck("api.grade.wrong", "Grade wrong answers", async () => {
-    const res = await httpPost(`${base}/api/grade`, { questId: "meet-nimiq", answers: [1, 1, 1] });
+    const res = await httpPost(`${base}/api/grade`, { questId: "meet-nimiq", answers: wrongAnswers("meet-nimiq") });
     if (res.json?.passed !== false) return fail("Wrong answers did not fail grading");
-    return pass("meet-nimiq [1,1,1] -> not passed");
+    return pass("meet-nimiq intentionally wrong answers -> not passed");
   }));
 
   results.push(await runCheck("api.grade.invalid", "Reject malformed grade", async () => {
@@ -155,7 +157,8 @@ export async function apiChecks(base) {
     const res = await httpGet(`${base}/api/quests/meet-nimiq`);
     if (!res.json?.quest) return fail(`/api/quests/meet-nimiq did not return a quest (status ${res.status})`);
     if (/answerIndex/.test(res.text)) return fail("Quest detail leaks answerIndex");
-    return pass("Quest detail served without answer keys");
+    if (/"explanation"\s*:/.test(res.text)) return fail("Quest detail leaks pre-grade explanations");
+    return pass("Quest detail served without answer metadata");
   }));
 
   results.push(await runCheck("api.unknown.404", "Unknown API route 404", async () => {
@@ -165,7 +168,7 @@ export async function apiChecks(base) {
   }));
 
   results.push(await runCheck("api.origin.reject", "Cross-origin write rejected", async () => {
-    const res = await httpPost(`${base}/api/grade`, { questId: "meet-nimiq", answers: [0, 0, 0] }, { headers: { origin: "https://evil.example.com" } });
+    const res = await httpPost(`${base}/api/grade`, { questId: "meet-nimiq", answers: correctAnswers("meet-nimiq") }, { headers: { origin: "https://evil.example.com" } });
     if (res.status !== 403) return fail(`Cross-origin POST returned ${res.status}, expected 403`, "Enforce same-origin on write routes.");
     return pass("Cross-origin POST -> 403");
   }));
@@ -186,9 +189,9 @@ export async function runFlow(name, base, { allowWrite = false, live = false } =
     return [await runCheck("flow.quiz-grade", "Flow: quiz grade", async () => {
       const quests = await httpGet(`${base}/api/quests`);
       if (!quests.json?.quests?.length) return fail("Could not load quests");
-      const wrong = await httpPost(`${base}/api/grade`, { questId: "meet-nimiq", answers: [2, 2, 2] });
+      const wrong = await httpPost(`${base}/api/grade`, { questId: "meet-nimiq", answers: wrongAnswers("meet-nimiq") });
       if (wrong.json?.passed !== false) return fail("Expected the wrong attempt to fail");
-      const right = await httpPost(`${base}/api/grade`, { questId: "meet-nimiq", answers: [0, 0, 0] });
+      const right = await httpPost(`${base}/api/grade`, { questId: "meet-nimiq", answers: correctAnswers("meet-nimiq") });
       if (right.json?.passed !== true) return fail("Expected the correct attempt to pass");
       return pass("Load quests -> wrong fails -> correct passes -> ready for wallet proof");
     })];
@@ -219,6 +222,16 @@ export async function runFlow(name, base, { allowWrite = false, live = false } =
   }
 
   return [await runCheck("flow.unknown", `Flow: ${name}`, async () => fail(`Unknown flow "${name}". Run "flow list".`))];
+}
+
+function correctAnswers(questId) {
+  return findQuest(questId).questions.map((question) => question.answerIndex);
+}
+
+function wrongAnswers(questId) {
+  return findQuest(questId).questions.map(
+    (question) => (question.answerIndex + 1) % question.options.length
+  );
 }
 
 // ---- Deploy ----------------------------------------------------------------

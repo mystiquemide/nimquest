@@ -1,4 +1,4 @@
-export const quests = [
+const authoredQuests = [
   {
     id: "meet-nimiq",
     title: "Meet Nimiq",
@@ -797,6 +797,46 @@ export const quests = [
   }
 ];
 
+export const quests = authoredQuests.map((quest) => ({
+  ...quest,
+  questions: quest.questions.map((question) => hardenQuestionOrder(quest.id, question))
+}));
+
+function hardenQuestionOrder(questId, question) {
+  const order = stablePermutation(
+    question.options.length,
+    `${questId}:${question.id}:nimquest-answer-order-v1`
+  );
+
+  return {
+    ...question,
+    options: order.map((index) => question.options[index]),
+    answerIndex: order.indexOf(question.answerIndex)
+  };
+}
+
+function stablePermutation(length, seedText) {
+  const order = Array.from({ length }, (_, index) => index);
+  let state = hashSeed(seedText);
+
+  for (let index = order.length - 1; index > 0; index -= 1) {
+    state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
+    const swapIndex = state % (index + 1);
+    [order[index], order[swapIndex]] = [order[swapIndex], order[index]];
+  }
+
+  return order;
+}
+
+function hashSeed(value) {
+  let hash = 2166136261;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+}
+
 export function findQuest(questId) {
   return quests.find((quest) => quest.id === questId);
 }
@@ -804,6 +844,6 @@ export function findQuest(questId) {
 export function publicQuest(quest) {
   return {
     ...quest,
-    questions: quest.questions.map(({ answerIndex, ...question }) => question)
+    questions: quest.questions.map(({ answerIndex, explanation, ...question }) => question)
   };
 }

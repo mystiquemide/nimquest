@@ -15,6 +15,7 @@ import {
   useChallengeStore,
   useCompletionStore
 } from "../src/quest-service.js";
+import { findQuest, quests as canonicalQuests } from "../src/quests.js";
 import { normalizeWalletAddress } from "../src/validation.js";
 
 let keyPair;
@@ -34,16 +35,26 @@ describe("quest service", () => {
 
     assert.equal(quests.length, 20);
     assert.equal("answerIndex" in quests[0].questions[0], false);
+    assert.equal("explanation" in quests[0].questions[0], false);
     assert.match(quests[0].sourceUrl, /^https:\/\/nimiq/);
     assert.equal(quests[0].reward.status, "unavailable");
   });
 
-  it("returns one public quest with answer explanations", () => {
+  it("returns one public quest without answer metadata", () => {
     const quest = getQuest("meet-nimiq");
 
     assert.equal(quest.id, "meet-nimiq");
-    assert.equal(typeof quest.questions[0].explanation, "string");
     assert.equal("answerIndex" in quest.questions[0], false);
+    assert.equal("explanation" in quest.questions[0], false);
+  });
+
+  it("distributes canonical correct answers across option positions", () => {
+    const answerIndexes = canonicalQuests.flatMap((quest) =>
+      quest.questions.map((question) => question.answerIndex)
+    );
+
+    assert.deepEqual([...new Set(answerIndexes)].sort(), [0, 1, 2]);
+    assert.ok(answerIndexes.some((answerIndex) => answerIndex !== 0));
   });
 
   it("accepts generated Nimiq addresses and rejects EVM addresses", () => {
@@ -82,7 +93,7 @@ describe("quest service", () => {
       questId: "meet-nimiq",
       walletAddress,
       challengeId: challenge.id,
-      answers: [1, 0, 0],
+      answers: wrongAnswers("meet-nimiq"),
       ...signed
     });
 
@@ -92,13 +103,18 @@ describe("quest service", () => {
   });
 
   it("grades answers before wallet proof without exposing answer indexes", () => {
+    const correct = correctAnswers("meet-nimiq");
+    const failedAnswers = [...correct];
+    const secondQuestion = findQuest("meet-nimiq").questions[1];
+    failedAnswers[1] = (failedAnswers[1] + 1) % secondQuestion.options.length;
+
     const failed = checkQuestAnswers({
       questId: "meet-nimiq",
-      answers: [0, 1, 0]
+      answers: failedAnswers
     });
     const passed = checkQuestAnswers({
       questId: "meet-nimiq",
-      answers: [0, 0, 0]
+      answers: correct
     });
 
     assert.equal(failed.passed, false);
@@ -127,7 +143,7 @@ describe("quest service", () => {
       questId: "meet-nimiq",
       walletAddress,
       challengeId: challenge.id,
-      answers: [0, 0, 0],
+      answers: correctAnswers("meet-nimiq"),
       publicKey: otherKeyPair.publicKey.toHex(),
       signature: signNimiqMessage(otherKeyPair, challenge.message)
     });
@@ -142,7 +158,7 @@ describe("quest service", () => {
       questId: "meet-nimiq",
       walletAddress,
       challengeId: challenge.id,
-      answers: [0, 0, 0],
+      answers: correctAnswers("meet-nimiq"),
       publicKey: keyPair.publicKey.toHex(),
       signature: signNimiqMessage(keyPair, `${challenge.message} changed`)
     });
@@ -181,6 +197,16 @@ describe("quest service", () => {
   });
 });
 
+function correctAnswers(questId) {
+  return findQuest(questId).questions.map((question) => question.answerIndex);
+}
+
+function wrongAnswers(questId) {
+  return findQuest(questId).questions.map(
+    (question) => (question.answerIndex + 1) % question.options.length
+  );
+}
+
 function issueChallenge() {
   const result = createCompletionChallenge({
     questId: "meet-nimiq",
@@ -201,7 +227,7 @@ function complete(challenge) {
     questId: "meet-nimiq",
     walletAddress,
     challengeId: challenge.id,
-    answers: [0, 0, 0],
+    answers: correctAnswers("meet-nimiq"),
     ...sign(challenge.message)
   });
 }
