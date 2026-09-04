@@ -100,6 +100,9 @@ describe("api server", () => {
     assert.equal("publicKey" in receipt.proof, false);
     assert.equal("deviceId" in receipt.proof, false);
     assert.equal(receipt.proof.walletAddress, maskWalletAddress(walletAddress));
+    assert.equal(receipt.proof.questTitle, "Meet Nimiq");
+    assert.equal(receipt.proof.track, "onboarding");
+    assert.equal(receipt.proof.difficulty, "starter");
     assert.equal(feedbackResponse.status, 201);
     assert.equal(leaderboardResponse.status, 200);
     assert.equal(leaderboardEntry.verifiedQuests, 1);

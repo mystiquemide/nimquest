@@ -217,9 +217,13 @@ export function createServer() {
 }
 
 function toPublicProof(proof) {
+  const quest = getQuest(proof.questId);
   return {
     key: proof.key,
     questId: proof.questId,
+    questTitle: quest?.title || proof.questId,
+    track: quest?.track || null,
+    difficulty: quest?.difficulty || null,
     walletAddress: maskWalletAddress(proof.walletAddress),
     verificationMethod: proof.verificationMethod,
     completedAt: proof.completedAt,

@@ -419,9 +419,13 @@ function toProof(record) {
 }
 
 function toPublicProof(record) {
+  const quest = findQuest(record.quest_id);
   return {
     key: record.public_id,
     questId: record.quest_id,
+    questTitle: quest?.title || record.quest_id,
+    track: quest?.track || null,
+    difficulty: quest?.difficulty || null,
     walletAddress: maskWalletAddress(record.wallet_address),
     verificationMethod: record.verification_method,
     completedAt: record.completed_at,

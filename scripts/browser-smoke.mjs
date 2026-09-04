@@ -155,6 +155,40 @@ try {
   }
   assert.ok(correctDisplayPositions.size > 1, "correct answer position must vary across sessions");
 
+  const receiptPage = await browser.newPage({ viewport: { width: 390, height: 900 } });
+  await receiptPage.route("**/api/completions/day3-receipt", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        proof: {
+          key: "day3-receipt",
+          questId: "meet-nimiq",
+          questTitle: "Meet Nimiq",
+          track: "onboarding",
+          difficulty: "starter",
+          walletAddress: "NQ20ABCD**********",
+          verificationMethod: "nimiq_message_signature",
+          completedAt: "2026-09-04T10:00:00.000Z",
+          status: "verified",
+          reward: { status: "unavailable", asset: null, amount: null }
+        }
+      })
+    });
+  });
+  await receiptPage.goto(`${baseUrl}/completions/day3-receipt`, { waitUntil: "networkidle" });
+  assert.match(await receiptPage.locator("h1").textContent(), /Meet Nimiq/);
+  const receiptDetails = await receiptPage.locator(".completion-card dl").textContent();
+  assert.match(receiptDetails, /Track\s*NIM basics/i);
+  assert.match(receiptDetails, /Difficulty\s*starter/i);
+  assert.match(await receiptPage.locator(".completion-trust").textContent(), /not an on-chain transaction or payment/i);
+  assert.equal(
+    await receiptPage.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth),
+    false,
+    "verified receipt must not overflow at 390px"
+  );
+  await receiptPage.close();
+
   console.log(JSON.stringify({
     status: "passed",
     routes: routes.length,

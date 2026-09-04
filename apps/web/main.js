@@ -1442,7 +1442,8 @@ function renderWalletProof(questId) {
           <p>Your wallet signature matched <b>${shortAddress}</b>${state.blockHeight ? ` at block ${state.blockHeight.toLocaleString()}` : ""}.</p>
         </div>
         <div class="next-screen-lock">
-          <a class="button" href="/journey">View my journey →</a>
+          <a class="button" href="/completions/${encodeURIComponent(state.proof.key)}">View verified receipt →</a>
+          <a class="button button--quiet" href="/journey">Continue to journey</a>
         </div>
         <div class="proof-receipt">
           <span>Status <b>Verified</b></span>
@@ -1662,7 +1663,7 @@ async function renderCompletionDetail(proofKey) {
       <a class="back-link" href="/journey"><span aria-hidden="true">←</span> My Journey</a>
     </header>
     <main class="completion-page" aria-live="polite">
-      <div class="completion-loading"><span class="wallet-loader" aria-hidden="true"><span></span><span></span><span></span></span><p>Loading verified proof…</p></div>
+      <div class="completion-loading"><span class="wallet-loader" aria-hidden="true"><span></span><span></span><span></span></span><p>Loading verified receipt…</p></div>
     </main>
   `;
 
@@ -1677,7 +1678,10 @@ async function renderCompletionDetail(proofKey) {
       const response = await fetch(`${apiBase}/api/completions/${encodeURIComponent(proofKey)}`);
       const result = await response.json();
       if (!response.ok) {
-        throw new Error(result.error || "Verified completion not found.");
+        const message = response.status === 404
+          ? "This receipt does not exist or is no longer available."
+          : result.error || "NimQuest couldn’t load this receipt.";
+        throw new Error(message);
       }
       proof = result.proof;
     }
@@ -1696,7 +1700,9 @@ async function renderCompletionDetail(proofKey) {
         <p class="completion-card__lead">This quest was completed and verified with a one-time Nimiq wallet signature.</p>
         <div class="completion-card__status"><span aria-hidden="true">✓</span><div><b>Verified</b><small>Signed with your NIM wallet</small></div></div>
         <dl>
-          <div><dt>Quest</dt><dd>${quest.number} · ${quest.title}</dd></div>
+          <div><dt>Quest</dt><dd>${quest.number} · ${escapeHtml(proof.questTitle || quest.title)}</dd></div>
+          <div><dt>Track</dt><dd>${escapeHtml(quest.track)}</dd></div>
+          <div><dt>Difficulty</dt><dd>${escapeHtml(proof.difficulty || quest.difficulty || "starter")}</dd></div>
           <div><dt>Wallet</dt><dd>${escapeHtml(compactAddress(proof.walletAddress))}</dd></div>
           <div><dt>Completed</dt><dd>${formatCompletionDate(proof.completedAt)}</dd></div>
           <div><dt>Method</dt><dd>Nimiq signed message</dd></div>
@@ -1715,6 +1721,7 @@ async function renderCompletionDetail(proofKey) {
           <li><span>✓</span>The quiz passed before wallet access.</li>
           <li><span>✓</span>The signature matched the public Nimiq address.</li>
           <li><span>✓</span>The one-time challenge was consumed after verification.</li>
+          <li><span>✓</span>This is a NimQuest verification record, not an on-chain transaction or payment.</li>
           <li><span>✓</span>No payment or private key was required.</li>
         </ul>
       </aside>
