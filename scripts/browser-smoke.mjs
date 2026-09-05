@@ -182,12 +182,40 @@ try {
   assert.match(receiptDetails, /Track\s*NIM basics/i);
   assert.match(receiptDetails, /Difficulty\s*starter/i);
   assert.match(await receiptPage.locator(".completion-trust").textContent(), /not an on-chain transaction or payment/i);
+  const receiptXShare = new URL(await receiptPage.locator("[data-share-x]").getAttribute("href"));
+  assert.equal(receiptXShare.origin, "https://twitter.com");
+  assert.equal(receiptXShare.pathname, "/intent/tweet");
+  assert.match(receiptXShare.searchParams.get("text"), /I completed Meet Nimiq on NimQuest/i);
+  assert.equal(receiptXShare.searchParams.get("url"), `${baseUrl}/completions/day3-receipt`);
+  assert.equal(receiptXShare.searchParams.get("text").includes("NQ20"), false, "X share text must not expose wallet details");
   assert.equal(
     await receiptPage.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth),
     false,
     "verified receipt must not overflow at 390px"
   );
   await receiptPage.close();
+
+  const journeySharePage = await browser.newPage({ viewport: { width: 390, height: 900 } });
+  await journeySharePage.goto(`${baseUrl}/journey`, { waitUntil: "networkidle" });
+  await journeySharePage.evaluate(() => {
+    localStorage.setItem("nimquest:completion:meet-nimiq", JSON.stringify({
+      key: "day4-journey-receipt",
+      questId: "meet-nimiq",
+      walletAddress: "NQ20ABCD**********",
+      verificationMethod: "nimiq_message_signature",
+      completedAt: "2026-09-05T10:00:00.000Z",
+      status: "verified",
+      reward: { status: "unavailable", asset: null, amount: null }
+    }));
+  });
+  await journeySharePage.reload({ waitUntil: "networkidle" });
+  await journeySharePage.locator('[data-view-proof="meet-nimiq"]').click();
+  const journeyXShare = new URL(await journeySharePage.locator(".journey-proof-dialog [data-share-x]").getAttribute("href"));
+  assert.equal(journeyXShare.origin, "https://twitter.com");
+  assert.equal(journeyXShare.pathname, "/intent/tweet");
+  assert.equal(journeyXShare.searchParams.get("url"), `${baseUrl}/completions/day4-journey-receipt`);
+  assert.equal(journeyXShare.searchParams.get("text").includes("NQ20"), false, "Journey X share text must not expose wallet details");
+  await journeySharePage.close();
 
   console.log(JSON.stringify({
     status: "passed",

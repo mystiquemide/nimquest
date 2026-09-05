@@ -1691,7 +1691,7 @@ async function renderCompletionDetail(proofKey) {
       throw new Error("Verified completion not found.");
     }
 
-    const shareUrl = window.location.href;
+    const shareUrl = new URL(`/completions/${encodeURIComponent(proof.key)}`, window.location.origin).href;
     page.innerHTML = `
       <section class="completion-card">
         <div class="completion-card__seal" aria-hidden="true">${brandMarkup()}</div>
@@ -1709,7 +1709,8 @@ async function renderCompletionDetail(proofKey) {
           <div><dt>Receipt ID</dt><dd>${escapeHtml(proof.key)}</dd></div>
         </dl>
         <div class="completion-card__actions">
-          <button class="button" type="button" data-share-detail>Share verified proof</button>
+          <a class="button" data-share-x href="${buildXShareUrl({ title: quest.title, url: shareUrl })}" target="_blank" rel="noopener noreferrer">Share on X</a>
+          <button class="button button--quiet" type="button" data-share-detail>Share or copy link</button>
           <a class="button button--quiet" href="/quests/${quest.id}">Review quest</a>
         </div>
         <p class="completion-card__share-status" data-share-status></p>
@@ -1748,6 +1749,14 @@ async function renderCompletionDetail(proofKey) {
     `;
     page.querySelector("[data-retry-proof]").addEventListener("click", () => window.location.reload());
   }
+}
+
+function buildXShareUrl({ title, url }) {
+  const params = new URLSearchParams({
+    text: `I completed ${title} on NimQuest and verified it with my Nimiq wallet.`,
+    url
+  });
+  return `https://twitter.com/intent/tweet?${params.toString()}`;
 }
 
 async function shareProof({ title, url }) {
@@ -1916,7 +1925,8 @@ function renderJourney() {
       </dl>
       <div class="journey-proof-dialog__actions">
         <a class="button button--small" data-proof-link href="#">Open receipt</a>
-        <button class="button button--small button--quiet" type="button" data-share-proof>Share proof</button>
+        <a class="button button--small button--quiet" data-share-x href="#" target="_blank" rel="noopener noreferrer">Share on X</a>
+        <button class="button button--small button--quiet" type="button" data-share-proof>Share or copy link</button>
       </div>
     </dialog>
   `;
@@ -1930,7 +1940,9 @@ function renderJourney() {
       proofDialog.querySelector("[data-proof-wallet]").textContent = compactAddress(proof.walletAddress);
       proofDialog.querySelector("[data-proof-date]").textContent = formatCompletionDate(proof.completedAt);
       const proofUrl = `/completions/${encodeURIComponent(proof.key)}`;
+      const absoluteProofUrl = new URL(proofUrl, window.location.origin).href;
       proofDialog.querySelector("[data-proof-link]").href = proofUrl;
+      proofDialog.querySelector("[data-share-x]").href = buildXShareUrl({ title: quest.title, url: absoluteProofUrl });
       proofDialog.querySelector("[data-share-proof]").dataset.shareUrl = proofUrl;
       proofDialog.querySelector("[data-share-proof]").dataset.shareTitle = quest.title;
       proofDialog.showModal();
