@@ -42,6 +42,25 @@ jobs:
       - name: Check Worker bundle
         run: npm run worker:check
 
+      - name: Run Worker integration tests
+        shell: bash
+        run: |
+          npx wrangler d1 migrations apply nimquest --local
+          npx wrangler dev --port 8790 --local > /tmp/nimquest-worker.log 2>&1 &
+          worker_pid=$!
+          trap 'kill "$worker_pid" 2>/dev/null || true' EXIT
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:8790/health >/dev/null; then
+              break
+            fi
+            sleep 1
+          done
+          if ! curl --fail --silent http://127.0.0.1:8790/health >/dev/null; then
+            cat /tmp/nimquest-worker.log
+            exit 1
+          fi
+          npm run test:worker-integration
+
       - name: Run QA CLI
         run: node cli/index.mjs qa --ci
 

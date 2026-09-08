@@ -59,6 +59,16 @@ async function routeRequest(request, env, url) {
     return json({ error: "Origin not allowed." }, 403);
   }
 
+  const completionPageMatch = url.pathname.match(/^\/completions\/([^/]+)$/);
+  if (request.method === "GET" && completionPageMatch) {
+    return renderCompletionPage(
+      request,
+      env,
+      url,
+      decodeURIComponent(completionPageMatch[1])
+    );
+  }
+
   if (request.method === "GET" && url.pathname === "/health") {
     return json({
       ok: true,
@@ -119,6 +129,65 @@ async function routeRequest(request, env, url) {
   }
 
   return json({ error: "Route not found." }, 404);
+}
+
+async function renderCompletionPage(request, env, url, publicId) {
+  const shellResponse = await env.ASSETS.fetch(request);
+  if (!shellResponse.ok) return shellResponse;
+
+  const record = await env.DB.prepare(
+    `SELECT public_id, quest_id, wallet_address, verification_method,
+            completed_at, status, reward_status
+     FROM completions
+     WHERE public_id = ? OR proof_key = ?`
+  ).bind(publicId, publicId).first();
+
+  if (!record || record.status !== "verified") {
+    return shellResponse;
+  }
+
+  const proof = toPublicProof(record);
+  const title = `${proof.questTitle} · Verified NimQuest receipt`;
+  const description = `Verified completion of ${proof.questTitle} on NimQuest, backed by a one-time Nimiq wallet signature.`;
+  const canonicalUrl = `${url.origin}/completions/${encodeURIComponent(proof.key)}`;
+
+  return new HTMLRewriter()
+    .on("title", {
+      element(element) {
+        element.setInnerContent(title);
+      }
+    })
+    .on('meta[name="description"]', {
+      element(element) {
+        element.setAttribute("content", description);
+      }
+    })
+    .on('meta[property="og:title"]', {
+      element(element) {
+        element.setAttribute("content", title);
+      }
+    })
+    .on('meta[property="og:description"]', {
+      element(element) {
+        element.setAttribute("content", description);
+      }
+    })
+    .on('meta[property="og:url"]', {
+      element(element) {
+        element.setAttribute("content", canonicalUrl);
+      }
+    })
+    .on('meta[name="twitter:title"]', {
+      element(element) {
+        element.setAttribute("content", title);
+      }
+    })
+    .on('meta[name="twitter:description"]', {
+      element(element) {
+        element.setAttribute("content", description);
+      }
+    })
+    .transform(shellResponse);
 }
 
 async function listLeaderboard(database) {

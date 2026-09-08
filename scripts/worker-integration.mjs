@@ -87,6 +87,34 @@ assert.equal(receipt.proof.walletAddress, maskWalletAddress(walletAddress));
 assert.equal(receipt.proof.questTitle, "Receive NIM Safely");
 assert.equal(receipt.proof.track, "payments");
 assert.equal(receipt.proof.difficulty, "starter");
+
+const receiptPageResponse = await fetch(
+  `${baseUrl}/completions/${encodeURIComponent(completion.proof.key)}`
+);
+const receiptPageHtml = await receiptPageResponse.text();
+assert.equal(receiptPageResponse.status, 200);
+assert.match(receiptPageHtml, /Receive NIM Safely · Verified NimQuest receipt/);
+assert.match(receiptPageHtml, /Verified completion of Receive NIM Safely on NimQuest/);
+assert.ok(
+  receiptPageHtml.includes(`${baseUrl}/completions/${encodeURIComponent(completion.proof.key)}`),
+  "receipt HTML must expose its canonical public URL"
+);
+assert.equal(
+  receiptPageHtml.includes(walletAddress),
+  false,
+  "receipt social metadata must not expose the wallet address"
+);
+assert.equal(
+  receiptPageHtml.includes(maskWalletAddress(walletAddress)),
+  false,
+  "receipt social metadata must not expose the masked wallet either"
+);
+
+const missingReceiptPageResponse = await fetch(`${baseUrl}/completions/not-a-real-receipt`);
+const missingReceiptPageHtml = await missingReceiptPageResponse.text();
+assert.equal(missingReceiptPageResponse.status, 200);
+assert.match(missingReceiptPageHtml, /NimQuest - Learn Nimiq by doing/);
+
 assert.equal(feedbackResponse.status, 201);
 assert.equal(replayResponse.status, 400);
 assert.match(replay.error, /already been used/);
@@ -113,6 +141,7 @@ console.log(JSON.stringify({
   d1Persistence: "passed",
   journeyRecovery: "passed",
   sharedReceipt: "passed",
+  receiptSocialMetadata: "passed",
   feedback: "passed",
   feedbackAuthorization: "passed",
   leaderboard: "passed",
