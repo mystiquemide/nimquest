@@ -40,5 +40,8 @@
     "playwright": "^1.61.1",
     "vite": "^7.0.0",
     "wrangler": "^4.0.0"
+  },
+  "overrides": {
+    "sharp": "0.35.4"
   }
 }
