@@ -1434,6 +1434,9 @@ function renderWalletProof(questId) {
 
     if (state.phase === "success") {
       const shortAddress = compactAddress(state.proof.walletAddress);
+      const completedQuestIds = new Set(readVerifiedCompletions().map((proof) => proof.questId));
+      completedQuestIds.add(quest.id);
+      const nextQuest = getNextQuest(completedQuestIds);
       gate.innerHTML = `
         <div class="proof-success__stamp" aria-hidden="true">✓</div>
         <div class="wallet-gate__content">
@@ -1443,7 +1446,9 @@ function renderWalletProof(questId) {
         </div>
         <div class="next-screen-lock">
           <a class="button" href="/completions/${encodeURIComponent(state.proof.key)}">View verified receipt →</a>
-          <a class="button button--quiet" href="/journey">Continue to journey</a>
+          ${nextQuest
+            ? `<a class="button button--quiet" data-next-quest href="/quests/${nextQuest.id}">Continue: ${escapeHtml(nextQuest.title)}</a><a class="button button--quiet" href="/journey">My Journey</a>`
+            : `<a class="button button--quiet" href="/journey">View completed journey</a>`}
         </div>
         <div class="proof-receipt">
           <span>Status <b>Verified</b></span>
@@ -1668,7 +1673,9 @@ async function renderCompletionDetail(proofKey) {
   `;
 
   const page = document.querySelector(".completion-page");
-  let proof = readVerifiedCompletions().find((item) => item.key === proofKey);
+  const localCompletions = readVerifiedCompletions();
+  const localProof = localCompletions.find((item) => item.key === proofKey);
+  let proof = localProof;
 
   try {
     if (!proof) {
@@ -1691,6 +1698,9 @@ async function renderCompletionDetail(proofKey) {
       throw new Error("Verified completion not found.");
     }
 
+    const isLocalProof = Boolean(localProof);
+    const completedQuestIds = new Set(localCompletions.map((item) => item.questId));
+    const nextQuest = isLocalProof ? getNextQuest(completedQuestIds) : null;
     const shareUrl = new URL(`/completions/${encodeURIComponent(proof.key)}`, window.location.origin).href;
     page.innerHTML = `
       <section class="completion-card">
@@ -1709,7 +1719,12 @@ async function renderCompletionDetail(proofKey) {
           <div><dt>Receipt ID</dt><dd>${escapeHtml(proof.key)}</dd></div>
         </dl>
         <div class="completion-card__actions">
-          <a class="button" data-share-x href="${buildXShareUrl({ title: quest.title, url: shareUrl })}" target="_blank" rel="noopener noreferrer">Share on X</a>
+          ${isLocalProof
+            ? nextQuest
+              ? `<a class="button" data-next-step href="/quests/${nextQuest.id}">Continue: ${escapeHtml(nextQuest.title)}</a>`
+              : `<a class="button" data-next-step href="/journey">View completed journey</a>`
+            : `<a class="button" data-next-step href="/quests/${STARTER_QUEST_ID}">Try NimQuest</a>`}
+          <a class="button button--quiet" data-share-x href="${buildXShareUrl({ title: quest.title, url: shareUrl })}" target="_blank" rel="noopener noreferrer">Share on X</a>
           <button class="button button--quiet" type="button" data-share-detail>Share or copy link</button>
           <a class="button button--quiet" href="/quests/${quest.id}">Review quest</a>
         </div>

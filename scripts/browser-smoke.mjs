@@ -188,14 +188,36 @@ try {
   assert.match(receiptXShare.searchParams.get("text"), /I completed Meet Nimiq on NimQuest/i);
   assert.equal(receiptXShare.searchParams.get("url"), `${baseUrl}/completions/day3-receipt`);
   assert.equal(receiptXShare.searchParams.get("text").includes("NQ20"), false, "X share text must not expose wallet details");
+  assert.equal(await receiptPage.locator("[data-next-step]").getAttribute("href"), "/quests/meet-nimiq");
+  assert.match(await receiptPage.locator("[data-next-step]").textContent(), /Try NimQuest/i);
   assert.equal(
     await receiptPage.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth),
     false,
     "verified receipt must not overflow at 390px"
   );
-  await receiptPage.close();
+  await receiptPage.evaluate(() => {
+  localStorage.setItem("nimquest:completion:meet-nimiq", JSON.stringify({
+    key: "day3-receipt",
+    questId: "meet-nimiq",
+    walletAddress: "NQ20ABCD**********",
+    verificationMethod: "nimiq_message_signature",
+    completedAt: "2026-09-04T10:00:00.000Z",
+    status: "verified",
+    reward: { status: "unavailable", asset: null, amount: null }
+  }));
+});
+await receiptPage.reload({ waitUntil: "networkidle" });
+assert.equal(await receiptPage.locator("[data-next-step]").getAttribute("href"), "/quests/pay-with-nim");
+assert.match(await receiptPage.locator("[data-next-step]").textContent(), /Continue: Pay with NIM/i);
+assert.equal(
+  await receiptPage.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth),
+  false,
+  "owner continuation receipt must not overflow at 390px"
+);
 
-  const journeySharePage = await browser.newPage({ viewport: { width: 390, height: 900 } });
+await receiptPage.close();
+
+const journeySharePage = await browser.newPage({ viewport: { width: 390, height: 900 } });
   await journeySharePage.goto(`${baseUrl}/journey`, { waitUntil: "networkidle" });
   await journeySharePage.evaluate(() => {
     localStorage.setItem("nimquest:completion:meet-nimiq", JSON.stringify({
