@@ -31,6 +31,7 @@ const routes = [
   ["/proof/meet-nimiq", /wallet proof/i, "Meet Nimiq Wallet Proof | NimQuest"],
   ["/journey", /Small wins/, "My Journey | NimQuest"],
   ["/leaderboard", /verified wallet proof/i, "Leaderboard | NimQuest"],
+  ["/community", /See what people are/i, "Community | NimQuest"],
   ["/docs", /Learn how NimQuest works/, "Documentation | NimQuest"],
   ["/docs/architecture", /Architecture/, "Architecture | NimQuest"],
   ["/docs/integration", /Nimiq Pay integration/, "Nimiq Pay Integration | NimQuest"],

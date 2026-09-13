@@ -303,6 +303,7 @@ function renderCurrentRoute() {
   const documentationMatch = normalizedPath.match(/^\/docs(?:\/([^/]+))?$/);
   const isJourney = normalizedPath === "/journey";
   const isLeaderboard = normalizedPath === "/leaderboard";
+  const isCommunity = normalizedPath === "/community";
   const isQuestTrail =
     normalizedPath === "/quests" ||
     new URLSearchParams(window.location.search).get("screen") === "quests";
@@ -315,6 +316,7 @@ function renderCurrentRoute() {
     documentationMatch,
     isJourney,
     isLeaderboard,
+    isCommunity,
     isQuestTrail
   });
 
@@ -322,6 +324,8 @@ function renderCurrentRoute() {
     renderCompletionDetail(decodeURIComponent(completionMatch[1]));
   } else if (documentationMatch) {
     renderDocumentationPage(documentationMatch[1] || "overview");
+  } else if (isCommunity) {
+    renderCommunity();
   } else if (isLeaderboard) {
     renderLeaderboard();
   } else if (isJourney) {
@@ -386,6 +390,7 @@ document.querySelector("#app").innerHTML = `
     <nav aria-label="Main navigation">
       <a href="#how">How it works</a>
       <a href="#quests">Quests</a>
+      <a href="/community">Community</a>
       <a href="/leaderboard">Leaderboard</a>
       <a href="/docs">Docs</a>
     </nav>
@@ -543,6 +548,7 @@ document.querySelector("#app").innerHTML = `
       <a href="https://nimiq.com/" target="_blank" rel="noreferrer">Nimiq</a>
       <a href="/quests">Quest Trail</a>
       <a href="/journey">My Journey</a>
+      <a href="/community">Community</a>
       <a href="/leaderboard">Leaderboard</a>
       <a href="/docs">Docs</a>
       <a href="/privacy">Privacy</a>
@@ -731,6 +737,7 @@ function setDocumentTitle({
   documentationMatch,
   isJourney,
   isLeaderboard,
+  isCommunity,
   isQuestTrail
 }) {
   const questId = questSessionMatch?.[1] || walletProofMatch?.[1];
@@ -747,7 +754,8 @@ function setDocumentTitle({
   if (completionMatch) title = "Completion Receipt";
   else if (documentationMatch) {
     title = documentationTitles[documentationMatch[1] || "overview"] || "Documentation";
-  } else if (isLeaderboard) title = "Leaderboard";
+  } else if (isCommunity) title = "Community";
+  else if (isLeaderboard) title = "Leaderboard";
   else if (isJourney) title = "My Journey";
   else if (normalizedPath === "/privacy") title = "Privacy Notice";
   else if (normalizedPath === "/terms") title = "Terms of Use";
@@ -1839,6 +1847,7 @@ function renderJourney() {
       <nav class="journey-nav" aria-label="Product navigation">
         <a href="/quests">Quest Trail</a>
         <a href="/journey" aria-current="page">My Journey</a>
+        <a href="/community">Community</a>
         <a href="/leaderboard">Leaderboard</a>
       </nav>
       <a class="back-link" href="/quests"><span aria-hidden="true">←</span> Quest Trail</a>
@@ -2020,6 +2029,134 @@ function renderJourney() {
   });
 }
 
+async function renderCommunity() {
+  const isLocalPreview = ["localhost", "127.0.0.1"].includes(window.location.hostname);
+  const apiBase =
+    import.meta.env.VITE_API_BASE_URL || (isLocalPreview ? "http://localhost:8787" : "");
+
+  document.querySelector("#app").innerHTML = `
+    <a class="skip-link" href="#community-content">Skip to community activity</a>
+    <header class="app-header journey-header">
+      <a class="brand" href="/" aria-label="NimQuest home">${brandMarkup()}</a>
+      <nav class="journey-nav" aria-label="Product navigation">
+        <a href="/quests">Quest Trail</a>
+        <a href="/journey">My Journey</a>
+        <a href="/community" aria-current="page">Community</a>
+        <a href="/leaderboard">Leaderboard</a>
+      </nav>
+      <a class="back-link" href="/quests"><span aria-hidden="true">←</span> Quest Trail</a>
+    </header>
+
+    <main class="leaderboard-page" id="community-content">
+      <section class="leaderboard-hero">
+        <div>
+          <p class="eyebrow eyebrow--large">Live verified learning</p>
+          <h1>See what people are<br><span class="word-highlight word-highlight--yellow">learning on NimQuest.</span></h1>
+          <p>This view is built only from verified completion records. Wallets stay masked and no self-reported activity is counted.</p>
+        </div>
+        <aside class="leaderboard-rule">
+          <span aria-hidden="true">✦</span>
+          <div>
+            <p class="eyebrow">Public by design</p>
+            <h2>Aggregate progress, not private identity.</h2>
+            <p>Counts, quest names, public receipt IDs and masked wallet labels are the only activity shown here.</p>
+          </div>
+        </aside>
+      </section>
+
+      <section class="leaderboard-board" aria-live="polite">
+        <div class="leaderboard-loading">
+          <span aria-hidden="true">◎</span>
+          <p>Loading verified community activity.</p>
+        </div>
+      </section>
+    </main>
+  `;
+
+  const board = document.querySelector(".leaderboard-board");
+  try {
+    if (!navigator.onLine) {
+      throw new Error("You’re offline. Reconnect to load community activity.");
+    }
+
+    const response = await fetch(`${apiBase}/api/community`);
+    const result = await response.json();
+    if (!response.ok) {
+      throw new Error(result.error || "NimQuest couldn’t load community activity.");
+    }
+
+    const summary = result.summary || {};
+    const popularQuests = Array.isArray(result.popularQuests) ? result.popularQuests : [];
+    const recentActivity = Array.isArray(result.recentActivity) ? result.recentActivity : [];
+    const popularRows = popularQuests.map((entry, index) => `
+      <li class="leaderboard-row">
+        <span class="leaderboard-rank" aria-label="Popular quest rank ${index + 1}">${index + 1}</span>
+        <div class="leaderboard-wallet">
+          <span>${escapeHtml(entry.track || "Quest")}</span>
+          <b>${escapeHtml(entry.questTitle)}</b>
+        </div>
+        <div class="leaderboard-score">
+          <strong>${entry.verifiedCompletions}</strong>
+          <span>verified completions</span>
+        </div>
+        <div class="leaderboard-date">
+          <span>Latest proof</span>
+          <b>${escapeHtml(formatCompletionDate(entry.latestVerifiedAt))}</b>
+        </div>
+      </li>
+    `).join("");
+    const recentRows = recentActivity.map((entry) => `
+      <li class="leaderboard-row">
+        <span class="leaderboard-rank" aria-hidden="true">✓</span>
+        <div class="leaderboard-wallet">
+          <span>${escapeHtml(entry.walletLabel)}</span>
+          <b>${escapeHtml(entry.questTitle)}</b>
+        </div>
+        <div class="leaderboard-score">
+          <a class="text-link" href="/completions/${encodeURIComponent(entry.receiptId)}">View receipt <span aria-hidden="true">→</span></a>
+          <span>${escapeHtml(entry.track || "Verified quest")}</span>
+        </div>
+        <div class="leaderboard-date">
+          <span>Verified</span>
+          <b>${escapeHtml(formatCompletionDate(entry.completedAt))}</b>
+        </div>
+      </li>
+    `).join("");
+
+    board.innerHTML = `
+      <div class="journey-summary" aria-label="Community summary">
+        <span><b>${Number(summary.verifiedCompletions || 0)}</b>verified completions</span>
+        <span><b>${Number(summary.participatingWallets || 0)}</b>participating wallets</span>
+        <span><b>${Number(summary.activeQuests || 0)}</b>active quests</span>
+      </div>
+      <div class="leaderboard-board__heading">
+        <div><p class="eyebrow">Most completed</p><h2>Popular quests</h2></div>
+        <span class="leaderboard-status">${summary.latestVerifiedAt ? `Updated ${escapeHtml(formatCompletionDate(summary.latestVerifiedAt))}` : "No verified activity yet"}</span>
+      </div>
+      ${popularRows
+        ? `<ol class="leaderboard-list">${popularRows}</ol>`
+        : `<div class="leaderboard-empty"><span aria-hidden="true">✦</span><h3>No verified activity yet.</h3><p>Complete the first quest to start the public activity feed.</p><a class="button" href="/quests/${STARTER_QUEST_ID}">Start Meet Nimiq</a></div>`}
+      ${recentRows ? `
+        <div class="leaderboard-board__heading">
+          <div><p class="eyebrow">Latest proofs</p><h2>Recent activity</h2></div>
+          <span class="leaderboard-status">Masked wallet labels only</span>
+        </div>
+        <ol class="leaderboard-list">${recentRows}</ol>` : ""}
+    `;
+  } catch (error) {
+    board.innerHTML = `
+      <div class="leaderboard-error">
+        <span aria-hidden="true">!</span>
+        <p class="eyebrow">Community activity unavailable</p>
+        <h2>We couldn’t load verified activity.</h2>
+        <p>${escapeHtml(error instanceof Error ? error.message : "Try again in a moment.")}</p>
+        <button class="button" type="button" data-retry-community>Try again</button>
+      </div>
+    `;
+    board.querySelector("[data-retry-community]").addEventListener("click", () => window.location.reload());
+  }
+}
+
 async function renderLeaderboard() {
   const isLocalPreview = ["localhost", "127.0.0.1"].includes(window.location.hostname);
   const apiBase =
@@ -2032,6 +2169,7 @@ async function renderLeaderboard() {
       <nav class="journey-nav" aria-label="Product navigation">
         <a href="/quests">Quest Trail</a>
         <a href="/journey">My Journey</a>
+        <a href="/community">Community</a>
         <a href="/leaderboard" aria-current="page">Leaderboard</a>
       </nav>
       <a class="back-link" href="/quests"><span aria-hidden="true">←</span> Quest Trail</a>

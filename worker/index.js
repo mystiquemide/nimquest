@@ -84,6 +84,10 @@ async function routeRequest(request, env, url) {
     return listLeaderboard(env.DB);
   }
 
+  if (request.method === "GET" && url.pathname === "/api/community") {
+    return getCommunityActivity(env.DB);
+  }
+
   if (request.method === "GET" && url.pathname === "/api/completions") {
     return listWalletCompletions(env.DB, url.searchParams.get("wallet"));
   }
@@ -188,6 +192,67 @@ async function renderCompletionPage(request, env, url, publicId) {
       }
     })
     .transform(shellResponse);
+}
+
+async function getCommunityActivity(database) {
+  const [summary, popular, recent] = await Promise.all([
+    database.prepare(
+      `SELECT COUNT(*) AS verified_completions,
+              COUNT(DISTINCT wallet_address) AS participating_wallets,
+              COUNT(DISTINCT quest_id) AS active_quests,
+              MAX(completed_at) AS latest_verified_at
+       FROM completions
+       WHERE status = 'verified'`
+    ).first(),
+    database.prepare(
+      `SELECT quest_id,
+              COUNT(*) AS verified_completions,
+              MAX(completed_at) AS latest_verified_at
+       FROM completions
+       WHERE status = 'verified'
+       GROUP BY quest_id
+       ORDER BY verified_completions DESC, latest_verified_at DESC, quest_id ASC
+       LIMIT 5`
+    ).all(),
+    database.prepare(
+      `SELECT public_id, quest_id, wallet_address, completed_at
+       FROM completions
+       WHERE status = 'verified'
+       ORDER BY completed_at DESC, public_id DESC
+       LIMIT 8`
+    ).all()
+  ]);
+
+  return json({
+    summary: {
+      verifiedCompletions: Number(summary?.verified_completions || 0),
+      participatingWallets: Number(summary?.participating_wallets || 0),
+      activeQuests: Number(summary?.active_quests || 0),
+      latestVerifiedAt: summary?.latest_verified_at || null
+    },
+    popularQuests: popular.results.map((record) => {
+      const quest = findQuest(record.quest_id);
+      return {
+        questId: record.quest_id,
+        questTitle: quest?.title || record.quest_id,
+        track: quest?.track || null,
+        difficulty: quest?.difficulty || null,
+        verifiedCompletions: Number(record.verified_completions),
+        latestVerifiedAt: record.latest_verified_at
+      };
+    }),
+    recentActivity: recent.results.map((record) => {
+      const quest = findQuest(record.quest_id);
+      return {
+        receiptId: record.public_id,
+        questId: record.quest_id,
+        questTitle: quest?.title || record.quest_id,
+        track: quest?.track || null,
+        walletLabel: maskWalletAddress(record.wallet_address),
+        completedAt: record.completed_at
+      };
+    })
+  });
 }
 
 async function listLeaderboard(database) {

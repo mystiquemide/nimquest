@@ -107,6 +107,68 @@ export function createServer() {
         return sendJson(response, 200, { leaderboard: ranked });
       }
 
+      if (request.method === "GET" && url.pathname === "/api/community") {
+        const verified = getCompletionStore()
+          .values()
+          .filter((proof) => proof.status === "verified");
+        const questCounts = verified.reduce((counts, proof) => {
+          const existing = counts.get(proof.questId) || {
+            questId: proof.questId,
+            verifiedCompletions: 0,
+            latestVerifiedAt: proof.completedAt
+          };
+          existing.verifiedCompletions += 1;
+          if (proof.completedAt > existing.latestVerifiedAt) {
+            existing.latestVerifiedAt = proof.completedAt;
+          }
+          counts.set(proof.questId, existing);
+          return counts;
+        }, new Map());
+        const latestVerifiedAt = verified.reduce(
+          (latest, proof) => !latest || proof.completedAt > latest ? proof.completedAt : latest,
+          null
+        );
+
+        return sendJson(response, 200, {
+          summary: {
+            verifiedCompletions: verified.length,
+            participatingWallets: new Set(verified.map((proof) => proof.walletAddress)).size,
+            activeQuests: new Set(verified.map((proof) => proof.questId)).size,
+            latestVerifiedAt
+          },
+          popularQuests: Array.from(questCounts.values())
+            .sort((a, b) =>
+              b.verifiedCompletions - a.verifiedCompletions ||
+              b.latestVerifiedAt.localeCompare(a.latestVerifiedAt) ||
+              a.questId.localeCompare(b.questId)
+            )
+            .slice(0, 5)
+            .map((entry) => {
+              const quest = getQuest(entry.questId);
+              return {
+                ...entry,
+                questTitle: quest?.title || entry.questId,
+                track: quest?.track || null,
+                difficulty: quest?.difficulty || null
+              };
+            }),
+          recentActivity: [...verified]
+            .sort((a, b) => b.completedAt.localeCompare(a.completedAt) || b.key.localeCompare(a.key))
+            .slice(0, 8)
+            .map((proof) => {
+              const quest = getQuest(proof.questId);
+              return {
+                receiptId: proof.key,
+                questId: proof.questId,
+                questTitle: quest?.title || proof.questId,
+                track: quest?.track || null,
+                walletLabel: maskWalletAddress(proof.walletAddress),
+                completedAt: proof.completedAt
+              };
+            })
+        });
+      }
+
       if (request.method === "GET" && url.pathname === "/api/completions") {
         const wallet = normalizeWalletAddress(url.searchParams.get("wallet"));
         if (!wallet) {

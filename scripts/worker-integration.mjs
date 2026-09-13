@@ -50,7 +50,7 @@ assert.equal(completionResponse.status, 200);
 assert.equal(completion.verified, true);
 assert.equal(completion.proof.walletAddress, walletAddress);
 
-const [walletResponse, receiptResponse, feedbackResponse, replayResponse, leaderboardResponse] = await Promise.all([
+const [walletResponse, receiptResponse, feedbackResponse, replayResponse, leaderboardResponse, communityResponse] = await Promise.all([
   fetch(`${baseUrl}/api/completions?wallet=${encodeURIComponent(walletAddress)}`),
   fetch(`${baseUrl}/api/completions/${encodeURIComponent(completion.proof.key)}`),
   fetch(`${baseUrl}/api/feedback`, {
@@ -67,12 +67,14 @@ const [walletResponse, receiptResponse, feedbackResponse, replayResponse, leader
     headers: { "content-type": "application/json" },
     body: JSON.stringify(completionPayload)
   }),
-  fetch(`${baseUrl}/api/leaderboard`)
+  fetch(`${baseUrl}/api/leaderboard`),
+  fetch(`${baseUrl}/api/community`)
 ]);
 const walletProofs = await walletResponse.json();
 const receipt = await receiptResponse.json();
 const replay = await replayResponse.json();
 const leaderboard = await leaderboardResponse.json();
+const community = await communityResponse.json();
 const leaderboardEntry = leaderboard.leaderboard.find(
   (entry) => entry.walletLabel === maskWalletAddress(walletAddress)
 );
@@ -121,6 +123,15 @@ assert.match(replay.error, /already been used/);
 assert.equal(leaderboardResponse.status, 200);
 assert.equal(leaderboardEntry.verifiedQuests, 1);
 assert.ok(leaderboardEntry.rank >= 1);
+assert.equal(communityResponse.status, 200);
+assert.equal(community.summary.verifiedCompletions, 1);
+assert.equal(community.summary.participatingWallets, 1);
+assert.equal(community.summary.activeQuests, 1);
+assert.equal(community.popularQuests[0].questId, "receive-nim-safely");
+assert.equal(community.popularQuests[0].verifiedCompletions, 1);
+assert.equal(community.recentActivity[0].receiptId, completion.proof.key);
+assert.equal(community.recentActivity[0].walletLabel, maskWalletAddress(walletAddress));
+assert.equal("walletAddress" in community.recentActivity[0], false);
 
 const unauthorizedFeedbackResponse = await fetch(`${baseUrl}/api/feedback`, {
   method: "POST",
@@ -145,6 +156,7 @@ console.log(JSON.stringify({
   feedback: "passed",
   feedbackAuthorization: "passed",
   leaderboard: "passed",
+  communityActivity: "passed",
   replayProtection: "passed"
 }, null, 2));
 
