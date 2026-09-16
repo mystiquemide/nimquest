@@ -49,6 +49,32 @@ try {
     const page = await browser.newPage({ viewport: { width, height: 900 } });
     const errors = [];
     page.on("pageerror", (error) => errors.push(error.message));
+    await page.route("**/api/community", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          summary: {
+            verifiedCompletions: 0,
+            participatingWallets: 0,
+            activeQuests: 0,
+            latestVerifiedAt: null
+          },
+          funnel: {
+            trackingSince: null,
+            quizAttempts: 0,
+            quizPasses: 0,
+            proofStarts: 0,
+            verifiedCompletions: 0,
+            passRate: null,
+            proofStartRate: null,
+            verificationRate: null
+          },
+          popularQuests: [],
+          recentActivity: []
+        })
+      });
+    });
 
     for (const [route, heading, title] of routes) {
       await page.goto(`${baseUrl}${route}`, { waitUntil: "networkidle" });
@@ -101,6 +127,11 @@ try {
           await page.locator(".journey-content__heading .button").getAttribute("href"),
           "/quests/meet-nimiq"
         );
+      }
+
+      if (route === "/community") {
+        assert.match(await page.locator(".leaderboard-board").textContent(), /From quiz to verified proof/i);
+        assert.match(await page.locator(".leaderboard-board").textContent(), /Aggregate daily counters only/i);
       }
 
       const overflows = await page.evaluate(

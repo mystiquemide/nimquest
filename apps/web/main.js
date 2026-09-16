@@ -2086,8 +2086,10 @@ async function renderCommunity() {
     }
 
     const summary = result.summary || {};
+    const funnel = result.funnel || {};
     const popularQuests = Array.isArray(result.popularQuests) ? result.popularQuests : [];
     const recentActivity = Array.isArray(result.recentActivity) ? result.recentActivity : [];
+    const rateLabel = (value) => value == null ? "—" : `${Number(value).toFixed(1)}%`;
     const popularRows = popularQuests.map((entry, index) => `
       <li class="leaderboard-row">
         <span class="leaderboard-rank" aria-label="Popular quest rank ${index + 1}">${index + 1}</span>
@@ -2129,6 +2131,17 @@ async function renderCommunity() {
         <span><b>${Number(summary.participatingWallets || 0)}</b>participating wallets</span>
         <span><b>${Number(summary.activeQuests || 0)}</b>active quests</span>
       </div>
+      <div class="leaderboard-board__heading">
+        <div><p class="eyebrow">Learning funnel</p><h2>From quiz to verified proof.</h2></div>
+        <span class="leaderboard-status">${funnel.trackingSince ? `Tracking since ${escapeHtml(formatCompletionDate(`${funnel.trackingSince}T00:00:00Z`))}` : "Tracking begins with the first event"}</span>
+      </div>
+      <div class="journey-summary" aria-label="Aggregate learning funnel">
+        <span><b>${Number(funnel.quizAttempts || 0)}</b>valid quiz attempts</span>
+        <span><b>${Number(funnel.quizPasses || 0)}</b>quiz passes</span>
+        <span><b>${Number(funnel.proofStarts || 0)}</b>wallet-proof starts</span>
+        <span><b>${Number(funnel.verifiedCompletions || 0)}</b>new verified proofs</span>
+      </div>
+      <p class="leaderboard-status">Pass rate ${rateLabel(funnel.passRate)} · proof-start rate ${rateLabel(funnel.proofStartRate)} · verification rate ${rateLabel(funnel.verificationRate)}. Aggregate daily counters only. No wallet, IP, device, session, answer, public-key or signature data is stored for this funnel.</p>
       <div class="leaderboard-board__heading">
         <div><p class="eyebrow">Most completed</p><h2>Popular quests</h2></div>
         <span class="leaderboard-status">${summary.latestVerifiedAt ? `Updated ${escapeHtml(formatCompletionDate(summary.latestVerifiedAt))}` : "No verified activity yet"}</span>
@@ -2516,6 +2529,7 @@ function renderLegalPage(page) {
         <h2>Data we use</h2>
         <p>When you verify a quest, NimQuest receives your selected Nimiq wallet address, public key, signature, quest answers, quest identifier, and completion time. Nimiq Pay keeps your private keys and recovery data. NimQuest never receives them.</p>
         <p>NimQuest does not request or store a Nimiq Pay device identifier.</p>
+        <p>NimQuest also records daily aggregate counts for valid quiz attempts, quiz passes, wallet-proof starts, and newly verified completions. These funnel counters do not contain wallet addresses, IP addresses, device or session identifiers, answers, public keys, or signatures.</p>
       </section>
       <section>
         <h2>Why we use this data</h2>
@@ -2525,11 +2539,12 @@ function renderLegalPage(page) {
           <li>Restore verified progress for the wallet that you approve in Nimiq Pay.</li>
           <li>Rank verified progress on the public leaderboard.</li>
           <li>Protect the service from spam and repeated automated requests.</li>
+          <li>Measure aggregate onboarding conversion so weak points in the learning flow can be improved without tracking individual learners.</li>
         </ul>
       </section>
       <section>
         <h2>Public information</h2>
-        <p>Leaderboard participation is required for every verified completion. You cannot opt out of public ranking. Public pages show a masked wallet label, verified quest count, completion dates, quest name, and verification method. NimQuest does not show your full wallet address, public key, signature, answers, or security tokens on public pages.</p>
+        <p>Leaderboard participation is required for every verified completion. You cannot opt out of public ranking. Public pages show a masked wallet label, verified quest count, completion dates, quest name, and verification method. The Community page may also show aggregate funnel counts and conversion rates. NimQuest does not show your full wallet address, public key, signature, answers, or security tokens on public pages.</p>
       </section>
       <section>
         <h2>Storage and retention</h2>
@@ -2655,7 +2670,7 @@ const documentationPages = {
               <tr><td>Vite frontend</td><td>Renders lessons, quizzes, Journey, receipts, badges, legal pages, and the leaderboard.</td></tr>
               <tr><td>Nimiq Pay</td><td>Provides approved account access, consensus state, block height, and message signing.</td></tr>
               <tr><td>Cloudflare Worker</td><td>Grades quizzes, verifies signatures, applies abuse controls, and serves the API and static app.</td></tr>
-              <tr><td>Cloudflare D1</td><td>Stores challenges, verified completions, feedback, and short-lived rate counters.</td></tr>
+              <tr><td>Cloudflare D1</td><td>Stores challenges, verified completions, feedback, short-lived rate counters, and aggregate daily learning-funnel counters.</td></tr>
             </tbody>
           </table>
         </div>

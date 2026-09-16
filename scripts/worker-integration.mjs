@@ -20,6 +20,18 @@ assert.equal((await questsResponse.json()).quests.length, 20);
 assert.equal(deepLinkResponse.status, 200);
 assert.match(await deepLinkResponse.text(), /<div id="app"><\/div>/);
 
+const gradeResponse = await fetch(`${baseUrl}/api/grade`, {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify({
+    questId: "receive-nim-safely",
+    answers: correctAnswers("receive-nim-safely")
+  })
+});
+const grade = await gradeResponse.json();
+assert.equal(gradeResponse.status, 200);
+assert.equal(grade.passed, true);
+
 const challengeResponse = await fetch(`${baseUrl}/api/completion-challenges`, {
   method: "POST",
   headers: { "content-type": "application/json" },
@@ -127,6 +139,17 @@ assert.equal(communityResponse.status, 200);
 assert.equal(community.summary.verifiedCompletions, 1);
 assert.equal(community.summary.participatingWallets, 1);
 assert.equal(community.summary.activeQuests, 1);
+assert.equal(community.funnel.quizAttempts, 1);
+assert.equal(community.funnel.quizPasses, 1);
+assert.equal(community.funnel.proofStarts, 1);
+assert.equal(community.funnel.verifiedCompletions, 1);
+assert.equal(community.funnel.passRate, 100);
+assert.equal(community.funnel.proofStartRate, 100);
+assert.equal(community.funnel.verificationRate, 100);
+assert.match(community.funnel.trackingSince, /^\d{4}-\d{2}-\d{2}$/);
+assert.equal("walletAddress" in community.funnel, false);
+assert.equal("deviceId" in community.funnel, false);
+assert.equal("ip" in community.funnel, false);
 assert.equal(community.popularQuests[0].questId, "receive-nim-safely");
 assert.equal(community.popularQuests[0].verifiedCompletions, 1);
 assert.equal(community.recentActivity[0].receiptId, completion.proof.key);
@@ -157,6 +180,7 @@ console.log(JSON.stringify({
   feedbackAuthorization: "passed",
   leaderboard: "passed",
   communityActivity: "passed",
+  aggregateLearningFunnel: "passed",
   replayProtection: "passed"
 }, null, 2));
 

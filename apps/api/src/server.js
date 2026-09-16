@@ -28,6 +28,20 @@ const CONTENT_TYPES = {
 };
 
 export function createServer() {
+  const funnelMetrics = {
+    trackingSince: null,
+    quizAttempts: 0,
+    quizPasses: 0,
+    proofStarts: 0,
+    verifiedCompletions: 0
+  };
+  const recordFunnelMetric = (metric) => {
+    if (!funnelMetrics.trackingSince) {
+      funnelMetrics.trackingSince = new Date().toISOString().slice(0, 10);
+    }
+    funnelMetrics[metric] += 1;
+  };
+
   return http.createServer(async (request, response) => {
     try {
       const url = new URL(request.url, `http://${request.headers.host}`);
@@ -136,6 +150,7 @@ export function createServer() {
             activeQuests: new Set(verified.map((proof) => proof.questId)).size,
             latestVerifiedAt
           },
+          funnel: toFunnelSummary(funnelMetrics),
           popularQuests: Array.from(questCounts.values())
             .sort((a, b) =>
               b.verifiedCompletions - a.verifiedCompletions ||
@@ -213,6 +228,7 @@ export function createServer() {
           return sendJson(response, result.status, { error: result.error });
         }
 
+        recordFunnelMetric("proofStarts");
         return sendJson(response, 201, result);
       }
 
@@ -224,6 +240,8 @@ export function createServer() {
           return sendJson(response, result.status, { error: result.error });
         }
 
+        recordFunnelMetric("quizAttempts");
+        if (result.passed) recordFunnelMetric("quizPasses");
         return sendJson(response, 200, result);
       }
 
@@ -237,6 +255,9 @@ export function createServer() {
           });
         }
 
+        if (result.verified && result.newlyCompleted) {
+          recordFunnelMetric("verifiedCompletions");
+        }
         return sendJson(response, 200, result);
       }
 
@@ -276,6 +297,17 @@ export function createServer() {
       });
     }
   });
+}
+
+function toFunnelSummary(metrics) {
+  const percentage = (value, total) =>
+    total > 0 ? Math.round((value / total) * 1000) / 10 : null;
+  return {
+    ...metrics,
+    passRate: percentage(metrics.quizPasses, metrics.quizAttempts),
+    proofStartRate: percentage(metrics.proofStarts, metrics.quizPasses),
+    verificationRate: percentage(metrics.verifiedCompletions, metrics.proofStarts)
+  };
 }
 
 function toPublicProof(proof) {

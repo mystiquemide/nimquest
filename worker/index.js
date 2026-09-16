@@ -108,7 +108,14 @@ async function routeRequest(request, env, url) {
   if (request.method === "POST" && url.pathname === "/api/grade") {
     const limited = await enforceRateLimit(env.DB, request, "grade", 30, 60);
     if (limited) return limited;
-    const result = checkQuestAnswers(await readJson(request));
+    const body = await readJson(request);
+    const result = checkQuestAnswers(body);
+    if (result.ok) {
+      await recordFunnelMetric(env.DB, body.questId, "quiz_attempts");
+      if (result.passed) {
+        await recordFunnelMetric(env.DB, body.questId, "quiz_passes");
+      }
+    }
     return result.ok
       ? json(result)
       : json({ error: result.error }, result.status);
@@ -195,7 +202,7 @@ async function renderCompletionPage(request, env, url, publicId) {
 }
 
 async function getCommunityActivity(database) {
-  const [summary, popular, recent] = await Promise.all([
+  const [summary, popular, recent, funnel] = await Promise.all([
     database.prepare(
       `SELECT COUNT(*) AS verified_completions,
               COUNT(DISTINCT wallet_address) AS participating_wallets,
@@ -220,7 +227,15 @@ async function getCommunityActivity(database) {
        WHERE status = 'verified'
        ORDER BY completed_at DESC, public_id DESC
        LIMIT 8`
-    ).all()
+    ).all(),
+    database.prepare(
+      `SELECT MIN(metric_date) AS tracking_since,
+              SUM(quiz_attempts) AS quiz_attempts,
+              SUM(quiz_passes) AS quiz_passes,
+              SUM(proof_starts) AS proof_starts,
+              SUM(verified_completions) AS verified_completions
+       FROM learning_funnel_daily`
+    ).first()
   ]);
 
   return json({
@@ -230,6 +245,7 @@ async function getCommunityActivity(database) {
       activeQuests: Number(summary?.active_quests || 0),
       latestVerifiedAt: summary?.latest_verified_at || null
     },
+    funnel: toFunnelSummary(funnel),
     popularQuests: popular.results.map((record) => {
       const quest = findQuest(record.quest_id);
       return {
@@ -402,6 +418,8 @@ async function createCompletionChallenge(database, body) {
     )
   ]);
 
+  await recordFunnelMetric(database, body.questId, "proof_starts");
+
   return json({
     ok: true,
     challenge: { id, message, expiresAt }
@@ -520,6 +538,10 @@ async function completeQuest(database, body) {
     throw new Error("Verified completion was not persisted.");
   }
 
+  if (!existing) {
+    await recordFunnelMetric(database, body.questId, "verified_completions");
+  }
+
   return json({
     ok: true,
     passed: true,
@@ -575,6 +597,48 @@ function toPublicProof(record) {
 function maskWalletAddress(value) {
   const compact = String(value || "").replace(/\s+/g, "");
   return `${compact.slice(0, 8)}${"*".repeat(10)}`;
+}
+
+function toFunnelSummary(record) {
+  const quizAttempts = Number(record?.quiz_attempts || 0);
+  const quizPasses = Number(record?.quiz_passes || 0);
+  const proofStarts = Number(record?.proof_starts || 0);
+  const verifiedCompletions = Number(record?.verified_completions || 0);
+  return {
+    trackingSince: record?.tracking_since || null,
+    quizAttempts,
+    quizPasses,
+    proofStarts,
+    verifiedCompletions,
+    passRate: percentage(quizPasses, quizAttempts),
+    proofStartRate: percentage(proofStarts, quizPasses),
+    verificationRate: percentage(verifiedCompletions, proofStarts)
+  };
+}
+
+function percentage(value, total) {
+  return total > 0 ? Math.round((value / total) * 1000) / 10 : null;
+}
+
+async function recordFunnelMetric(database, questId, metric) {
+  const allowed = new Set(["quiz_attempts", "quiz_passes", "proof_starts", "verified_completions"]);
+  if (!allowed.has(metric) || !findQuest(questId)) return;
+  const metricDate = new Date().toISOString().slice(0, 10);
+  try {
+    await database.prepare(
+      `INSERT INTO learning_funnel_daily (metric_date, quest_id, ${metric})
+       VALUES (?, ?, 1)
+       ON CONFLICT (metric_date, quest_id) DO UPDATE SET
+         ${metric} = ${metric} + 1`
+    ).bind(metricDate, questId).run();
+  } catch (error) {
+    console.error(JSON.stringify({
+      event: "funnel_metric_error",
+      metric,
+      questId,
+      error: error instanceof Error ? error.message : String(error)
+    }));
+  }
 }
 
 async function enforceRateLimit(database, request, route, limit, windowSeconds) {
