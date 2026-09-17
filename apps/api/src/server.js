@@ -35,11 +35,23 @@ export function createServer() {
     proofStarts: 0,
     verifiedCompletions: 0
   };
-  const recordFunnelMetric = (metric) => {
+  const questFunnelMetrics = new Map();
+  const recordFunnelMetric = (questId, metric) => {
+    const metricDate = new Date().toISOString().slice(0, 10);
     if (!funnelMetrics.trackingSince) {
-      funnelMetrics.trackingSince = new Date().toISOString().slice(0, 10);
+      funnelMetrics.trackingSince = metricDate;
     }
     funnelMetrics[metric] += 1;
+
+    const questMetrics = questFunnelMetrics.get(questId) || {
+      trackingSince: metricDate,
+      quizAttempts: 0,
+      quizPasses: 0,
+      proofStarts: 0,
+      verifiedCompletions: 0
+    };
+    questMetrics[metric] += 1;
+    questFunnelMetrics.set(questId, questMetrics);
   };
 
   return http.createServer(async (request, response) => {
@@ -151,6 +163,22 @@ export function createServer() {
             latestVerifiedAt
           },
           funnel: toFunnelSummary(funnelMetrics),
+          questFunnels: Array.from(questFunnelMetrics.entries())
+            .map(([questId, metrics]) => {
+              const quest = getQuest(questId);
+              return {
+                questId,
+                questTitle: quest?.title || questId,
+                track: quest?.track || null,
+                difficulty: quest?.difficulty || null,
+                ...toFunnelSummary(metrics)
+              };
+            })
+            .sort((a, b) =>
+              b.quizAttempts - a.quizAttempts ||
+              b.proofStarts - a.proofStarts ||
+              a.questTitle.localeCompare(b.questTitle)
+            ),
           popularQuests: Array.from(questCounts.values())
             .sort((a, b) =>
               b.verifiedCompletions - a.verifiedCompletions ||
@@ -228,7 +256,7 @@ export function createServer() {
           return sendJson(response, result.status, { error: result.error });
         }
 
-        recordFunnelMetric("proofStarts");
+        recordFunnelMetric(body.questId, "proofStarts");
         return sendJson(response, 201, result);
       }
 
@@ -240,8 +268,8 @@ export function createServer() {
           return sendJson(response, result.status, { error: result.error });
         }
 
-        recordFunnelMetric("quizAttempts");
-        if (result.passed) recordFunnelMetric("quizPasses");
+        recordFunnelMetric(body.questId, "quizAttempts");
+        if (result.passed) recordFunnelMetric(body.questId, "quizPasses");
         return sendJson(response, 200, result);
       }
 
@@ -256,7 +284,7 @@ export function createServer() {
         }
 
         if (result.verified && result.newlyCompleted) {
-          recordFunnelMetric("verifiedCompletions");
+          recordFunnelMetric(body.questId, "verifiedCompletions");
         }
         return sendJson(response, 200, result);
       }

@@ -2089,7 +2089,25 @@ async function renderCommunity() {
     const funnel = result.funnel || {};
     const popularQuests = Array.isArray(result.popularQuests) ? result.popularQuests : [];
     const recentActivity = Array.isArray(result.recentActivity) ? result.recentActivity : [];
+    const questFunnels = Array.isArray(result.questFunnels) ? result.questFunnels : [];
     const rateLabel = (value) => value == null ? "—" : `${Number(value).toFixed(1)}%`;
+    const questFunnelRows = questFunnels.map((entry, index) => `
+      <li class="leaderboard-row">
+        <span class="leaderboard-rank" aria-label="Quest funnel row ${index + 1}">${String(index + 1).padStart(2, "0")}</span>
+        <div class="leaderboard-wallet">
+          <span>${escapeHtml(entry.track || "Quest")} · ${Number(entry.quizAttempts || 0)} attempts · ${Number(entry.proofStarts || 0)} proof starts</span>
+          <b>${escapeHtml(entry.questTitle)}</b>
+        </div>
+        <div class="leaderboard-score">
+          <strong>${rateLabel(entry.passRate)}</strong>
+          <span>quiz pass</span>
+        </div>
+        <div class="leaderboard-date">
+          <span>Verified</span>
+          <b>${rateLabel(entry.verificationRate)}</b>
+        </div>
+      </li>
+    `).join("");
     const popularRows = popularQuests.map((entry, index) => `
       <li class="leaderboard-row">
         <span class="leaderboard-rank" aria-label="Popular quest rank ${index + 1}">${index + 1}</span>
@@ -2142,6 +2160,14 @@ async function renderCommunity() {
         <span><b>${Number(funnel.verifiedCompletions || 0)}</b>new verified proofs</span>
       </div>
       <p class="leaderboard-status">Pass rate ${rateLabel(funnel.passRate)} · proof-start rate ${rateLabel(funnel.proofStartRate)} · verification rate ${rateLabel(funnel.verificationRate)}. Aggregate daily counters only. No wallet, IP, device, session, answer, public-key or signature data is stored for this funnel.</p>
+      <div class="leaderboard-board__heading">
+        <div><p class="eyebrow">Quest funnel</p><h2>Quest-by-quest conversion.</h2></div>
+        <span class="leaderboard-status">Only quests with tracked activity appear</span>
+      </div>
+      ${questFunnelRows
+        ? `<ol class="leaderboard-list">${questFunnelRows}</ol>`
+        : `<p class="leaderboard-status">Per-quest rates will appear after the first tracked quiz attempt.</p>`}
+      <p class="leaderboard-status">These rates use aggregate counters from the tracking period. Small samples can be noisy, so use them as a signal for where to investigate rather than as a learner score.</p>
       <div class="leaderboard-board__heading">
         <div><p class="eyebrow">Most completed</p><h2>Popular quests</h2></div>
         <span class="leaderboard-status">${summary.latestVerifiedAt ? `Updated ${escapeHtml(formatCompletionDate(summary.latestVerifiedAt))}` : "No verified activity yet"}</span>

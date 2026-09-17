@@ -70,6 +70,22 @@ try {
             proofStartRate: null,
             verificationRate: null
           },
+          questFunnels: [
+            {
+              questId: "meet-nimiq",
+              questTitle: "Meet Nimiq",
+              track: "onboarding",
+              difficulty: "starter",
+              trackingSince: "2026-09-16",
+              quizAttempts: 3,
+              quizPasses: 2,
+              proofStarts: 1,
+              verifiedCompletions: 1,
+              passRate: 66.7,
+              proofStartRate: 50,
+              verificationRate: 100
+            }
+          ],
           popularQuests: [],
           recentActivity: []
         })
@@ -130,8 +146,14 @@ try {
       }
 
       if (route === "/community") {
-        assert.match(await page.locator(".leaderboard-board").textContent(), /From quiz to verified proof/i);
-        assert.match(await page.locator(".leaderboard-board").textContent(), /Aggregate daily counters only/i);
+        const communityText = await page.locator(".leaderboard-board").textContent();
+        assert.match(communityText, /From quiz to verified proof/i);
+        assert.match(communityText, /Aggregate daily counters only/i);
+        assert.match(communityText, /Quest-by-quest conversion/i);
+        assert.match(communityText, /Meet Nimiq/i);
+        assert.match(communityText, /3 attempts/i);
+        assert.match(communityText, /66\.7%/i);
+        assert.match(communityText, /Small samples can be noisy/i);
       }
 
       const overflows = await page.evaluate(

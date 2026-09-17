@@ -202,7 +202,7 @@ async function renderCompletionPage(request, env, url, publicId) {
 }
 
 async function getCommunityActivity(database) {
-  const [summary, popular, recent, funnel] = await Promise.all([
+  const [summary, popular, recent, funnel, questFunnels] = await Promise.all([
     database.prepare(
       `SELECT COUNT(*) AS verified_completions,
               COUNT(DISTINCT wallet_address) AS participating_wallets,
@@ -235,7 +235,18 @@ async function getCommunityActivity(database) {
               SUM(proof_starts) AS proof_starts,
               SUM(verified_completions) AS verified_completions
        FROM learning_funnel_daily`
-    ).first()
+    ).first(),
+    database.prepare(
+      `SELECT quest_id,
+              MIN(metric_date) AS tracking_since,
+              SUM(quiz_attempts) AS quiz_attempts,
+              SUM(quiz_passes) AS quiz_passes,
+              SUM(proof_starts) AS proof_starts,
+              SUM(verified_completions) AS verified_completions
+       FROM learning_funnel_daily
+       GROUP BY quest_id
+       ORDER BY quiz_attempts DESC, proof_starts DESC, quest_id ASC`
+    ).all()
   ]);
 
   return json({
@@ -246,6 +257,16 @@ async function getCommunityActivity(database) {
       latestVerifiedAt: summary?.latest_verified_at || null
     },
     funnel: toFunnelSummary(funnel),
+    questFunnels: questFunnels.results.map((record) => {
+      const quest = findQuest(record.quest_id);
+      return {
+        questId: record.quest_id,
+        questTitle: quest?.title || record.quest_id,
+        track: quest?.track || null,
+        difficulty: quest?.difficulty || null,
+        ...toFunnelSummary(record)
+      };
+    }),
     popularQuests: popular.results.map((record) => {
       const quest = findQuest(record.quest_id);
       return {

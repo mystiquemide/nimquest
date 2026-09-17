@@ -142,6 +142,23 @@ describe("api server", () => {
     assert.equal("answerIndex" in body.feedback[1], false);
   });
 
+  it("reports per-quest funnel metrics without learner identifiers", async () => {
+    const response = await fetch(`${baseUrl}/api/community`);
+    const body = await response.json();
+    const meetNimiq = body.questFunnels.find((entry) => entry.questId === "meet-nimiq");
+
+    assert.equal(response.status, 200);
+    assert.ok(meetNimiq);
+    assert.equal(meetNimiq.questTitle, "Meet Nimiq");
+    assert.ok(meetNimiq.quizAttempts >= 1);
+    assert.ok(meetNimiq.proofStarts >= 1);
+    assert.ok(meetNimiq.verifiedCompletions >= 1);
+    assert.equal("walletAddress" in meetNimiq, false);
+    assert.equal("deviceId" in meetNimiq, false);
+    assert.equal("ip" in meetNimiq, false);
+    assert.equal("answers" in meetNimiq, false);
+  });
+
   it("does not expose unverified pool or public progress routes", async () => {
     const [pools, progress, claims] = await Promise.all([
       fetch(`${baseUrl}/api/pools`),

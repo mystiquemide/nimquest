@@ -32,6 +32,20 @@ const grade = await gradeResponse.json();
 assert.equal(gradeResponse.status, 200);
 assert.equal(grade.passed, true);
 
+const failedAnswers = correctAnswers("meet-nimiq");
+failedAnswers[0] = (failedAnswers[0] + 1) % findQuest("meet-nimiq").questions[0].options.length;
+const failedGradeResponse = await fetch(`${baseUrl}/api/grade`, {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify({
+    questId: "meet-nimiq",
+    answers: failedAnswers
+  })
+});
+const failedGrade = await failedGradeResponse.json();
+assert.equal(failedGradeResponse.status, 200);
+assert.equal(failedGrade.passed, false);
+
 const challengeResponse = await fetch(`${baseUrl}/api/completion-challenges`, {
   method: "POST",
   headers: { "content-type": "application/json" },
@@ -139,17 +153,38 @@ assert.equal(communityResponse.status, 200);
 assert.equal(community.summary.verifiedCompletions, 1);
 assert.equal(community.summary.participatingWallets, 1);
 assert.equal(community.summary.activeQuests, 1);
-assert.equal(community.funnel.quizAttempts, 1);
+assert.equal(community.funnel.quizAttempts, 2);
 assert.equal(community.funnel.quizPasses, 1);
 assert.equal(community.funnel.proofStarts, 1);
 assert.equal(community.funnel.verifiedCompletions, 1);
-assert.equal(community.funnel.passRate, 100);
+assert.equal(community.funnel.passRate, 50);
 assert.equal(community.funnel.proofStartRate, 100);
 assert.equal(community.funnel.verificationRate, 100);
 assert.match(community.funnel.trackingSince, /^\d{4}-\d{2}-\d{2}$/);
 assert.equal("walletAddress" in community.funnel, false);
 assert.equal("deviceId" in community.funnel, false);
 assert.equal("ip" in community.funnel, false);
+const receiveFunnel = community.questFunnels.find((entry) => entry.questId === "receive-nim-safely");
+const meetFunnel = community.questFunnels.find((entry) => entry.questId === "meet-nimiq");
+assert.ok(receiveFunnel);
+assert.equal(receiveFunnel.questTitle, "Receive NIM Safely");
+assert.equal(receiveFunnel.quizAttempts, 1);
+assert.equal(receiveFunnel.quizPasses, 1);
+assert.equal(receiveFunnel.proofStarts, 1);
+assert.equal(receiveFunnel.verifiedCompletions, 1);
+assert.equal(receiveFunnel.passRate, 100);
+assert.equal(receiveFunnel.verificationRate, 100);
+assert.ok(meetFunnel);
+assert.equal(meetFunnel.quizAttempts, 1);
+assert.equal(meetFunnel.quizPasses, 0);
+assert.equal(meetFunnel.proofStarts, 0);
+assert.equal(meetFunnel.verifiedCompletions, 0);
+assert.equal(meetFunnel.passRate, 0);
+assert.equal(meetFunnel.proofStartRate, null);
+assert.equal(meetFunnel.verificationRate, null);
+assert.equal("walletAddress" in receiveFunnel, false);
+assert.equal("deviceId" in receiveFunnel, false);
+assert.equal("answers" in receiveFunnel, false);
 assert.equal(community.popularQuests[0].questId, "receive-nim-safely");
 assert.equal(community.popularQuests[0].verifiedCompletions, 1);
 assert.equal(community.recentActivity[0].receiptId, completion.proof.key);
@@ -181,6 +216,7 @@ console.log(JSON.stringify({
   leaderboard: "passed",
   communityActivity: "passed",
   aggregateLearningFunnel: "passed",
+  perQuestLearningFunnel: "passed",
   replayProtection: "passed"
 }, null, 2));
 
