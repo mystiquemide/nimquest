@@ -75,11 +75,13 @@ export async function configChecks() {
     const checks = [
       [/"binding":\s*"DB"/, "D1 binding DB"],
       [/"directory":\s*"\.\/dist"/, "assets directory ./dist"],
-      [/"\/api\/\*"/, "run_worker_first /api/*"]
+      [/"\/api\/\*"/, "run_worker_first /api/*"],
+      [/"pattern":\s*"nimquest\.midelabs\.xyz"/, "custom domain nimquest.midelabs.xyz"],
+      [/"custom_domain":\s*true/, "custom domain enabled"]
     ];
     const missing = checks.filter(([re]) => !re.test(raw)).map(([, name]) => name);
     if (missing.length) return fail(`Missing config: ${missing.join(", ")}`);
-    return pass("D1 binding, dist assets, and worker routing configured");
+    return pass("D1 binding, dist assets, Worker routing, and custom domain configured");
   }));
 
   results.push(await runCheck("config.secrets", "No tracked secrets", async () => {
@@ -118,7 +120,7 @@ export async function doctorChecks() {
 
   results.push(await runCheck("doctor.migrations", "D1 migrations", async () => {
     const files = fs.existsSync("migrations") ? fs.readdirSync("migrations").filter((f) => f.endsWith(".sql")) : [];
-    if (files.length < 3) return warn(`${files.length} migrations found, expected 3`, "Confirm migrations were not removed.");
+    if (files.length < 4) return warn(`${files.length} migrations found, expected at least 4`, "Confirm migrations were not removed.");
     return pass(`${files.length} migrations present`);
   }));
 

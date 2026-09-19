@@ -12,7 +12,7 @@ This document records what the CLI was built against. Every check is derived fro
   - Cloudflare Worker `worker/index.js` for production. `/health` returns `{ ok: true, service: "nimquest-worker" }`. Static assets and SPA fallback are served by Workers Static Assets; `run_worker_first` is scoped to `/api/*` and `/health`.
 - Database: Cloudflare D1 in production, migrations in `migrations/` (three applied). Local development uses file-backed storage.
 - Authentication: there is no user login. Proof of control is a Nimiq wallet signature verified server-side. Signing requires the Nimiq Pay Mini App provider, so it cannot be automated headlessly.
-- Deployment: Cloudflare Workers, live at https://nimquest.artistic-chip.workers.dev, auto-deployed from `main`.
+- Deployment: Cloudflare Workers, live at https://nimquest.midelabs.xyz, auto-deployed from `main`.
 
 ## API routes (derived from server.js and worker/index.js)
 

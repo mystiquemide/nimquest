@@ -240,7 +240,7 @@ try {
   assert.equal(receiptXShare.origin, "https://twitter.com");
   assert.equal(receiptXShare.pathname, "/intent/tweet");
   assert.match(receiptXShare.searchParams.get("text"), /I completed Meet Nimiq on NimQuest/i);
-  assert.equal(receiptXShare.searchParams.get("url"), `${baseUrl}/completions/day3-receipt`);
+  assert.equal(receiptXShare.searchParams.get("url"), "https://nimquest.midelabs.xyz/completions/day3-receipt");
   assert.equal(receiptXShare.searchParams.get("text").includes("NQ20"), false, "X share text must not expose wallet details");
   assert.equal(await receiptPage.locator("[data-next-step]").getAttribute("href"), "/quests/meet-nimiq");
   assert.match(await receiptPage.locator("[data-next-step]").textContent(), /Try NimQuest/i);
@@ -289,7 +289,7 @@ const journeySharePage = await browser.newPage({ viewport: { width: 390, height:
   const journeyXShare = new URL(await journeySharePage.locator(".journey-proof-dialog [data-share-x]").getAttribute("href"));
   assert.equal(journeyXShare.origin, "https://twitter.com");
   assert.equal(journeyXShare.pathname, "/intent/tweet");
-  assert.equal(journeyXShare.searchParams.get("url"), `${baseUrl}/completions/day4-journey-receipt`);
+  assert.equal(journeyXShare.searchParams.get("url"), "https://nimquest.midelabs.xyz/completions/day4-journey-receipt");
   assert.equal(journeyXShare.searchParams.get("text").includes("NQ20"), false, "Journey X share text must not expose wallet details");
   await journeySharePage.close();
 

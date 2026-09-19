@@ -4,6 +4,7 @@ import { signNimiqMessage } from "../apps/api/test/nimiq-signature.js";
 import { findQuest } from "../apps/api/src/quests.js";
 
 const baseUrl = process.env.NIMQUEST_WORKER_URL || "http://127.0.0.1:8790";
+const publicOrigin = "https://nimquest.midelabs.xyz";
 const keyPair = KeyPair.generate();
 const walletAddress = keyPair.toAddress().toUserFriendlyAddress();
 
@@ -124,7 +125,7 @@ assert.equal(receiptPageResponse.status, 200);
 assert.match(receiptPageHtml, /Receive NIM Safely · Verified NimQuest receipt/);
 assert.match(receiptPageHtml, /Verified completion of Receive NIM Safely on NimQuest/);
 assert.ok(
-  receiptPageHtml.includes(`${baseUrl}/completions/${encodeURIComponent(completion.proof.key)}`),
+  receiptPageHtml.includes(`${publicOrigin}/completions/${encodeURIComponent(completion.proof.key)}`),
   "receipt HTML must expose its canonical public URL"
 );
 assert.equal(
@@ -142,6 +143,10 @@ const missingReceiptPageResponse = await fetch(`${baseUrl}/completions/not-a-rea
 const missingReceiptPageHtml = await missingReceiptPageResponse.text();
 assert.equal(missingReceiptPageResponse.status, 200);
 assert.match(missingReceiptPageHtml, /NimQuest - Learn Nimiq by doing/);
+assert.ok(
+  missingReceiptPageHtml.includes(`<link rel="canonical" href="${publicOrigin}/"`),
+  "generic shell must point at the canonical NimQuest domain"
+);
 
 assert.equal(feedbackResponse.status, 201);
 assert.equal(replayResponse.status, 400);

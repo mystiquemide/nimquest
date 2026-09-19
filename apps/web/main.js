@@ -9,6 +9,8 @@ import { catalogQuests } from "./quest-catalog.generated.js";
 // Leave empty and the tip UI stays hidden, so nothing breaks until an address is set.
 const NIMQUEST_TIP_ADDRESS = "NQ20 2U0V Y927 PC3M 33GM E96Y 1J2R RL3P 8CVD";
 const NIMQUEST_TIP_NIM = 1;
+const PUBLIC_ORIGIN = "https://nimquest.midelabs.xyz";
+const LEGACY_HOSTNAME = "nimquest.artistic-chip.workers.dev";
 
 const questPresentation = [
   {
@@ -604,6 +606,27 @@ document.querySelectorAll("[data-close]").forEach((button) => {
   } else {
     renderNotFound();
   }
+}
+
+function installDomainMigrationBanner() {
+  if (window.location.hostname !== LEGACY_HOSTNAME) return;
+
+  const banner = document.createElement("aside");
+  banner.className = "domain-migration-banner";
+  banner.setAttribute("aria-label", "NimQuest domain update");
+
+  const message = document.createElement("span");
+  message.textContent = "NimQuest has a new home at nimquest.midelabs.xyz. This legacy address stays available during the move.";
+
+  const link = document.createElement("a");
+  link.href = new URL(
+    `${window.location.pathname}${window.location.search}${window.location.hash}`,
+    PUBLIC_ORIGIN
+  ).href;
+  link.textContent = "Open new domain →";
+
+  banner.append(message, link);
+  document.body.prepend(banner);
 }
 
 function installConnectivityBanner() {
@@ -1709,7 +1732,7 @@ async function renderCompletionDetail(proofKey) {
     const isLocalProof = Boolean(localProof);
     const completedQuestIds = new Set(localCompletions.map((item) => item.questId));
     const nextQuest = isLocalProof ? getNextQuest(completedQuestIds) : null;
-    const shareUrl = new URL(`/completions/${encodeURIComponent(proof.key)}`, window.location.origin).href;
+    const shareUrl = new URL(`/completions/${encodeURIComponent(proof.key)}`, PUBLIC_ORIGIN).href;
     page.innerHTML = `
       <section class="completion-card">
         <div class="completion-card__seal" aria-hidden="true">${brandMarkup()}</div>
@@ -1964,7 +1987,7 @@ function renderJourney() {
       proofDialog.querySelector("[data-proof-wallet]").textContent = compactAddress(proof.walletAddress);
       proofDialog.querySelector("[data-proof-date]").textContent = formatCompletionDate(proof.completedAt);
       const proofUrl = `/completions/${encodeURIComponent(proof.key)}`;
-      const absoluteProofUrl = new URL(proofUrl, window.location.origin).href;
+      const absoluteProofUrl = new URL(proofUrl, PUBLIC_ORIGIN).href;
       proofDialog.querySelector("[data-proof-link]").href = proofUrl;
       proofDialog.querySelector("[data-share-x]").href = buildXShareUrl({ title: quest.title, url: absoluteProofUrl });
       proofDialog.querySelector("[data-share-proof]").dataset.shareUrl = proofUrl;
@@ -1981,7 +2004,7 @@ function renderJourney() {
 
   proofDialog.querySelector("[data-share-proof]").addEventListener("click", async (event) => {
     const button = event.currentTarget;
-    const shareUrl = new URL(button.dataset.shareUrl, window.location.origin).href;
+    const shareUrl = new URL(button.dataset.shareUrl, PUBLIC_ORIGIN).href;
     const copied = await shareProof({
       title: button.dataset.shareTitle,
       url: shareUrl
@@ -2881,4 +2904,5 @@ function renderDocumentationPage(page) {
 }
 
 renderCurrentRoute();
+installDomainMigrationBanner();
 installConnectivityBanner();

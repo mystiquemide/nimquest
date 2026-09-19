@@ -7,6 +7,7 @@ import { findQuest } from "../apps/api/src/quests.js";
 import { normalizeWalletAddress } from "../apps/api/src/validation.js";
 import { verifyWalletProofWorker } from "../apps/api/src/wallet-proof-worker.js";
 
+const PUBLIC_ORIGIN = "https://nimquest.midelabs.xyz";
 const CHALLENGE_TTL_MS = 5 * 60 * 1000;
 const JSON_HEADERS = {
   "content-type": "application/json; charset=utf-8",
@@ -160,7 +161,7 @@ async function renderCompletionPage(request, env, url, publicId) {
   const proof = toPublicProof(record);
   const title = `${proof.questTitle} · Verified NimQuest receipt`;
   const description = `Verified completion of ${proof.questTitle} on NimQuest, backed by a one-time Nimiq wallet signature.`;
-  const canonicalUrl = `${url.origin}/completions/${encodeURIComponent(proof.key)}`;
+  const canonicalUrl = `${PUBLIC_ORIGIN}/completions/${encodeURIComponent(proof.key)}`;
 
   return new HTMLRewriter()
     .on("title", {
@@ -181,6 +182,11 @@ async function renderCompletionPage(request, env, url, publicId) {
     .on('meta[property="og:description"]', {
       element(element) {
         element.setAttribute("content", description);
+      }
+    })
+    .on('link[rel="canonical"]', {
+      element(element) {
+        element.setAttribute("href", canonicalUrl);
       }
     })
     .on('meta[property="og:url"]', {

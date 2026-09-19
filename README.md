@@ -4,7 +4,7 @@ Learn Nimiq by doing, then prove you learned it with your own wallet.
 
 [![CI](https://github.com/mystiquemide/nimquest/actions/workflows/ci.yml/badge.svg)](https://github.com/mystiquemide/nimquest/actions/workflows/ci.yml)
 
-[Open the live Mini App](https://nimquest.artistic-chip.workers.dev) · [Watch the product walkthrough](https://youtu.be/iSwB3MyyLZM) · [Launch post](https://x.com/mystiquemide/status/2082365421659820280?s=46) · [In-app docs](https://nimquest.artistic-chip.workers.dev/docs) · [Leaderboard](https://nimquest.artistic-chip.workers.dev/leaderboard)
+[Open the live Mini App](https://nimquest.midelabs.xyz) · [Watch the product walkthrough](https://youtu.be/iSwB3MyyLZM) · [Launch post](https://x.com/mystiquemide/status/2082365421659820280?s=46) · [In-app docs](https://nimquest.midelabs.xyz/docs) · [Leaderboard](https://nimquest.midelabs.xyz/leaderboard)
 
 ## Product walkthrough
 
@@ -92,7 +92,7 @@ flowchart TD
 | Cloudflare Workers with Static Assets | Serves the app and the API, with quiz grading and signature checks running at the edge |
 | Cloudflare D1 | Stores verified completions, one-time challenges, feedback, and rate counters |
 
-Full wallet flow in the live [integration docs](https://nimquest.artistic-chip.workers.dev/docs/integration).
+Full wallet flow in the live [integration docs](https://nimquest.midelabs.xyz/docs/integration).
 
 ## Product screens
 
@@ -116,7 +116,7 @@ Mobile layout:
 
 Native path (full proof):
 
-1. Open [nimquest.artistic-chip.workers.dev](https://nimquest.artistic-chip.workers.dev) inside Nimiq Pay.
+1. Open [nimquest.midelabs.xyz](https://nimquest.midelabs.xyz) inside Nimiq Pay.
 2. Start Meet Nimiq, read the lesson, answer the three questions.
 3. Select Verify with Nimiq Pay, approve account access, sign the one-time message.
 4. Open My Journey and Leaderboard. The quest shows verified, the count goes up, your masked wallet joins the board.
@@ -125,12 +125,12 @@ No-wallet path (verify the server logic without signing):
 
 ```bash
 # Correct answers pass and unlock the wallet step
-curl -s -X POST https://nimquest.artistic-chip.workers.dev/api/grade \
+curl -s -X POST https://nimquest.midelabs.xyz/api/grade \
   -H "content-type: application/json" \
   -d '{"questId":"meet-nimiq","answers":[0,0,0]}'
 
 # Read the live verified leaderboard
-curl -s https://nimquest.artistic-chip.workers.dev/api/leaderboard
+curl -s https://nimquest.midelabs.xyz/api/leaderboard
 ```
 
 The grade response returns per-question correctness and explanations but never the correct index. The quest catalog at `/api/quests` ships lessons and options with no answer keys.
@@ -151,14 +151,14 @@ Every row maps to a real automated test in the repo.
 | Write from a cross-origin browser | Rejected | `server.test.js`: rejects cross-origin browser writes |
 | Submit an EVM address instead of a Nimiq one | Rejected | `quest-service.test.js`: accepts generated Nimiq addresses and rejects EVM addresses |
 
-Run them all: `npm test` (25 tests).
+Run them all: `npm test` (27 tests).
 
 ## Live proof
 
-- App: https://nimquest.artistic-chip.workers.dev (Cloudflare Workers with Static Assets)
-- Health: https://nimquest.artistic-chip.workers.dev/health
-- Public quests API: https://nimquest.artistic-chip.workers.dev/api/quests (20 quests, no answer keys)
-- Live leaderboard API: https://nimquest.artistic-chip.workers.dev/api/leaderboard
+- App: https://nimquest.midelabs.xyz (Cloudflare Workers with Static Assets)
+- Health: https://nimquest.midelabs.xyz/health
+- Public quests API: https://nimquest.midelabs.xyz/api/quests (20 quests, no answer keys)
+- Live leaderboard API: https://nimquest.midelabs.xyz/api/leaderboard
 - Storage: Cloudflare D1, three applied migrations in `migrations/`
 - Deploys automatically from `main`.
 - No smart contract. Completions are wallet-signed records in D1, not on-chain writes.
@@ -166,7 +166,7 @@ Run them all: `npm test` (25 tests).
 Do not trust the screenshots. The leaderboard is not seeded, verify the real signed completions yourself:
 
 ```bash
-curl -s https://nimquest.artistic-chip.workers.dev/api/leaderboard
+curl -s https://nimquest.midelabs.xyz/api/leaderboard
 ```
 
 ## Real usage
@@ -203,14 +203,13 @@ What is next for NimQuest, in priority order.
 
 ### Short-term
 
-- **Source answer hardening.** Vary the canonical answer index per question in the source catalog so the quiz grading layer is fully independent of the UI shuffle that already shipped.
-- **Custom domain.** Move from `nimquest.artistic-chip.workers.dev` to a dedicated domain.
+- **Funnel-driven learning improvements.** Use the privacy-safe per-quest conversion data to identify and fix the highest-friction learning steps.
 - **Wider on-device signing coverage.** Grow the live leaderboard beyond the initial native Nimiq Pay completions into double-digit verified wallets.
 
 ### Medium-term (Cycle II)
 
 - **Funded quest rewards.** Attach real NIM payouts to verified completions, with transaction receipts stored alongside the proof. Gated on a confirmed payout design and funding source. No reward promises until the rail is real.
-- **Community progress.** A `/community` surface showing privacy-safe aggregate learning stats built from production D1 data — quests completed, wallets verified, paths most travelled. No individual exposure beyond the existing masked leaderboard.
+- **Community depth.** Expand the shipped `/community` surface with trend comparisons once there is enough production data to make them meaningful.
 - **Deeper quest catalog.** More advanced and technical quests, driven by real learner data on which concepts need the most reinforcement.
 
 ### Long-term (ecosystem)
@@ -233,7 +232,7 @@ Verify it:
 ```bash
 npm ci
 npm run build:web
-npm test            # 25 Node, API, and cryptography tests
+npm test            # 27 Node, API, and cryptography tests
 npm audit           # 0 vulnerabilities
 ```
 
@@ -274,6 +273,7 @@ GET  /health
 GET  /api/quests
 GET  /api/quests/:id
 GET  /api/leaderboard
+GET  /api/community
 GET  /api/completions?wallet=:address
 GET  /api/completions/:receiptId
 POST /api/grade
@@ -286,9 +286,9 @@ Write routes reject unsupported browser origins. D1 rate counters limit grading,
 
 ## More
 
-- [In-app documentation](https://nimquest.artistic-chip.workers.dev/docs)
-- [Privacy Notice](https://nimquest.artistic-chip.workers.dev/privacy) · [Terms of Use](https://nimquest.artistic-chip.workers.dev/terms)
-- [Architecture](https://nimquest.artistic-chip.workers.dev/docs/architecture) · [Nimiq Pay integration](https://nimquest.artistic-chip.workers.dev/docs/integration) · [Security](docs/SECURITY.md)
+- [In-app documentation](https://nimquest.midelabs.xyz/docs)
+- [Privacy Notice](https://nimquest.midelabs.xyz/privacy) · [Terms of Use](https://nimquest.midelabs.xyz/terms)
+- [Architecture](https://nimquest.midelabs.xyz/docs/architecture) · [Nimiq Pay integration](https://nimquest.midelabs.xyz/docs/integration) · [Security](docs/SECURITY.md)
 
 ## License
 

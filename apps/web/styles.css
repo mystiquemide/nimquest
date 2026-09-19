@@ -77,6 +77,26 @@ button {
   transform: translateY(0);
 }
 
+.domain-migration-banner {
+  display: flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 9px 20px;
+  border-bottom: 1px solid rgba(25, 24, 42, 0.16);
+  background: var(--violet-light);
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.domain-migration-banner a {
+  font-weight: 900;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 .announcement {
   display: flex;
   min-height: 40px;
@@ -1938,6 +1958,13 @@ footer > p {
 }
 
 @media (max-width: 430px) {
+  .domain-migration-banner {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 3px;
+    text-align: left;
+  }
+
   .word-highlight {
     white-space: normal;
   }

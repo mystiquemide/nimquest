@@ -2,7 +2,7 @@ import { spawn } from "node:child_process";
 import net from "node:net";
 
 export const DEFAULT_TIMEOUT = 15000;
-export const LIVE_URL = "https://nimquest.artistic-chip.workers.dev";
+export const LIVE_URL = "https://nimquest.midelabs.xyz";
 
 // Status helpers. Every check returns one of these shapes.
 export const pass = (evidence) => ({ status: "pass", evidence: asArray(evidence) });
