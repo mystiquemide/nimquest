@@ -11,6 +11,7 @@ const NIMQUEST_TIP_ADDRESS = "NQ20 2U0V Y927 PC3M 33GM E96Y 1J2R RL3P 8CVD";
 const NIMQUEST_TIP_NIM = 1;
 const PUBLIC_ORIGIN = "https://nimquest.midelabs.xyz";
 const LEGACY_HOSTNAME = "nimquest.artistic-chip.workers.dev";
+const QUEST_DRAFT_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 const questPresentation = [
   {
@@ -343,6 +344,11 @@ function renderCurrentRoute() {
   } else if (isQuestTrail) {
     renderQuestTrail();
   } else if (normalizedPath === "/") {
+const completedQuestIds = new Set(readVerifiedCompletions().map((proof) => proof.questId));
+const resumableQuest = getLatestResumableQuest(completedQuestIds);
+const homeQuest = resumableQuest?.quest || quests.find((quest) => quest.id === STARTER_QUEST_ID) || quests[0];
+const homeQuestHref = `/quests/${homeQuest.id}`;
+const homeQuestLabel = resumableQuest ? `Resume ${homeQuest.title}` : `Start ${homeQuest.title}`;
 const questCards = quests
   .slice(0, 6)
   .map(
@@ -379,8 +385,8 @@ document.querySelector("#app").innerHTML = `
   <a class="skip-link" href="#main">Skip to content</a>
 
   <div class="announcement">
-    <span>New to Nimiq?</span>
-    <a href="/quests/${STARTER_QUEST_ID}">Take your first 60-second quest <span aria-hidden="true">→</span></a>
+    <span>${resumableQuest ? "Quest in progress" : "New to Nimiq?"}</span>
+    <a href="${homeQuestHref}">${resumableQuest ? `Continue ${homeQuest.title}` : "Take your first 60-second quest"} <span aria-hidden="true">→</span></a>
   </div>
 
   <header class="site-header">
@@ -397,7 +403,7 @@ document.querySelector("#app").innerHTML = `
       <a href="/docs">Docs</a>
     </nav>
 
-    <a class="button button--small" href="/quests/${STARTER_QUEST_ID}">Start Meet Nimiq</a>
+    <a class="button button--small" href="${homeQuestHref}">${homeQuestLabel}</a>
     <button class="menu-button" type="button" aria-label="Open navigation" aria-expanded="false">
       <span></span><span></span>
     </button>
@@ -415,7 +421,7 @@ document.querySelector("#app").innerHTML = `
           Complete quick, friendly quests. Learn how NIM works, verify your completion with your wallet, and build a journey you can trust.
         </p>
         <div class="hero__actions">
-          <a class="button" href="/quests/${STARTER_QUEST_ID}">Start Meet Nimiq <span aria-hidden="true">→</span></a>
+          <a class="button" href="${homeQuestHref}">${homeQuestLabel} <span aria-hidden="true">→</span></a>
           <a class="button button--quiet" href="#how">See how it works</a>
         </div>
         <div class="hero__proof" aria-label="Product qualities">
@@ -537,7 +543,7 @@ document.querySelector("#app").innerHTML = `
       <p class="eyebrow">Your first quest is ready</p>
       <h2>One minute can make Nimiq <span>click.</span></h2>
       <p>Start with the basics, keep your wallet safe, and leave with proof you earned.</p>
-      <a class="button button--dark" href="/quests/${STARTER_QUEST_ID}">Start Meet Nimiq <span aria-hidden="true">→</span></a>
+      <a class="button button--dark" href="${homeQuestHref}">${homeQuestLabel} <span aria-hidden="true">→</span></a>
     </section>
   </main>
 
@@ -811,7 +817,20 @@ function renderQuestTrail() {
   const completionByQuest = new Map(completions.map((proof) => [proof.questId, proof]));
   const completedQuestIds = new Set(completionByQuest.keys());
   const completedCount = completedQuestIds.size;
-  const recommendedQuest = getNextQuest(completedQuestIds);
+  const draftByQuest = new Map(
+    quests
+      .filter((quest) => !completedQuestIds.has(quest.id))
+      .map((quest) => [quest.id, readQuestDraft(quest)])
+      .filter(([, draft]) => Boolean(draft))
+  );
+  const latestDraftEntry = [...draftByQuest.entries()].sort(
+    (a, b) => Date.parse(b[1].savedAt) - Date.parse(a[1].savedAt)
+  )[0];
+  const resumableQuestId = latestDraftEntry?.[0] || null;
+  const recommendedQuest = resumableQuestId
+    ? quests.find((quest) => quest.id === resumableQuestId)
+    : getNextQuest(completedQuestIds);
+  const recommendedIsResume = Boolean(resumableQuestId);
   const trailCards = quests
     .map(
       (quest, index) => `
@@ -826,7 +845,7 @@ function renderQuestTrail() {
           </div>
           <div class="trail-card__body">
             <div class="trail-card__meta">
-              <span class="availability"><i></i> ${completedQuestIds.has(quest.id) ? "Verified" : "Available now"}</span>
+              <span class="availability"><i></i> ${completedQuestIds.has(quest.id) ? "Verified" : draftByQuest.has(quest.id) ? "In progress" : "Available now"}</span>
               <span>${quest.duration}</span>
             </div>
             <div class="trail-card__title">
@@ -839,8 +858,8 @@ function renderQuestTrail() {
             <p class="trail-card__description">${quest.description}</p>
             <div class="trail-card__footer">
               <span>3 quick questions</span>
-              <a class="trail-action" href="/quests/${quest.id}" aria-label="${completedQuestIds.has(quest.id) ? "Review" : "Start"} ${quest.title}">
-                ${completedQuestIds.has(quest.id) ? "Review quest" : "Start quest"} <span aria-hidden="true">→</span>
+              <a class="trail-action" href="/quests/${quest.id}" aria-label="${completedQuestIds.has(quest.id) ? "Review" : draftByQuest.has(quest.id) ? "Resume" : "Start"} ${quest.title}">
+                ${completedQuestIds.has(quest.id) ? "Review quest" : draftByQuest.has(quest.id) ? "Resume quest" : "Start quest"} <span aria-hidden="true">→</span>
               </a>
             </div>
           </div>
@@ -905,11 +924,11 @@ function renderQuestTrail() {
             ? `<aside class="recommendation-card">
                 <span class="recommendation-card__mark" aria-hidden="true">${recommendedQuest.icon}</span>
                 <div>
-                  <p class="eyebrow">Recommended next</p>
+                  <p class="eyebrow">${recommendedIsResume ? "Resume quest" : "Recommended next"}</p>
                   <h3>${recommendedQuest.title}</h3>
-                  <p>${completedCount ? "This is the next missing skill in your verified trail." : "Start here for the clearest introduction to Nimiq."}</p>
+                  <p>${recommendedIsResume ? "Pick up from the latest unfinished quest saved on this browser." : completedCount ? "This is the next missing skill in your verified trail." : "Start here for the clearest introduction to Nimiq."}</p>
                 </div>
-                <a class="button button--small" href="/quests/${recommendedQuest.id}">Start quest <span aria-hidden="true">→</span></a>
+                <a class="button button--small" href="/quests/${recommendedQuest.id}">${recommendedIsResume ? "Continue quest" : "Start quest"} <span aria-hidden="true">→</span></a>
               </aside>`
             : `<aside class="recommendation-card recommendation-card--complete">
                 <span class="recommendation-card__mark" aria-hidden="true">✓</span>
@@ -1299,7 +1318,7 @@ function renderQuestSession(questId) {
             savedAt: new Date().toISOString()
           })
         );
-        sessionStorage.removeItem(`nimquest:draft:${quest.id}`);
+        clearQuestDraft(quest.id);
         window.location.assign(`/proof/${quest.id}`);
       });
     }
@@ -1673,7 +1692,7 @@ function renderWalletProof(questId) {
       state.proof = completion.proof;
       state.feedbackToken = completion.feedbackToken;
       sessionStorage.removeItem(`nimquest:proof:${quest.id}`);
-      sessionStorage.removeItem(`nimquest:draft:${quest.id}`);
+      clearQuestDraft(quest.id);
       localStorage.setItem(`nimquest:completion:${quest.id}`, JSON.stringify(completion.proof));
       renderGate();
     } catch (error) {
@@ -2359,50 +2378,105 @@ function readVerifiedCompletions() {
 }
 
 function readQuestDraft(quest) {
-  try {
-    const draft = JSON.parse(sessionStorage.getItem(`nimquest:draft:${quest.id}`));
-    const validAnswers =
-      Array.isArray(draft?.answers) &&
-      draft.answers.length === quest.questions.length &&
-      draft.answers.every(
-        (answer, index) =>
-          answer === null ||
-          (Number.isInteger(answer) &&
-            answer >= 0 &&
-            answer < quest.questions[index].options.length)
-      );
-    const validStep = ["lesson", "quiz", "review"].includes(draft?.step);
-    const validQuestionIndex =
-      Number.isInteger(draft?.questionIndex) &&
-      draft.questionIndex >= 0 &&
-      draft.questionIndex < quest.questions.length;
+  const key = `nimquest:draft:${quest.id}`;
+  const storages = [localStorage, sessionStorage];
 
-    if (validAnswers && validStep && validQuestionIndex) {
+  for (const storage of storages) {
+    try {
+      const serialized = storage.getItem(key);
+      if (!serialized) continue;
+
+      const draft = JSON.parse(serialized);
+      const savedAtMs = Date.parse(draft?.savedAt || "");
+      if (Number.isFinite(savedAtMs) && Date.now() - savedAtMs > QUEST_DRAFT_TTL_MS) {
+        clearQuestDraft(quest.id);
+        return null;
+      }
+
+      const validAnswers =
+        Array.isArray(draft?.answers) &&
+        draft.answers.length === quest.questions.length &&
+        draft.answers.every(
+          (answer, index) =>
+            answer === null ||
+            (Number.isInteger(answer) &&
+              answer >= 0 &&
+              answer < quest.questions[index].options.length)
+        );
+      const validStep = ["lesson", "quiz", "review"].includes(draft?.step);
+      const validQuestionIndex =
+        Number.isInteger(draft?.questionIndex) &&
+        draft.questionIndex >= 0 &&
+        draft.questionIndex < quest.questions.length;
+
+      if (!validAnswers || !validStep || !validQuestionIndex) {
+        storage.removeItem(key);
+        continue;
+      }
+
       if (draft.step === "review" && draft.answers.some((answer) => answer === null)) {
         draft.step = "quiz";
         draft.questionIndex = draft.answers.findIndex((answer) => answer === null);
       }
+
+      if (!Number.isFinite(savedAtMs)) {
+        draft.savedAt = new Date().toISOString();
+      }
+
+      try {
+        localStorage.setItem(key, JSON.stringify(draft));
+      } catch {
+        // Session storage still preserves the draft when local storage is unavailable.
+      }
+
       return draft;
+    } catch {
+      // Try the other browser storage before giving up on the draft.
     }
-  } catch {
-    return null;
   }
 
   return null;
 }
 
+function getLatestResumableQuest(completedQuestIds = new Set()) {
+  return quests
+    .filter((quest) => !completedQuestIds.has(quest.id))
+    .map((quest) => ({ quest, draft: readQuestDraft(quest) }))
+    .filter(({ draft }) => Boolean(draft))
+    .sort((a, b) => Date.parse(b.draft.savedAt) - Date.parse(a.draft.savedAt))[0] || null;
+}
+
 function saveQuestDraft(questId, state) {
+  const payload = JSON.stringify({
+    step: state.step,
+    questionIndex: state.questionIndex,
+    answers: state.answers,
+    optionOrder: state.optionOrder,
+    savedAt: new Date().toISOString()
+  });
+  const key = `nimquest:draft:${questId}`;
+
   try {
-    sessionStorage.setItem(
-      `nimquest:draft:${questId}`,
-      JSON.stringify({
-        step: state.step,
-        questionIndex: state.questionIndex,
-        answers: state.answers
-      })
-    );
+    localStorage.setItem(key, payload);
   } catch {
-    // The quest still works when private browsing blocks session storage.
+    // The quest still works when local persistence is unavailable.
+  }
+
+  try {
+    sessionStorage.setItem(key, payload);
+  } catch {
+    // The active page still works when session storage is unavailable.
+  }
+}
+
+function clearQuestDraft(questId) {
+  const key = `nimquest:draft:${questId}`;
+  for (const storage of [localStorage, sessionStorage]) {
+    try {
+      storage.removeItem(key);
+    } catch {
+      // Clearing a draft should never block the learning or proof flow.
+    }
   }
 }
 
@@ -2597,6 +2671,7 @@ function renderLegalPage(page) {
       </section>
       <section>
         <h2>Storage and retention</h2>
+        <p>Before wallet proof, unfinished quest drafts are saved only in your browser for up to seven days so you can resume after closing the tab. A draft contains the quest step, selected answer positions, and question order. It does not contain a wallet address, public key, signature, or proof token.</p>
         <p>Cloudflare D1 stores verified completions and feedback. One-time signing challenges expire after five minutes. Abuse-prevention counters expire automatically. Completion records remain available while NimQuest operates because they support Journey recovery, receipts, and ranking. You can request correction or deletion through the project repository contact channel, subject to technical and competition record requirements.</p>
       </section>
       <section>

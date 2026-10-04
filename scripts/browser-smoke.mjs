@@ -209,6 +209,52 @@ try {
   }
   assert.ok(correctDisplayPositions.size > 1, "correct answer position must vary across sessions");
 
+  // Unfinished quest progress survives a closed tab, is discoverable from Home and
+  // Quest Trail, and expires after seven days without storing wallet proof data.
+  const resumeContext = await browser.newContext({ viewport: { width: 390, height: 900 } });
+  const draftPage = await resumeContext.newPage();
+  await draftPage.goto(`${baseUrl}/quests/meet-nimiq`, { waitUntil: "networkidle" });
+  await draftPage.getByRole("button", { name: /Begin 3 questions/i }).click();
+  await draftPage.locator(".answer-option").first().click();
+  const savedDraft = await draftPage.evaluate(() =>
+    JSON.parse(localStorage.getItem("nimquest:draft:meet-nimiq"))
+  );
+  assert.equal(savedDraft.step, "quiz");
+  assert.ok(savedDraft.answers.some((answer) => answer !== null));
+  assert.equal(typeof savedDraft.savedAt, "string");
+  assert.equal("walletAddress" in savedDraft, false);
+  assert.equal("signature" in savedDraft, false);
+  assert.equal("proof" in savedDraft, false);
+  await draftPage.close();
+
+  const resumedHome = await resumeContext.newPage();
+  await resumedHome.goto(`${baseUrl}/`, { waitUntil: "networkidle" });
+  assert.match(await resumedHome.locator(".hero__actions .button").first().textContent(), /Resume Meet Nimiq/i);
+  assert.equal(await resumedHome.locator(".hero__actions .button").first().getAttribute("href"), "/quests/meet-nimiq");
+  assert.match(await resumedHome.locator(".announcement").textContent(), /Quest in progress/i);
+
+  await resumedHome.goto(`${baseUrl}/quests`, { waitUntil: "networkidle" });
+  assert.match(await resumedHome.locator(".recommendation-card .eyebrow").textContent(), /Resume quest/i);
+  assert.match(await resumedHome.locator(".recommendation-card .button").textContent(), /Continue quest/i);
+  assert.match(await resumedHome.locator('.trail-card[data-track="nim basics"]').first().locator(".availability").textContent(), /In progress/i);
+  assert.match(await resumedHome.locator('.trail-card[data-track="nim basics"]').first().locator(".trail-action").textContent(), /Resume quest/i);
+
+  await resumedHome.evaluate(() => {
+    const key = "nimquest:draft:meet-nimiq";
+    const draft = JSON.parse(localStorage.getItem(key));
+    draft.savedAt = new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString();
+    localStorage.setItem(key, JSON.stringify(draft));
+    sessionStorage.removeItem(key);
+  });
+  await resumedHome.goto(`${baseUrl}/`, { waitUntil: "networkidle" });
+  assert.match(await resumedHome.locator(".hero__actions .button").first().textContent(), /Start Meet Nimiq/i);
+  assert.equal(
+    await resumedHome.evaluate(() => localStorage.getItem("nimquest:draft:meet-nimiq")),
+    null,
+    "expired quest drafts must be removed"
+  );
+  await resumeContext.close();
+
   const receiptPage = await browser.newPage({ viewport: { width: 390, height: 900 } });
   await receiptPage.route("**/api/completions/day3-receipt", async (route) => {
     await route.fulfill({
