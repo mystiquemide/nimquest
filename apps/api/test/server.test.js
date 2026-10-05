@@ -146,6 +146,7 @@ describe("api server", () => {
     const response = await fetch(`${baseUrl}/api/community`);
     const body = await response.json();
     const meetNimiq = body.questFunnels.find((entry) => entry.questId === "meet-nimiq");
+    const meetFeedback = body.feedbackInsights.find((entry) => entry.questId === "meet-nimiq");
 
     assert.equal(response.status, 200);
     assert.ok(meetNimiq);
@@ -157,6 +158,14 @@ describe("api server", () => {
     assert.equal("deviceId" in meetNimiq, false);
     assert.equal("ip" in meetNimiq, false);
     assert.equal("answers" in meetNimiq, false);
+    assert.ok(meetFeedback);
+    assert.equal(meetFeedback.questTitle, "Meet Nimiq");
+    assert.ok(meetFeedback.responses >= 1);
+    assert.equal(meetFeedback.averageRating, 3);
+    assert.equal(meetFeedback.veryClearRate, 100);
+    assert.equal("walletAddress" in meetFeedback, false);
+    assert.equal("proofKey" in meetFeedback, false);
+    assert.equal("note" in meetFeedback, false);
   });
 
   it("does not expose unverified pool or public progress routes", async () => {

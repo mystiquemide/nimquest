@@ -36,6 +36,7 @@ export function createServer() {
     verifiedCompletions: 0
   };
   const questFunnelMetrics = new Map();
+  const feedbackByProof = new Map();
   const recordFunnelMetric = (questId, metric) => {
     const metricDate = new Date().toISOString().slice(0, 10);
     if (!funnelMetrics.trackingSince) {
@@ -179,6 +180,7 @@ export function createServer() {
               b.proofStarts - a.proofStarts ||
               a.questTitle.localeCompare(b.questTitle)
             ),
+          feedbackInsights: buildFeedbackInsights(verified, feedbackByProof),
           popularQuests: Array.from(questCounts.values())
             .sort((a, b) =>
               b.verifiedCompletions - a.verifiedCompletions ||
@@ -304,6 +306,10 @@ export function createServer() {
         if (!Number.isInteger(body.rating) || body.rating < 1 || body.rating > 3) {
           return sendJson(response, 400, { error: "Feedback rating must be between 1 and 3." });
         }
+        feedbackByProof.set(proof.key, {
+          rating: body.rating,
+          submittedAt: new Date().toISOString()
+        });
         return sendJson(response, 201, { ok: true, message: "Feedback saved." });
       }
 
@@ -325,6 +331,49 @@ export function createServer() {
       });
     }
   });
+}
+
+function buildFeedbackInsights(verifiedCompletions, feedbackByProof) {
+  const byQuest = new Map();
+  for (const proof of verifiedCompletions) {
+    const feedback = feedbackByProof.get(proof.key);
+    if (!feedback) continue;
+    const insight = byQuest.get(proof.questId) || {
+      questId: proof.questId,
+      responses: 0,
+      ratingTotal: 0,
+      needsWork: 0,
+      clear: 0,
+      veryClear: 0
+    };
+    insight.responses += 1;
+    insight.ratingTotal += feedback.rating;
+    if (feedback.rating === 1) insight.needsWork += 1;
+    if (feedback.rating === 2) insight.clear += 1;
+    if (feedback.rating === 3) insight.veryClear += 1;
+    byQuest.set(proof.questId, insight);
+  }
+  return Array.from(byQuest.values())
+    .map((entry) => {
+      const quest = getQuest(entry.questId);
+      return {
+        questId: entry.questId,
+        questTitle: quest?.title || entry.questId,
+        track: quest?.track || null,
+        difficulty: quest?.difficulty || null,
+        responses: entry.responses,
+        averageRating: Number((entry.ratingTotal / entry.responses).toFixed(2)),
+        needsWork: entry.needsWork,
+        clear: entry.clear,
+        veryClear: entry.veryClear,
+        veryClearRate: Number(((entry.veryClear / entry.responses) * 100).toFixed(1))
+      };
+    })
+    .sort((a, b) =>
+      b.responses - a.responses ||
+      a.averageRating - b.averageRating ||
+      a.questTitle.localeCompare(b.questTitle)
+    );
 }
 
 function toFunnelSummary(metrics) {

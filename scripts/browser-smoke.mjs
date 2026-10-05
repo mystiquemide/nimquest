@@ -86,6 +86,20 @@ try {
               verificationRate: 100
             }
           ],
+          feedbackInsights: [
+            {
+              questId: "meet-nimiq",
+              questTitle: "Meet Nimiq",
+              track: "onboarding",
+              difficulty: "starter",
+              responses: 4,
+              averageRating: 2.5,
+              needsWork: 1,
+              clear: 0,
+              veryClear: 3,
+              veryClearRate: 75
+            }
+          ],
           popularQuests: [],
           recentActivity: []
         })
@@ -154,6 +168,12 @@ try {
         assert.match(communityText, /3 attempts/i);
         assert.match(communityText, /66\.7%/i);
         assert.match(communityText, /Small samples can be noisy/i);
+        assert.match(communityText, /Learner clarity/i);
+        assert.match(communityText, /What verified learners thought/i);
+        assert.match(communityText, /4 responses/i);
+        assert.match(communityText, /2\.50\/3/i);
+        assert.match(communityText, /75\.0%/i);
+        assert.match(communityText, /Free-text feedback/i);
       }
 
       const overflows = await page.evaluate(

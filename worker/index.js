@@ -208,7 +208,7 @@ async function renderCompletionPage(request, env, url, publicId) {
 }
 
 async function getCommunityActivity(database) {
-  const [summary, popular, recent, funnel, questFunnels] = await Promise.all([
+  const [summary, popular, recent, funnel, questFunnels, feedbackInsights] = await Promise.all([
     database.prepare(
       `SELECT COUNT(*) AS verified_completions,
               COUNT(DISTINCT wallet_address) AS participating_wallets,
@@ -252,6 +252,19 @@ async function getCommunityActivity(database) {
        FROM learning_funnel_daily
        GROUP BY quest_id
        ORDER BY quiz_attempts DESC, proof_starts DESC, quest_id ASC`
+    ).all(),
+    database.prepare(
+      `SELECT c.quest_id,
+              COUNT(*) AS responses,
+              AVG(f.rating) AS average_rating,
+              SUM(CASE WHEN f.rating = 1 THEN 1 ELSE 0 END) AS needs_work,
+              SUM(CASE WHEN f.rating = 2 THEN 1 ELSE 0 END) AS clear_count,
+              SUM(CASE WHEN f.rating = 3 THEN 1 ELSE 0 END) AS very_clear
+       FROM completion_feedback f
+       INNER JOIN completions c ON c.proof_key = f.proof_key
+       WHERE c.status = 'verified'
+       GROUP BY c.quest_id
+       ORDER BY responses DESC, average_rating ASC, c.quest_id ASC`
     ).all()
   ]);
 
@@ -271,6 +284,23 @@ async function getCommunityActivity(database) {
         track: quest?.track || null,
         difficulty: quest?.difficulty || null,
         ...toFunnelSummary(record)
+      };
+    }),
+    feedbackInsights: feedbackInsights.results.map((record) => {
+      const quest = findQuest(record.quest_id);
+      const responses = Number(record.responses || 0);
+      const veryClear = Number(record.very_clear || 0);
+      return {
+        questId: record.quest_id,
+        questTitle: quest?.title || record.quest_id,
+        track: quest?.track || null,
+        difficulty: quest?.difficulty || null,
+        responses,
+        averageRating: responses ? Number(Number(record.average_rating || 0).toFixed(2)) : null,
+        needsWork: Number(record.needs_work || 0),
+        clear: Number(record.clear_count || 0),
+        veryClear,
+        veryClearRate: responses ? Number(((veryClear / responses) * 100).toFixed(1)) : null
       };
     }),
     popularQuests: popular.results.map((record) => {

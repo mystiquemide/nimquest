@@ -77,7 +77,7 @@ assert.equal(completionResponse.status, 200);
 assert.equal(completion.verified, true);
 assert.equal(completion.proof.walletAddress, walletAddress);
 
-const [walletResponse, receiptResponse, feedbackResponse, replayResponse, leaderboardResponse, communityResponse] = await Promise.all([
+const [walletResponse, receiptResponse, feedbackResponse, replayResponse, leaderboardResponse] = await Promise.all([
   fetch(`${baseUrl}/api/completions?wallet=${encodeURIComponent(walletAddress)}`),
   fetch(`${baseUrl}/api/completions/${encodeURIComponent(completion.proof.key)}`),
   fetch(`${baseUrl}/api/feedback`, {
@@ -94,13 +94,14 @@ const [walletResponse, receiptResponse, feedbackResponse, replayResponse, leader
     headers: { "content-type": "application/json" },
     body: JSON.stringify(completionPayload)
   }),
-  fetch(`${baseUrl}/api/leaderboard`),
-  fetch(`${baseUrl}/api/community`)
+  fetch(`${baseUrl}/api/leaderboard`)
 ]);
 const walletProofs = await walletResponse.json();
 const receipt = await receiptResponse.json();
 const replay = await replayResponse.json();
 const leaderboard = await leaderboardResponse.json();
+assert.equal(feedbackResponse.status, 201);
+const communityResponse = await fetch(`${baseUrl}/api/community`);
 const community = await communityResponse.json();
 const leaderboardEntry = leaderboard.leaderboard.find(
   (entry) => entry.walletLabel === maskWalletAddress(walletAddress)
@@ -148,7 +149,6 @@ assert.ok(
   "generic shell must point at the canonical NimQuest domain"
 );
 
-assert.equal(feedbackResponse.status, 201);
 assert.equal(replayResponse.status, 400);
 assert.match(replay.error, /already been used/);
 assert.equal(leaderboardResponse.status, 200);
@@ -190,6 +190,15 @@ assert.equal(meetFunnel.verificationRate, null);
 assert.equal("walletAddress" in receiveFunnel, false);
 assert.equal("deviceId" in receiveFunnel, false);
 assert.equal("answers" in receiveFunnel, false);
+const receiveFeedback = community.feedbackInsights.find((entry) => entry.questId === "receive-nim-safely");
+assert.ok(receiveFeedback);
+assert.equal(receiveFeedback.responses, 1);
+assert.equal(receiveFeedback.averageRating, 3);
+assert.equal(receiveFeedback.veryClear, 1);
+assert.equal(receiveFeedback.veryClearRate, 100);
+assert.equal("walletAddress" in receiveFeedback, false);
+assert.equal("proofKey" in receiveFeedback, false);
+assert.equal("note" in receiveFeedback, false);
 assert.equal(community.popularQuests[0].questId, "receive-nim-safely");
 assert.equal(community.popularQuests[0].verifiedCompletions, 1);
 assert.equal(community.recentActivity[0].receiptId, completion.proof.key);

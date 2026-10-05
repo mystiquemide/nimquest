@@ -2132,7 +2132,9 @@ async function renderCommunity() {
     const popularQuests = Array.isArray(result.popularQuests) ? result.popularQuests : [];
     const recentActivity = Array.isArray(result.recentActivity) ? result.recentActivity : [];
     const questFunnels = Array.isArray(result.questFunnels) ? result.questFunnels : [];
+    const feedbackInsights = Array.isArray(result.feedbackInsights) ? result.feedbackInsights : [];
     const rateLabel = (value) => value == null ? "—" : `${Number(value).toFixed(1)}%`;
+    const ratingLabel = (value) => value == null ? "—" : `${Number(value).toFixed(2)}/3`;
     const questFunnelRows = questFunnels.map((entry, index) => `
       <li class="leaderboard-row">
         <span class="leaderboard-rank" aria-label="Quest funnel row ${index + 1}">${String(index + 1).padStart(2, "0")}</span>
@@ -2147,6 +2149,23 @@ async function renderCommunity() {
         <div class="leaderboard-date">
           <span>Verified</span>
           <b>${rateLabel(entry.verificationRate)}</b>
+        </div>
+      </li>
+    `).join("");
+    const feedbackRows = feedbackInsights.map((entry, index) => `
+      <li class="leaderboard-row">
+        <span class="leaderboard-rank" aria-label="Quest clarity row ${index + 1}">${String(index + 1).padStart(2, "0")}</span>
+        <div class="leaderboard-wallet">
+          <span>${escapeHtml(entry.track || "Quest")} · ${Number(entry.responses || 0)} response${Number(entry.responses || 0) === 1 ? "" : "s"}</span>
+          <b>${escapeHtml(entry.questTitle)}</b>
+        </div>
+        <div class="leaderboard-score">
+          <strong>${ratingLabel(entry.averageRating)}</strong>
+          <span>average clarity</span>
+        </div>
+        <div class="leaderboard-date">
+          <span>Very clear</span>
+          <b>${rateLabel(entry.veryClearRate)}</b>
         </div>
       </li>
     `).join("");
@@ -2210,6 +2229,14 @@ async function renderCommunity() {
         ? `<ol class="leaderboard-list">${questFunnelRows}</ol>`
         : `<p class="leaderboard-status">Per-quest rates will appear after the first tracked quiz attempt.</p>`}
       <p class="leaderboard-status">These rates use aggregate counters from the tracking period. Small samples can be noisy, so use them as a signal for where to investigate rather than as a learner score.</p>
+      <div class="leaderboard-board__heading">
+        <div><p class="eyebrow">Learner clarity</p><h2>What verified learners thought.</h2></div>
+        <span class="leaderboard-status">Aggregate ratings only</span>
+      </div>
+      ${feedbackRows
+        ? `<ol class="leaderboard-list">${feedbackRows}</ol>`
+        : `<p class="leaderboard-status">Clarity insights will appear after verified learners rate completed quests.</p>`}
+      <p class="leaderboard-status">Ratings are grouped by quest. Free-text feedback, wallet details, proof identifiers and individual responses are not exposed here. Small samples should be treated as directional.</p>
       <div class="leaderboard-board__heading">
         <div><p class="eyebrow">Most completed</p><h2>Popular quests</h2></div>
         <span class="leaderboard-status">${summary.latestVerifiedAt ? `Updated ${escapeHtml(formatCompletionDate(summary.latestVerifiedAt))}` : "No verified activity yet"}</span>
