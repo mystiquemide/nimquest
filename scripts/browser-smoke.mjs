@@ -145,11 +145,42 @@ try {
       if (route === "/quests") {
         const trailQuestTitles = await page.locator(".trail-card h2").allTextContents();
         assert.equal(trailQuestTitles[0], "Meet Nimiq");
-        const paymentsFilter = page.locator('[data-filter="payments"]');
+
+        const paymentsFilter = page.locator('[data-track-filter="payments"]');
         await paymentsFilter.click();
         assert.equal(await paymentsFilter.getAttribute("aria-pressed"), "true");
         assert.ok(await page.locator('.trail-card[data-track="payments"]:visible').count() > 0);
-        await page.locator('[data-filter="all"]').click();
+        assert.equal(await page.locator('.trail-card:not([data-track="payments"]):visible').count(), 0);
+
+        const search = page.locator("[data-quest-search]");
+        await search.fill("cashlink");
+        assert.ok(await page.locator('.trail-card[data-track="payments"]:visible').count() >= 1);
+        assert.match(await page.locator("[data-quest-results]").textContent(), /quest.*shown/i);
+
+        await search.fill("definitely-not-a-quest");
+        assert.equal(await page.locator(".trail-card:visible").count(), 0);
+        assert.equal(await page.locator("[data-quest-empty]").isVisible(), true);
+
+        await page.locator("[data-clear-quest-filters]").click();
+        assert.equal(await page.locator(".trail-card:visible").count(), 20);
+        assert.match(await page.locator("[data-quest-results]").textContent(), /20 quests shown/i);
+
+        await page.evaluate(() => {
+          localStorage.setItem("nimquest:draft:meet-nimiq", JSON.stringify({
+            step: "quiz",
+            questionIndex: 0,
+            answers: [null, null, null],
+            optionOrder: [[0, 1, 2], [0, 1, 2], [0, 1, 2]],
+            savedAt: new Date().toISOString()
+          }));
+        });
+        await page.reload({ waitUntil: "networkidle" });
+        const inProgressFilter = page.locator('[data-status-filter="in-progress"]');
+        await inProgressFilter.click();
+        assert.equal(await page.locator(".trail-card:visible").count(), 1);
+        assert.match(await page.locator(".trail-card:visible h2").textContent(), /Meet Nimiq/i);
+        assert.match(await page.locator("[data-quest-results]").textContent(), /1 quest shown/i);
+        await page.evaluate(() => localStorage.removeItem("nimquest:draft:meet-nimiq"));
       }
 
       if (route === "/journey") {

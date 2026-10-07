@@ -1484,11 +1484,60 @@ footer > p {
   letter-spacing: -0.055em;
 }
 
+.quest-discovery {
+  display: grid;
+  justify-items: end;
+  gap: 10px;
+  width: min(100%, 620px);
+}
+
+.quest-search {
+  display: grid;
+  width: min(100%, 420px);
+  gap: 6px;
+}
+
+.quest-search > span {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.quest-search input {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1.5px solid var(--ink);
+  border-radius: 12px;
+  background: white;
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.quest-search input:focus {
+  outline: 3px solid color-mix(in srgb, var(--violet) 30%, transparent);
+  outline-offset: 2px;
+}
+
 .quest-filters {
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 8px;
+}
+
+.quest-filters--status {
+  margin-top: 2px;
+}
+
+.quest-results {
+  margin: 2px 0 0;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--muted);
 }
 
 .filter-chip {
@@ -1532,8 +1581,43 @@ footer > p {
   grid-template-columns: 86px 1fr;
 }
 
-.trail-card[hidden] {
+.trail-card[hidden],
+.quest-path__heading[hidden],
+.quest-empty[hidden] {
   display: none;
+}
+
+.quest-empty {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  padding: 46px 24px;
+  border: 2px dashed var(--ink);
+  border-radius: 22px;
+  background: white;
+  text-align: center;
+}
+
+.quest-empty > span {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border: 2px solid var(--ink);
+  border-radius: 50%;
+  font-size: 22px;
+  font-weight: 900;
+}
+
+.quest-empty h3,
+.quest-empty p {
+  margin: 0;
+}
+
+.quest-empty p {
+  color: var(--muted);
 }
 
 .trail-card__marker {
@@ -1877,8 +1961,21 @@ footer > p {
     margin-bottom: 46px;
   }
 
+  .quest-discovery {
+    justify-items: stretch;
+    width: 100%;
+  }
+
+  .quest-search {
+    width: 100%;
+  }
+
   .quest-filters {
     justify-content: flex-start;
+  }
+
+  .quest-results {
+    text-align: left;
   }
 
   .quest-path {

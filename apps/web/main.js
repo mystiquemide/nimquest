@@ -836,10 +836,15 @@ function renderQuestTrail() {
       (quest, index) => `
         ${
           index === 0 || quests[index - 1].track !== quest.track
-            ? `<div class="quest-path__heading"><span>${quest.track}</span><b>${quests.filter((item) => item.track === quest.track).length} quests</b></div>`
+            ? `<div class="quest-path__heading" data-track-heading="${quest.track.toLowerCase()}"><span>${quest.track}</span><b>${quests.filter((item) => item.track === quest.track).length} quests</b></div>`
             : ""
         }
-        <article class="trail-card trail-card--${quest.color} ${completedQuestIds.has(quest.id) ? "is-complete" : ""}" data-track="${quest.track.toLowerCase()}">
+        <article
+          class="trail-card trail-card--${quest.color} ${completedQuestIds.has(quest.id) ? "is-complete" : ""}"
+          data-track="${quest.track.toLowerCase()}"
+          data-status="${completedQuestIds.has(quest.id) ? "verified" : draftByQuest.has(quest.id) ? "in-progress" : "not-started"}"
+          data-search="${escapeHtml([quest.title, quest.description, quest.track, ...quest.goals].join(" ").toLowerCase())}"
+        >
           <div class="trail-card__marker" aria-hidden="true">
             <span>${index + 1}</span>
           </div>
@@ -907,15 +912,28 @@ function renderQuestTrail() {
             <p class="eyebrow">Starter path</p>
             <h2>Twenty skills worth knowing.</h2>
           </div>
-          <div class="quest-filters" aria-label="Filter quests">
-            <button class="filter-chip is-active" type="button" data-filter="all" aria-pressed="true">All</button>
-            <button class="filter-chip" type="button" data-filter="nim basics" aria-pressed="false">Basics</button>
-            <button class="filter-chip" type="button" data-filter="payments" aria-pressed="false">Payments</button>
-            <button class="filter-chip" type="button" data-filter="wallet safety" aria-pressed="false">Safety</button>
-            <button class="filter-chip" type="button" data-filter="network" aria-pressed="false">Network</button>
-            <button class="filter-chip" type="button" data-filter="staking" aria-pressed="false">Staking</button>
-            <button class="filter-chip" type="button" data-filter="ecosystem" aria-pressed="false">Ecosystem</button>
-            <button class="filter-chip" type="button" data-filter="mini apps" aria-pressed="false">Mini Apps</button>
+          <div class="quest-discovery">
+            <label class="quest-search">
+              <span>Search quests</span>
+              <input type="search" placeholder="Search skills or topics" autocomplete="off" data-quest-search>
+            </label>
+            <div class="quest-filters" aria-label="Filter quests by topic">
+              <button class="filter-chip is-active" type="button" data-track-filter="all" aria-pressed="true">All topics</button>
+              <button class="filter-chip" type="button" data-track-filter="nim basics" aria-pressed="false">Basics</button>
+              <button class="filter-chip" type="button" data-track-filter="payments" aria-pressed="false">Payments</button>
+              <button class="filter-chip" type="button" data-track-filter="wallet safety" aria-pressed="false">Safety</button>
+              <button class="filter-chip" type="button" data-track-filter="network" aria-pressed="false">Network</button>
+              <button class="filter-chip" type="button" data-track-filter="staking" aria-pressed="false">Staking</button>
+              <button class="filter-chip" type="button" data-track-filter="ecosystem" aria-pressed="false">Ecosystem</button>
+              <button class="filter-chip" type="button" data-track-filter="mini apps" aria-pressed="false">Mini Apps</button>
+            </div>
+            <div class="quest-filters quest-filters--status" aria-label="Filter quests by progress">
+              <button class="filter-chip is-active" type="button" data-status-filter="all" aria-pressed="true">All progress</button>
+              <button class="filter-chip" type="button" data-status-filter="in-progress" aria-pressed="false">In progress</button>
+              <button class="filter-chip" type="button" data-status-filter="not-started" aria-pressed="false">Not started</button>
+              <button class="filter-chip" type="button" data-status-filter="verified" aria-pressed="false">Verified</button>
+            </div>
+            <p class="quest-results" data-quest-results role="status">${quests.length} quests shown</p>
           </div>
         </div>
 
@@ -940,6 +958,12 @@ function renderQuestTrail() {
         <div class="quest-path">
           <div class="quest-path__line" aria-hidden="true"></div>
           ${trailCards}
+          <div class="quest-empty" data-quest-empty hidden>
+            <span aria-hidden="true">?</span>
+            <h3>No quests match those filters.</h3>
+            <p>Try another topic, progress state, or search term.</p>
+            <button class="button button--quiet" type="button" data-clear-quest-filters>Clear filters</button>
+          </div>
         </div>
       </section>
 
@@ -964,19 +988,79 @@ function renderQuestTrail() {
 
   `;
 
-  document.querySelectorAll("[data-filter]").forEach((button) => {
+  const trailCardsElements = [...document.querySelectorAll(".trail-card")];
+  const searchInput = document.querySelector("[data-quest-search]");
+  const resultStatus = document.querySelector("[data-quest-results]");
+  const emptyState = document.querySelector("[data-quest-empty]");
+  let activeTrack = "all";
+  let activeStatus = "all";
+  let searchQuery = "";
+
+  function setActiveFilter(selector, activeButton) {
+    document.querySelectorAll(selector).forEach((button) => {
+      const active = button === activeButton;
+      button.classList.toggle("is-active", active);
+      button.setAttribute("aria-pressed", String(active));
+    });
+  }
+
+  function applyQuestFilters() {
+    let visibleCount = 0;
+    const visibleTracks = new Set();
+
+    trailCardsElements.forEach((card) => {
+      const matchesTrack = activeTrack === "all" || card.dataset.track === activeTrack;
+      const matchesStatus = activeStatus === "all" || card.dataset.status === activeStatus;
+      const matchesSearch = !searchQuery || card.dataset.search.includes(searchQuery);
+      const visible = matchesTrack && matchesStatus && matchesSearch;
+      card.hidden = !visible;
+      if (visible) {
+        visibleCount += 1;
+        visibleTracks.add(card.dataset.track);
+      }
+    });
+
+    document.querySelectorAll("[data-track-heading]").forEach((heading) => {
+      heading.hidden = !visibleTracks.has(heading.dataset.trackHeading);
+    });
+
+    resultStatus.textContent = `${visibleCount} quest${visibleCount === 1 ? "" : "s"} shown`;
+    emptyState.hidden = visibleCount !== 0;
+  }
+
+  document.querySelectorAll("[data-track-filter]").forEach((button) => {
     button.addEventListener("click", () => {
-      const filter = button.dataset.filter;
-      document.querySelectorAll("[data-filter]").forEach((chip) => {
-        const active = chip === button;
-        chip.classList.toggle("is-active", active);
-        chip.setAttribute("aria-pressed", String(active));
-      });
-      document.querySelectorAll(".trail-card").forEach((card) => {
-        card.hidden = filter !== "all" && card.dataset.track !== filter;
-      });
+      activeTrack = button.dataset.trackFilter;
+      setActiveFilter("[data-track-filter]", button);
+      applyQuestFilters();
     });
   });
+
+  document.querySelectorAll("[data-status-filter]").forEach((button) => {
+    button.addEventListener("click", () => {
+      activeStatus = button.dataset.statusFilter;
+      setActiveFilter("[data-status-filter]", button);
+      applyQuestFilters();
+    });
+  });
+
+  searchInput.addEventListener("input", () => {
+    searchQuery = searchInput.value.trim().toLowerCase();
+    applyQuestFilters();
+  });
+
+  document.querySelector("[data-clear-quest-filters]").addEventListener("click", () => {
+    activeTrack = "all";
+    activeStatus = "all";
+    searchQuery = "";
+    searchInput.value = "";
+    setActiveFilter("[data-track-filter]", document.querySelector('[data-track-filter="all"]'));
+    setActiveFilter("[data-status-filter]", document.querySelector('[data-status-filter="all"]'));
+    applyQuestFilters();
+    searchInput.focus();
+  });
+
+  applyQuestFilters();
 }
 
 function renderQuestSession(questId) {
