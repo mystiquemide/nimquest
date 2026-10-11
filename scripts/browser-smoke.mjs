@@ -156,16 +156,43 @@ try {
         await search.fill("cashlink");
         assert.ok(await page.locator('.trail-card[data-track="payments"]:visible').count() >= 1);
         assert.match(await page.locator("[data-quest-results]").textContent(), /quest.*shown/i);
+        assert.equal(
+          new URL(page.url()).search,
+          "?topic=payments&q=cashlink",
+          "quest discovery state must be reflected in the URL"
+        );
 
-        await search.fill("definitely-not-a-quest");
+        const filteredTrailUrl = `${new URL(page.url()).pathname}${new URL(page.url()).search}`;
+        await page.reload({ waitUntil: "networkidle" });
+        assert.equal(await page.locator("[data-quest-search]").inputValue(), "cashlink");
+        assert.equal(await page.locator('[data-track-filter="payments"]').getAttribute("aria-pressed"), "true");
+        assert.ok(await page.locator('.trail-card[data-track="payments"]:visible').count() >= 1);
+
+        const filteredQuestHref = await page.locator(".trail-card:visible .trail-action").first().getAttribute("href");
+        await page.goto(`${baseUrl}${filteredQuestHref}`, { waitUntil: "networkidle" });
+        assert.equal(
+          await page.locator(".session-header .back-link").getAttribute("href"),
+          filteredTrailUrl,
+          "quest back navigation must restore the filtered Trail"
+        );
+        await page.goto(`${baseUrl}${filteredTrailUrl}`, { waitUntil: "networkidle" });
+
+        await page.locator("[data-quest-search]").fill("definitely-not-a-quest");
         assert.equal(await page.locator(".trail-card:visible").count(), 0);
         assert.equal(await page.locator("[data-quest-empty]").isVisible(), true);
 
         await page.locator("[data-clear-quest-filters]").click();
         assert.equal(await page.locator(".trail-card:visible").count(), 20);
         assert.match(await page.locator("[data-quest-results]").textContent(), /20 quests shown/i);
+        assert.equal(new URL(page.url()).search, "");
 
         await page.evaluate(() => {
+          for (const storage of [localStorage, sessionStorage]) {
+            for (let index = storage.length - 1; index >= 0; index -= 1) {
+              const key = storage.key(index);
+              if (key?.startsWith("nimquest:draft:")) storage.removeItem(key);
+            }
+          }
           localStorage.setItem("nimquest:draft:meet-nimiq", JSON.stringify({
             step: "quiz",
             questionIndex: 0,
@@ -180,7 +207,12 @@ try {
         assert.equal(await page.locator(".trail-card:visible").count(), 1);
         assert.match(await page.locator(".trail-card:visible h2").textContent(), /Meet Nimiq/i);
         assert.match(await page.locator("[data-quest-results]").textContent(), /1 quest shown/i);
+        assert.equal(new URL(page.url()).search, "?progress=in-progress");
+        await page.reload({ waitUntil: "networkidle" });
+        assert.equal(await page.locator('[data-status-filter="in-progress"]').getAttribute("aria-pressed"), "true");
+        assert.equal(await page.locator(".trail-card:visible").count(), 1);
         await page.evaluate(() => localStorage.removeItem("nimquest:draft:meet-nimiq"));
+        await page.goto(`${baseUrl}/quests`, { waitUntil: "networkidle" });
       }
 
       if (route === "/journey") {

@@ -12,6 +12,18 @@ const NIMQUEST_TIP_NIM = 1;
 const PUBLIC_ORIGIN = "https://nimquest.midelabs.xyz";
 const LEGACY_HOSTNAME = "nimquest.artistic-chip.workers.dev";
 const QUEST_DRAFT_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const QUEST_TRAIL_RETURN_KEY = "nimquest:quest-trail-return";
+const QUEST_TRAIL_TRACKS = new Set([
+  "all",
+  "nim basics",
+  "payments",
+  "wallet safety",
+  "network",
+  "staking",
+  "ecosystem",
+  "mini apps"
+]);
+const QUEST_TRAIL_STATUSES = new Set(["all", "in-progress", "not-started", "verified"]);
 
 const questPresentation = [
   {
@@ -813,6 +825,7 @@ function renderNotFound() {
 }
 
 function renderQuestTrail() {
+  const trailState = readQuestTrailState();
   const completions = readVerifiedCompletions();
   const completionByQuest = new Map(completions.map((proof) => [proof.questId, proof]));
   const completedQuestIds = new Set(completionByQuest.keys());
@@ -992,9 +1005,9 @@ function renderQuestTrail() {
   const searchInput = document.querySelector("[data-quest-search]");
   const resultStatus = document.querySelector("[data-quest-results]");
   const emptyState = document.querySelector("[data-quest-empty]");
-  let activeTrack = "all";
-  let activeStatus = "all";
-  let searchQuery = "";
+  let activeTrack = trailState.track;
+  let activeStatus = trailState.status;
+  let searchQuery = trailState.query;
 
   function setActiveFilter(selector, activeButton) {
     document.querySelectorAll(selector).forEach((button) => {
@@ -1002,6 +1015,20 @@ function renderQuestTrail() {
       button.classList.toggle("is-active", active);
       button.setAttribute("aria-pressed", String(active));
     });
+  }
+
+  function syncQuestTrailState() {
+    const trailUrl = buildQuestTrailUrl({
+      track: activeTrack,
+      status: activeStatus,
+      query: searchQuery
+    });
+    window.history.replaceState(window.history.state, "", trailUrl);
+    try {
+      sessionStorage.setItem(QUEST_TRAIL_RETURN_KEY, trailUrl);
+    } catch {
+      // URL state still preserves the filters when session storage is unavailable.
+    }
   }
 
   function applyQuestFilters() {
@@ -1026,7 +1053,20 @@ function renderQuestTrail() {
 
     resultStatus.textContent = `${visibleCount} quest${visibleCount === 1 ? "" : "s"} shown`;
     emptyState.hidden = visibleCount !== 0;
+    syncQuestTrailState();
   }
+
+  searchInput.value = searchQuery;
+  setActiveFilter(
+    "[data-track-filter]",
+    document.querySelector(`[data-track-filter="${activeTrack}"]`) ||
+      document.querySelector('[data-track-filter="all"]')
+  );
+  setActiveFilter(
+    "[data-status-filter]",
+    document.querySelector(`[data-status-filter="${activeStatus}"]`) ||
+      document.querySelector('[data-status-filter="all"]')
+  );
 
   document.querySelectorAll("[data-track-filter]").forEach((button) => {
     button.addEventListener("click", () => {
@@ -1100,6 +1140,8 @@ function renderQuestSession(questId) {
     );
   }
 
+  const questTrailReturnUrl = readQuestTrailReturnUrl();
+
   document.querySelector("#app").innerHTML = `
     <a class="skip-link" href="#session-content">Skip to quest</a>
 
@@ -1109,7 +1151,7 @@ function renderQuestSession(questId) {
         <span class="session-header__quest">${quest.number}</span>
         <span><b>${quest.title}</b>${quest.duration}</span>
       </div>
-      <a class="back-link" href="/quests"><span aria-hidden="true">←</span> Quest Trail</a>
+      <a class="back-link" href="${escapeHtml(questTrailReturnUrl)}"><span aria-hidden="true">←</span> Quest Trail</a>
     </header>
 
     <main class="session-page" id="session-content">
@@ -2486,6 +2528,44 @@ function readVerifiedCompletions() {
   }
 
   return completions;
+}
+
+function readQuestTrailState() {
+  const params = new URLSearchParams(window.location.search);
+  const trackValue = (params.get("topic") || "all").trim().toLowerCase();
+  const statusValue = (params.get("progress") || "all").trim().toLowerCase();
+  const queryValue = (params.get("q") || "").trim().toLowerCase().slice(0, 80);
+
+  return {
+    track: QUEST_TRAIL_TRACKS.has(trackValue) ? trackValue : "all",
+    status: QUEST_TRAIL_STATUSES.has(statusValue) ? statusValue : "all",
+    query: queryValue
+  };
+}
+
+function buildQuestTrailUrl({ track = "all", status = "all", query = "" } = {}) {
+  const params = new URLSearchParams();
+  if (track !== "all" && QUEST_TRAIL_TRACKS.has(track)) params.set("topic", track);
+  if (status !== "all" && QUEST_TRAIL_STATUSES.has(status)) params.set("progress", status);
+  const normalizedQuery = String(query || "").trim().toLowerCase().slice(0, 80);
+  if (normalizedQuery) params.set("q", normalizedQuery);
+  const serialized = params.toString();
+  return serialized ? `/quests?${serialized}` : "/quests";
+}
+
+function readQuestTrailReturnUrl() {
+  try {
+    const saved = sessionStorage.getItem(QUEST_TRAIL_RETURN_KEY);
+    if (saved) {
+      const parsed = new URL(saved, window.location.origin);
+      if (parsed.origin === window.location.origin && parsed.pathname === "/quests") {
+        return `${parsed.pathname}${parsed.search}`;
+      }
+    }
+  } catch {
+    // Fall back to the unfiltered trail when session storage is unavailable.
+  }
+  return "/quests";
 }
 
 function readQuestDraft(quest) {
