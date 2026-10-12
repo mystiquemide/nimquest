@@ -213,6 +213,49 @@ try {
         assert.equal(await page.locator(".trail-card:visible").count(), 1);
         await page.evaluate(() => localStorage.removeItem("nimquest:draft:meet-nimiq"));
         await page.goto(`${baseUrl}/quests`, { waitUntil: "networkidle" });
+
+        await page.evaluate(() => {
+          const now = new Date().toISOString();
+          localStorage.setItem("nimquest:proof:meet-nimiq", JSON.stringify({
+            questId: "meet-nimiq",
+            answers: [0, 0, 0],
+            gradedAt: now,
+            savedAt: now
+          }));
+          sessionStorage.removeItem("nimquest:proof:meet-nimiq");
+        });
+        await page.reload({ waitUntil: "networkidle" });
+        const proofReadyCard = page.locator('.trail-card').filter({ hasText: "Meet Nimiq" }).first();
+        assert.match(await proofReadyCard.textContent(), /Proof ready/i);
+        assert.equal(await proofReadyCard.locator(".trail-action").getAttribute("href"), "/proof/meet-nimiq");
+
+        const proofProgressFilter = page.locator('[data-status-filter="in-progress"]');
+        await proofProgressFilter.click();
+        assert.equal(await page.locator(".trail-card:visible").count(), 1);
+        assert.match(await page.locator(".trail-card:visible").textContent(), /Proof ready/i);
+
+        await page.goto(`${baseUrl}/`, { waitUntil: "networkidle" });
+        assert.match(await page.locator(".announcement").textContent(), /Proof ready/i);
+        assert.equal(await page.locator(".announcement a").getAttribute("href"), "/proof/meet-nimiq");
+
+        await page.goto(`${baseUrl}/proof/meet-nimiq`, { waitUntil: "networkidle" });
+        assert.match(await page.locator(".wallet-ticket__score").textContent(), /3 of 3 ready/i);
+        assert.equal(await page.locator("[data-connect-proof]").count(), 1);
+
+        await page.evaluate(() => {
+          const expired = new Date(Date.now() - 31 * 60 * 1000).toISOString();
+          localStorage.setItem("nimquest:proof:meet-nimiq", JSON.stringify({
+            questId: "meet-nimiq",
+            answers: [0, 0, 0],
+            gradedAt: expired,
+            savedAt: expired
+          }));
+          sessionStorage.removeItem("nimquest:proof:meet-nimiq");
+        });
+        await page.reload({ waitUntil: "networkidle" });
+        assert.match(await page.locator(".wallet-gate").textContent(), /Quiz required/i);
+        assert.equal(await page.evaluate(() => localStorage.getItem("nimquest:proof:meet-nimiq")), null);
+        await page.goto(`${baseUrl}/quests`, { waitUntil: "networkidle" });
       }
 
       if (route === "/journey") {
