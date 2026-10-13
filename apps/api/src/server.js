@@ -14,6 +14,7 @@ import {
 import { normalizeWalletAddress } from "./validation.js";
 
 const PORT = Number.parseInt(process.env.PORT || "8787", 10);
+const FEEDBACK_WINDOW_MS = 24 * 60 * 60 * 1000;
 const PROJECT_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 const DIST_ROOT = path.join(PROJECT_ROOT, "dist");
 const CONTENT_TYPES = {
@@ -303,6 +304,9 @@ export function createServer() {
         ) {
           return sendJson(response, 403, { error: "Feedback authorization is invalid." });
         }
+        if (!isFeedbackTokenFresh(body.feedbackToken)) {
+          return sendJson(response, 410, { error: "Feedback authorization has expired." });
+        }
         if (!Number.isInteger(body.rating) || body.rating < 1 || body.rating > 3) {
           return sendJson(response, 400, { error: "Feedback rating must be between 1 and 3." });
         }
@@ -413,6 +417,16 @@ function isMatchingToken(token, expectedHash) {
   const actualHash = crypto.createHash("sha256").update(token).digest("hex");
   if (actualHash.length !== expectedHash.length) return false;
   return crypto.timingSafeEqual(Buffer.from(actualHash), Buffer.from(expectedHash));
+}
+
+function isFeedbackTokenFresh(token) {
+  if (typeof token !== "string") return false;
+  const parts = token.split(".");
+  if (parts.length !== 2 || !parts[0] || !parts[1]) return false;
+  const issuedAt = Number.parseInt(parts[0], 36);
+  if (!Number.isFinite(issuedAt)) return false;
+  const age = Date.now() - issuedAt;
+  return age >= 0 && age <= FEEDBACK_WINDOW_MS;
 }
 
 function sendFrontend(request, response, pathname) {

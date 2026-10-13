@@ -75,6 +75,7 @@ const completion = await completionResponse.json();
 
 assert.equal(completionResponse.status, 200);
 assert.equal(completion.verified, true);
+assert.match(completion.feedbackToken, /^[0-9a-z]+\.[0-9a-f]{64}$/);
 assert.equal(completion.proof.walletAddress, walletAddress);
 
 const [walletResponse, receiptResponse, feedbackResponse, replayResponse, leaderboardResponse] = await Promise.all([

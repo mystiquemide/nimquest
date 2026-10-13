@@ -9,6 +9,7 @@ import { verifyWalletProofWorker } from "../apps/api/src/wallet-proof-worker.js"
 
 const PUBLIC_ORIGIN = "https://nimquest.midelabs.xyz";
 const CHALLENGE_TTL_MS = 5 * 60 * 1000;
+const FEEDBACK_WINDOW_MS = 24 * 60 * 60 * 1000;
 const JSON_HEADERS = {
   "content-type": "application/json; charset=utf-8",
   "x-content-type-options": "nosniff",
@@ -405,6 +406,9 @@ async function submitFeedback(database, body) {
   if (!constantTimeEqual(submittedTokenHash, proof.feedback_token_hash || "")) {
     return json({ error: "Feedback authorization is invalid." }, 403);
   }
+  if (!isFeedbackTokenFresh(body.feedbackToken)) {
+    return json({ error: "Feedback authorization has expired." }, 410);
+  }
 
   await database.prepare(
     `INSERT INTO completion_feedback (proof_key, rating, note, submitted_at)
@@ -545,7 +549,7 @@ async function completeQuest(database, body) {
 
   const proofKey = `${body.questId}:${walletProof.walletAddress}`;
   const publicId = crypto.randomUUID();
-  const feedbackToken = randomHex(32);
+  const feedbackToken = `${Date.now().toString(36)}.${randomHex(32)}`;
   const feedbackTokenHash = await sha256Hex(feedbackToken);
   const completedAt = now;
   const existing = await database.prepare(
@@ -734,6 +738,16 @@ function constantTimeEqual(left, right) {
     result |= left.charCodeAt(index) ^ right.charCodeAt(index);
   }
   return result === 0;
+}
+
+function isFeedbackTokenFresh(token) {
+  if (typeof token !== "string") return false;
+  const parts = token.split(".");
+  if (parts.length !== 2 || !parts[0] || !parts[1]) return false;
+  const issuedAt = Number.parseInt(parts[0], 36);
+  if (!Number.isFinite(issuedAt)) return false;
+  const age = Date.now() - issuedAt;
+  return age >= 0 && age <= FEEDBACK_WINDOW_MS;
 }
 
 function isAllowedOrigin(request, url) {

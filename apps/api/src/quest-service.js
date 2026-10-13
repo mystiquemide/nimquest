@@ -82,7 +82,7 @@ export function gradeQuest({
   }
 
   const key = `${questId}:${walletProof.walletAddress}`;
-  const feedbackToken = crypto.randomBytes(32).toString("hex");
+  const feedbackToken = `${Date.now().toString(36)}.${crypto.randomBytes(32).toString("hex")}`;
   const feedbackTokenHash = crypto.createHash("sha256").update(feedbackToken).digest("hex");
   if (completionStore.has(key)) {
     const existing = completionStore.get(key);

@@ -29,6 +29,7 @@ const routes = [
   ["/quests", /Pick a skill/, "Quest Trail | NimQuest"],
   ["/quests/meet-nimiq", /Meet Nimiq/, "Meet Nimiq | NimQuest"],
   ["/proof/meet-nimiq", /wallet proof/i, "Meet Nimiq Wallet Proof | NimQuest"],
+  ["/completions/test-feedback-proof", /Meet Nimiq/, "Completion Receipt | NimQuest"],
   ["/journey", /Small wins/, "My Journey | NimQuest"],
   ["/leaderboard", /verified wallet proof/i, "Leaderboard | NimQuest"],
   ["/community", /See what people are/i, "Community | NimQuest"],
@@ -49,6 +50,18 @@ try {
     const page = await browser.newPage({ viewport: { width, height: 900 } });
     const errors = [];
     page.on("pageerror", (error) => errors.push(error.message));
+    await page.route("**/api/feedback", async (route) => {
+      const body = route.request().postDataJSON();
+      if (body.proofKey === "test-feedback-proof" && body.feedbackToken === "mteststamp.ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff") {
+        return route.fulfill({
+          status: 201,
+          contentType: "application/json",
+          body: JSON.stringify({ ok: true, message: "Feedback saved." })
+        });
+      }
+      return route.continue();
+    });
+
     await page.route("**/api/community", async (route) => {
       await route.fulfill({
         status: 200,
@@ -107,6 +120,29 @@ try {
     });
 
     for (const [route, heading, title] of routes) {
+      if (route === "/completions/test-feedback-proof") {
+        await page.evaluate(() => {
+          const completedAt = new Date().toISOString();
+          localStorage.setItem("nimquest:completion:meet-nimiq", JSON.stringify({
+            key: "test-feedback-proof",
+            questId: "meet-nimiq",
+            questTitle: "Meet Nimiq",
+            track: "onboarding",
+            difficulty: "starter",
+            walletAddress: "NQ00 TEST WALLET ADDRESS",
+            verificationMethod: "nimiq_message_signature",
+            completedAt,
+            status: "verified",
+            reward: { status: "unavailable", asset: null, amount: null }
+          }));
+          localStorage.setItem("nimquest:feedback:test-feedback-proof", JSON.stringify({
+            proofKey: "test-feedback-proof",
+            feedbackToken: "mteststamp.ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            savedAt: completedAt
+          }));
+        });
+      }
+
       await page.goto(`${baseUrl}${route}`, { waitUntil: "networkidle" });
       const h1 = page.locator("h1").first();
       await h1.waitFor({ state: "visible" });
@@ -256,6 +292,23 @@ try {
         assert.match(await page.locator(".wallet-gate").textContent(), /Quiz required/i);
         assert.equal(await page.evaluate(() => localStorage.getItem("nimquest:proof:meet-nimiq")), null);
         await page.goto(`${baseUrl}/quests`, { waitUntil: "networkidle" });
+      }
+
+      if (route === "/completions/test-feedback-proof") {
+        const receiptText = await page.locator(".completion-page").textContent();
+        assert.match(receiptText, /How clear was this quest/i);
+        assert.match(receiptText, /up to 24 hours/i);
+        const feedbackButton = page.locator('[data-receipt-feedback-rating="3"]');
+        await feedbackButton.click();
+        await page.waitForFunction(() =>
+          document.querySelector("[data-receipt-feedback-status]")?.textContent?.includes("saved")
+        );
+        assert.match(await page.locator("[data-receipt-feedback-status]").textContent(), /saved/i);
+        assert.equal(
+          await page.evaluate(() => localStorage.getItem("nimquest:feedback:test-feedback-proof")),
+          null
+        );
+        await page.evaluate(() => localStorage.removeItem("nimquest:completion:meet-nimiq"));
       }
 
       if (route === "/journey") {

@@ -13,6 +13,7 @@ const PUBLIC_ORIGIN = "https://nimquest.midelabs.xyz";
 const LEGACY_HOSTNAME = "nimquest.artistic-chip.workers.dev";
 const QUEST_DRAFT_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const PROOF_READY_TTL_MS = 30 * 60 * 1000;
+const FEEDBACK_RECOVERY_TTL_MS = 24 * 60 * 60 * 1000;
 const QUEST_TRAIL_RETURN_KEY = "nimquest:quest-trail-return";
 const QUEST_TRAIL_TRACKS = new Set([
   "all",
@@ -1705,6 +1706,7 @@ function renderWalletProof(questId) {
             }
             status.textContent = "Thanks. Your feedback was saved.";
             button.classList.add("is-selected");
+            clearFeedbackSession(state.proof.key);
           } catch (error) {
             status.textContent = error instanceof Error ? error.message : "Feedback couldn’t be saved.";
             gate.querySelectorAll("[data-feedback-rating]").forEach((item) => {
@@ -1835,6 +1837,7 @@ function renderWalletProof(questId) {
       state.phase = "success";
       state.proof = completion.proof;
       state.feedbackToken = completion.feedbackToken;
+      saveFeedbackSession(completion.proof.key, completion.feedbackToken);
       clearProofSession(quest.id);
       clearQuestDraft(quest.id);
       localStorage.setItem(`nimquest:completion:${quest.id}`, JSON.stringify(completion.proof));
@@ -1893,6 +1896,7 @@ async function renderCompletionDetail(proofKey) {
     }
 
     const isLocalProof = Boolean(localProof);
+    const feedbackSession = isLocalProof ? readFeedbackSession(proof.key) : null;
     const completedQuestIds = new Set(localCompletions.map((item) => item.questId));
     const nextQuest = isLocalProof ? getNextQuest(completedQuestIds) : null;
     const shareUrl = new URL(`/completions/${encodeURIComponent(proof.key)}`, PUBLIC_ORIGIN).href;
@@ -1924,6 +1928,17 @@ async function renderCompletionDetail(proofKey) {
         </div>
         <p class="completion-card__share-status" data-share-status></p>
       </section>
+      ${feedbackSession ? `
+      <section class="completion-feedback" data-receipt-feedback>
+        <div><p class="eyebrow">One quick check</p><h3>How clear was this quest?</h3></div>
+        <p>You can still send this rating for up to 24 hours after verification.</p>
+        <div class="completion-feedback__choices" aria-label="Rate this quest">
+          <button type="button" data-receipt-feedback-rating="1">Needs work</button>
+          <button type="button" data-receipt-feedback-rating="2">Clear</button>
+          <button type="button" data-receipt-feedback-rating="3">Very clear</button>
+        </div>
+        <p data-receipt-feedback-status></p>
+      </section>` : ""}
       <aside class="completion-trust">
         <p class="eyebrow">What this proves</p>
         <h2>A wallet approved this specific completion.</h2>
@@ -1946,6 +1961,41 @@ async function renderCompletionDetail(proofKey) {
         event.currentTarget.textContent = "Link copied";
       }
     });
+
+    if (feedbackSession) {
+      page.querySelectorAll("[data-receipt-feedback-rating]").forEach((button) => {
+        button.addEventListener("click", async () => {
+          const status = page.querySelector("[data-receipt-feedback-status]");
+          page.querySelectorAll("[data-receipt-feedback-rating]").forEach((item) => {
+            item.disabled = true;
+          });
+          status.textContent = "Saving feedback…";
+          try {
+            const response = await fetch(`${apiBase}/api/feedback`, {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({
+                proofKey: proof.key,
+                feedbackToken: feedbackSession.feedbackToken,
+                rating: Number(button.dataset.receiptFeedbackRating)
+              })
+            });
+            const result = await response.json();
+            if (!response.ok) {
+              throw new Error(result.error || "Feedback couldn’t be saved.");
+            }
+            status.textContent = "Thanks. Your feedback was saved.";
+            button.classList.add("is-selected");
+            clearFeedbackSession(proof.key);
+          } catch (error) {
+            status.textContent = error instanceof Error ? error.message : "Feedback couldn’t be saved.";
+            page.querySelectorAll("[data-receipt-feedback-rating]").forEach((item) => {
+              item.disabled = false;
+            });
+          }
+        });
+      });
+    }
   } catch (error) {
     page.innerHTML = `
       <section class="completion-error">
@@ -2778,6 +2828,70 @@ function clearProofSession(questId) {
   }
 }
 
+function readFeedbackSession(proofKey) {
+  const key = `nimquest:feedback:${proofKey}`;
+
+  for (const storage of [localStorage, sessionStorage]) {
+    try {
+      const raw = storage.getItem(key);
+      if (!raw) continue;
+      const stored = JSON.parse(raw);
+      const savedAt = Date.parse(stored?.savedAt || "");
+      const valid =
+        stored?.proofKey === proofKey &&
+        typeof stored.feedbackToken === "string" &&
+        stored.feedbackToken.length >= 32 &&
+        Number.isFinite(savedAt);
+
+      if (!valid || Date.now() - savedAt > FEEDBACK_RECOVERY_TTL_MS) {
+        storage.removeItem(key);
+        continue;
+      }
+
+      for (const mirror of [localStorage, sessionStorage]) {
+        try {
+          mirror.setItem(key, raw);
+        } catch {
+          // One browser store is enough to keep feedback recovery available.
+        }
+      }
+      return stored;
+    } catch {
+      // Try the other browser store before giving up.
+    }
+  }
+
+  return null;
+}
+
+function saveFeedbackSession(proofKey, feedbackToken) {
+  const key = `nimquest:feedback:${proofKey}`;
+  const payload = JSON.stringify({
+    proofKey,
+    feedbackToken,
+    savedAt: new Date().toISOString()
+  });
+
+  for (const storage of [localStorage, sessionStorage]) {
+    try {
+      storage.setItem(key, payload);
+    } catch {
+      // Feedback still works on the current success screen if persistence is unavailable.
+    }
+  }
+}
+
+function clearFeedbackSession(proofKey) {
+  const key = `nimquest:feedback:${proofKey}`;
+  for (const storage of [localStorage, sessionStorage]) {
+    try {
+      storage.removeItem(key);
+    } catch {
+      // Cleanup should never block receipt navigation.
+    }
+  }
+}
+
 function unwrapWalletResult(result, fallbackMessage) {
   if (result && typeof result === "object" && "error" in result) {
     throw new WalletFlowError(
@@ -2940,6 +3054,7 @@ function renderLegalPage(page) {
         <h2>Storage and retention</h2>
         <p>Before wallet proof, unfinished quest drafts are saved only in your browser for up to seven days so you can resume after closing the tab. A draft contains the quest step, selected answer positions, and question order. It does not contain a wallet address, public key, signature, or proof token.</p>
         <p>After you pass a quiz and choose wallet proof, NimQuest keeps a short-lived proof-ready state in your browser for up to 30 minutes so closing the tab does not force a retake. It contains only the quest ID, selected answer positions, and timestamps. It does not contain a wallet address, public key, signature, signing challenge, or proof token.</p>
+        <p>After verification, the one-time feedback authorization is stored only in your browser for up to 24 hours so you can rate the quest from your receipt after leaving the success screen. The server accepts it only during that 24-hour window, stores only its hash with the completion, and the browser copy is removed after successful feedback or expiry.</p>
         <p>Cloudflare D1 stores verified completions and feedback. One-time signing challenges expire after five minutes. Abuse-prevention counters expire automatically. Completion records remain available while NimQuest operates because they support Journey recovery, receipts, and ranking. You can request correction or deletion through the project repository contact channel, subject to technical and competition record requirements.</p>
       </section>
       <section>

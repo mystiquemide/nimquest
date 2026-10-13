@@ -1,8 +1,10 @@
 import assert from "node:assert/strict";
+import crypto from "node:crypto";
 import { after, before, describe, it } from "node:test";
 import { KeyPair } from "@nimiq/core";
 import { createServer } from "../src/server.js";
 import { findQuest } from "../src/quests.js";
+import { getCompletionStore } from "../src/quest-service.js";
 import { signNimiqMessage } from "./nimiq-signature.js";
 
 let server;
@@ -118,6 +120,22 @@ describe("api server", () => {
       })
     });
     assert.equal(unauthorizedFeedback.status, 403);
+
+    const expiredToken = `${(Date.now() - 25 * 60 * 60 * 1000).toString(36)}.${"a".repeat(64)}`;
+    const storedProof = getCompletionStore().values().find((item) => item.key === completion.proof.key);
+    storedProof.feedbackTokenHash = crypto.createHash("sha256").update(expiredToken).digest("hex");
+    getCompletionStore().set(`${storedProof.questId}:${storedProof.walletAddress}`, storedProof);
+
+    const expiredFeedback = await fetch(`${baseUrl}/api/feedback`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        proofKey: completion.proof.key,
+        feedbackToken: expiredToken,
+        rating: 2
+      })
+    });
+    assert.equal(expiredFeedback.status, 410);
   });
 
   it("grades a quiz before wallet access is requested", async () => {
