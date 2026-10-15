@@ -1132,9 +1132,9 @@ function renderQuestTrail() {
 
 function renderQuestSession(questId) {
   const quest = quests.find((item) => item.id === questId);
-  const isLocalPreview = ["localhost", "127.0.0.1"].includes(window.location.hostname);
+  // Vite dev uses a separate API port. Built previews and production use same-origin routes.
   const apiBase =
-    import.meta.env.VITE_API_BASE_URL || (isLocalPreview ? "http://localhost:8787" : "");
+    import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? "http://localhost:8787" : "");
 
   if (!quest) {
     document.querySelector("#app").innerHTML = `
