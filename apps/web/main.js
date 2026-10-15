@@ -1439,7 +1439,7 @@ function renderQuestSession(questId) {
       </article>
 
       <div class="session-actions">
-        <button class="session-exit" type="button" data-back-question>Back to questions</button>
+        <button class="session-exit" type="button" ${failed ? "data-review-lesson" : "data-back-question"}>${failed ? "Review lesson" : "Back to questions"}</button>
         <button class="button" type="button" ${state.grading ? "disabled" : ""} ${passed ? "data-continue-proof" : "data-check-answers"}>
           ${state.grading ? "Checking answers…" : passed ? "Continue to wallet proof" : failed ? "Check corrected answers" : "Check my answers"}
           <span aria-hidden="true">→</span>
@@ -1455,7 +1455,10 @@ function renderQuestSession(questId) {
         renderQuestion();
       });
     });
-    stage.querySelector("[data-back-question]").addEventListener("click", () => {
+    stage.querySelector("[data-review-lesson]")?.addEventListener("click", () => {
+      renderLesson();
+    });
+    stage.querySelector("[data-back-question]")?.addEventListener("click", () => {
       state.questionIndex = quest.questions.length - 1;
       renderQuestion();
     });

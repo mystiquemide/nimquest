@@ -363,6 +363,38 @@ try {
     await page.close();
   }
 
+
+  // A failed quiz should offer direct lesson review without losing selected
+  // answers. Learners can then correct their answers and regrade.
+  const failedQuizPage = await browser.newPage({ viewport: { width: 390, height: 900 } });
+  await failedQuizPage.goto(`${baseUrl}/quests/meet-nimiq`, { waitUntil: "networkidle" });
+  await failedQuizPage.getByRole("button", { name: /Begin 3 questions/i }).click();
+  const failedQuest = findQuest("meet-nimiq");
+  const wrongAnswers = failedQuest.questions.map(
+    (question) => (question.answerIndex + 1) % question.options.length
+  );
+  for (let questionIndex = 0; questionIndex < wrongAnswers.length; questionIndex += 1) {
+    await failedQuizPage.locator(`.answer-option[data-answer="${wrongAnswers[questionIndex]}"]`).click();
+    await failedQuizPage.locator("[data-next]").click();
+  }
+  await failedQuizPage.locator("[data-check-answers]").click();
+  await failedQuizPage.locator(".review-panel--needs-work").waitFor({ state: "visible" });
+  assert.match(await failedQuizPage.locator("[data-review-lesson]").textContent(), /Review lesson/i);
+  await failedQuizPage.locator("[data-review-lesson]").click();
+  assert.match(await failedQuizPage.locator(".lesson-panel h1").textContent(), /Meet Nimiq/i);
+  assert.deepEqual(
+    await failedQuizPage.evaluate(() => JSON.parse(localStorage.getItem("nimquest:draft:meet-nimiq")).answers),
+    wrongAnswers,
+    "returning to the lesson must preserve the learner's quiz draft"
+  );
+  await failedQuizPage.getByRole("button", { name: /Begin 3 questions/i }).click();
+  assert.equal(
+    await failedQuizPage.locator(`.answer-option[data-answer="${wrongAnswers[0]}"]`).getAttribute("aria-checked"),
+    "true",
+    "previously selected answer must remain selected when revisiting the quiz"
+  );
+  await failedQuizPage.close();
+
   // Browser shuffling changes display position per session while preserving the
   // hardened canonical index used by backend grading.
   const firstQuestion = findQuest("meet-nimiq").questions[0];

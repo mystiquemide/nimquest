@@ -124,7 +124,10 @@ Native path (full proof):
 No-wallet path (verify the server logic without signing):
 
 ```bash
-# Correct answers pass and unlock the wallet step
+# Inspect the current public quest and its question options
+curl -s https://nimquest.midelabs.xyz/api/quests/meet-nimiq
+
+# Submit selected option indexes after reading the lesson (illustrative values)
 curl -s -X POST https://nimquest.midelabs.xyz/api/grade \
   -H "content-type: application/json" \
   -d '{"questId":"meet-nimiq","answers":[0,0,0]}'
