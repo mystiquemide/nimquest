@@ -395,6 +395,33 @@ try {
   );
   await failedQuizPage.close();
 
+
+  // Community remains useful when optional production analytics tables are
+  // missing. Unavailable counters must never be rendered as real zeros.
+  const partialCommunity = await browser.newPage({ viewport: { width: 390, height: 900 } });
+  await partialCommunity.route("**/api/community", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        availability: { funnel: false, feedback: false },
+        summary: { verifiedCompletions: 55, participatingWallets: 20, activeQuests: 20 },
+        funnel: null,
+        questFunnels: [],
+        feedbackInsights: [],
+        popularQuests: [],
+        recentActivity: []
+      })
+    });
+  });
+  await partialCommunity.goto(`${baseUrl}/community`, { waitUntil: "networkidle" });
+  const partialCommunityText = await partialCommunity.locator(".leaderboard-board").textContent();
+  assert.match(partialCommunityText, /Learning metrics are temporarily unavailable/i);
+  assert.match(partialCommunityText, /Learner feedback metrics are temporarily unavailable/i);
+  assert.match(partialCommunityText, /55verified completions/i);
+  assert.equal(await partialCommunity.locator('[aria-label="Aggregate learning funnel"]').isVisible(), false);
+  await partialCommunity.close();
+
   // Browser shuffling changes display position per session while preserving the
   // hardened canonical index used by backend grading.
   const firstQuestion = findQuest("meet-nimiq").questions[0];

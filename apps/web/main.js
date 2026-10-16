@@ -2326,6 +2326,8 @@ async function renderCommunity() {
 
     const summary = result.summary || {};
     const funnel = result.funnel || {};
+    const funnelAvailable = result.availability?.funnel !== false;
+    const feedbackAvailable = result.availability?.feedback !== false;
     const popularQuests = Array.isArray(result.popularQuests) ? result.popularQuests : [];
     const recentActivity = Array.isArray(result.recentActivity) ? result.recentActivity : [];
     const questFunnels = Array.isArray(result.questFunnels) ? result.questFunnels : [];
@@ -2409,30 +2411,34 @@ async function renderCommunity() {
       </div>
       <div class="leaderboard-board__heading">
         <div><p class="eyebrow">Learning funnel</p><h2>From quiz to verified proof.</h2></div>
-        <span class="leaderboard-status">${funnel.trackingSince ? `Tracking since ${escapeHtml(formatCompletionDate(`${funnel.trackingSince}T00:00:00Z`))}` : "Tracking begins with the first event"}</span>
+        <span class="leaderboard-status">${!funnelAvailable ? "Learning metrics unavailable" : funnel.trackingSince ? `Tracking since ${escapeHtml(formatCompletionDate(`${funnel.trackingSince}T00:00:00Z`))}` : "Tracking begins with the first event"}</span>
       </div>
-      <div class="journey-summary" aria-label="Aggregate learning funnel">
+      <div class="journey-summary" aria-label="Aggregate learning funnel" style="${funnelAvailable ? "" : "display:none"}">
         <span><b>${Number(funnel.quizAttempts || 0)}</b>valid quiz attempts</span>
         <span><b>${Number(funnel.quizPasses || 0)}</b>quiz passes</span>
         <span><b>${Number(funnel.proofStarts || 0)}</b>wallet-proof starts</span>
         <span><b>${Number(funnel.verifiedCompletions || 0)}</b>new verified proofs</span>
       </div>
-      <p class="leaderboard-status">Pass rate ${rateLabel(funnel.passRate)} · proof-start rate ${rateLabel(funnel.proofStartRate)} · verification rate ${rateLabel(funnel.verificationRate)}. Aggregate daily counters only. No wallet, IP, device, session, answer, public-key or signature data is stored for this funnel.</p>
+      <p class="leaderboard-status" style="${funnelAvailable ? "" : "display:none"}">Pass rate ${rateLabel(funnel.passRate)} · proof-start rate ${rateLabel(funnel.proofStartRate)} · verification rate ${rateLabel(funnel.verificationRate)}. Aggregate daily counters only. No wallet, IP, device, session, answer, public-key or signature data is stored for this funnel.</p>
       <div class="leaderboard-board__heading">
         <div><p class="eyebrow">Quest funnel</p><h2>Quest-by-quest conversion.</h2></div>
         <span class="leaderboard-status">Only quests with tracked activity appear</span>
       </div>
-      ${questFunnelRows
-        ? `<ol class="leaderboard-list">${questFunnelRows}</ol>`
-        : `<p class="leaderboard-status">Per-quest rates will appear after the first tracked quiz attempt.</p>`}
+      ${!funnelAvailable
+        ? `<p class="leaderboard-status" role="status">Learning metrics are temporarily unavailable. Verified community activity is still available.</p>`
+        : questFunnelRows
+          ? `<ol class="leaderboard-list">${questFunnelRows}</ol>`
+          : `<p class="leaderboard-status">Per-quest rates will appear after the first tracked quiz attempt.</p>`}
       <p class="leaderboard-status">These rates use aggregate counters from the tracking period. Small samples can be noisy, so use them as a signal for where to investigate rather than as a learner score.</p>
       <div class="leaderboard-board__heading">
         <div><p class="eyebrow">Learner clarity</p><h2>What verified learners thought.</h2></div>
         <span class="leaderboard-status">Aggregate ratings only</span>
       </div>
-      ${feedbackRows
-        ? `<ol class="leaderboard-list">${feedbackRows}</ol>`
-        : `<p class="leaderboard-status">Clarity insights will appear after verified learners rate completed quests.</p>`}
+      ${!feedbackAvailable
+        ? `<p class="leaderboard-status" role="status">Learner feedback metrics are temporarily unavailable.</p>`
+        : feedbackRows
+          ? `<ol class="leaderboard-list">${feedbackRows}</ol>`
+          : `<p class="leaderboard-status">Clarity insights will appear after verified learners rate completed quests.</p>`}
       <p class="leaderboard-status">Ratings are grouped by quest. Free-text feedback, wallet details, proof identifiers and individual responses are not exposed here. Small samples should be treated as directional.</p>
       <div class="leaderboard-board__heading">
         <div><p class="eyebrow">Most completed</p><h2>Popular quests</h2></div>

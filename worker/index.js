@@ -209,7 +209,7 @@ async function renderCompletionPage(request, env, url, publicId) {
 }
 
 async function getCommunityActivity(database) {
-  const [summary, popular, recent, funnel, questFunnels, feedbackInsights] = await Promise.all([
+  const communityQueryResults = await Promise.allSettled([
     database.prepare(
       `SELECT COUNT(*) AS verified_completions,
               COUNT(DISTINCT wallet_address) AS participating_wallets,
@@ -268,15 +268,41 @@ async function getCommunityActivity(database) {
        ORDER BY responses DESC, average_rating ASC, c.quest_id ASC`
     ).all()
   ]);
+  const [summaryResult, popularResult, recentResult, funnelResult, questFunnelsResult, feedbackResult] =
+    communityQueryResults;
+
+  // Core completion activity must be trustworthy. Optional analytics may be
+  // unavailable while a production migration is being applied.
+  for (const required of [summaryResult, popularResult, recentResult]) {
+    if (required.status === "rejected") throw required.reason;
+  }
+
+  const summary = summaryResult.value;
+  const popular = popularResult.value;
+  const recent = recentResult.value;
+  const funnelAvailable = funnelResult.status === "fulfilled" && questFunnelsResult.status === "fulfilled";
+  const feedbackAvailable = feedbackResult.status === "fulfilled";
+  const funnel = funnelAvailable ? funnelResult.value : null;
+  const questFunnels = funnelAvailable ? questFunnelsResult.value : { results: [] };
+  const feedbackInsights = feedbackAvailable ? feedbackResult.value : { results: [] };
+
+  if (!funnelAvailable || !feedbackAvailable) {
+    console.warn(JSON.stringify({
+      event: "community_optional_data_unavailable",
+      funnelAvailable,
+      feedbackAvailable
+    }));
+  }
 
   return json({
+    availability: { funnel: funnelAvailable, feedback: feedbackAvailable },
     summary: {
       verifiedCompletions: Number(summary?.verified_completions || 0),
       participatingWallets: Number(summary?.participating_wallets || 0),
       activeQuests: Number(summary?.active_quests || 0),
       latestVerifiedAt: summary?.latest_verified_at || null
     },
-    funnel: toFunnelSummary(funnel),
+    funnel: funnelAvailable ? toFunnelSummary(funnel) : null,
     questFunnels: questFunnels.results.map((record) => {
       const quest = findQuest(record.quest_id);
       return {
