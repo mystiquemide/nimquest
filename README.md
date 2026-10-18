@@ -154,15 +154,16 @@ Every row maps to a real automated test in the repo.
 | Write from a cross-origin browser | Rejected | `server.test.js`: rejects cross-origin browser writes |
 | Submit an EVM address instead of a Nimiq one | Rejected | `quest-service.test.js`: accepts generated Nimiq addresses and rejects EVM addresses |
 
-Run them all: `npm test` (27 tests).
+Run them all: `npm test`.
 
 ## Live proof
 
 - App: https://nimquest.midelabs.xyz (Cloudflare Workers with Static Assets)
 - Health: https://nimquest.midelabs.xyz/health
+- Read-only D1 health: https://nimquest.midelabs.xyz/api/health/dependencies
 - Public quests API: https://nimquest.midelabs.xyz/api/quests (20 quests, no answer keys)
 - Live leaderboard API: https://nimquest.midelabs.xyz/api/leaderboard
-- Storage: Cloudflare D1, three applied migrations in `migrations/`
+- Storage: Cloudflare D1, four migration files in `migrations/`; verify remote application separately
 - Deploys automatically from `main`.
 - No smart contract. Completions are wallet-signed records in D1, not on-chain writes.
 
@@ -235,7 +236,7 @@ Verify it:
 ```bash
 npm ci
 npm run build:web
-npm test            # 27 Node, API, and cryptography tests
+npm test            # Node, API, and cryptography tests
 npm audit           # 0 vulnerabilities
 ```
 
@@ -269,10 +270,26 @@ npm run cli -- diagnose      # find and explain failures
 
 Live and deploy checks are read-only, secrets are never printed, and failures return a non-zero exit code. Full reference in [docs/cli.md](docs/cli.md), design notes in [docs/cli-architecture.md](docs/cli-architecture.md).
 
+## Database readiness and migration diagnosis
+
+The regular `/health` endpoint confirms that the Worker responds. The read-only `/api/health/dependencies` endpoint checks that the core completion store, learning-funnel table, and feedback table can be queried.
+
+```bash
+curl -fsS https://nimquest.midelabs.xyz/api/health/dependencies
+
+# Authenticated Wrangler session required. Lists unapplied remote migrations.
+npx wrangler d1 migrations list nimquest --remote
+```
+
+`healthy` means all three table checks passed. `degraded` means the core store works but an optional analytics table is unavailable. `unavailable` returns HTTP 503 when the core store cannot be queried. A successful table check alone does not prove migration history or data correctness, so inspect the remote migrations list before taking action.
+
+The endpoint never changes D1 or returns raw SQL errors. Production migrations require an explicit release decision.
+
 ## API
 
-```text
+```
 GET  /health
+GET  /api/health/dependencies
 GET  /api/quests
 GET  /api/quests/:id
 GET  /api/leaderboard

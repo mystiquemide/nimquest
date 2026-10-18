@@ -78,6 +78,10 @@ async function routeRequest(request, env, url) {
     });
   }
 
+  if (request.method === "GET" && url.pathname === "/api/health/dependencies") {
+    return inspectDatabaseHealth(env.DB);
+  }
+
   if (request.method === "GET" && url.pathname === "/api/quests") {
     return json({ quests: listQuests() });
   }
@@ -206,6 +210,32 @@ async function renderCompletionPage(request, env, url, publicId) {
       }
     })
     .transform(shellResponse);
+}
+
+async function inspectDatabaseHealth(database) {
+  // Read-only checks. Never include D1 errors, SQL or stored records in the response.
+  const results = await Promise.allSettled([
+    database.prepare("SELECT 1 FROM completions LIMIT 1").first(),
+    database.prepare("SELECT 1 FROM learning_funnel_daily LIMIT 1").first(),
+    database.prepare("SELECT 1 FROM completion_feedback LIMIT 1").first()
+  ]);
+
+  const components = {
+    completionStore: results[0].status === "fulfilled",
+    learningFunnel: results[1].status === "fulfilled",
+    learnerFeedback: results[2].status === "fulfilled"
+  };
+  const ok = components.completionStore;
+  const status = !ok ? "unavailable" :
+    components.learningFunnel && components.learnerFeedback ? "healthy" : "degraded";
+
+  if (status !== "healthy") {
+    console.warn(JSON.stringify({ event: "database_health_degraded", status, components }));
+  }
+
+  const response = json({ ok, service: "nimquest-worker", status, components }, ok ? 200 : 503);
+  response.headers.set("cache-control", "no-store");
+  return response;
 }
 
 async function getCommunityActivity(database) {

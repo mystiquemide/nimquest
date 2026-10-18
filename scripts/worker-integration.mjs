@@ -8,14 +8,23 @@ const publicOrigin = "https://nimquest.midelabs.xyz";
 const keyPair = KeyPair.generate();
 const walletAddress = keyPair.toAddress().toUserFriendlyAddress();
 
-const [healthResponse, questsResponse, deepLinkResponse] = await Promise.all([
+const [healthResponse, dependencyResponse, questsResponse, deepLinkResponse] = await Promise.all([
   fetch(`${baseUrl}/health`),
+  fetch(`${baseUrl}/api/health/dependencies`),
   fetch(`${baseUrl}/api/quests`),
   fetch(`${baseUrl}/proof/meet-nimiq`)
 ]);
 
 assert.equal(healthResponse.status, 200);
 assert.equal((await healthResponse.json()).service, "nimquest-worker");
+assert.equal(dependencyResponse.status, 200);
+const dependencyHealth = await dependencyResponse.json();
+assert.equal(dependencyHealth.status, "healthy");
+assert.deepEqual(dependencyHealth.components, {
+  completionStore: true,
+  learningFunnel: true,
+  learnerFeedback: true
+});
 assert.equal(questsResponse.status, 200);
 assert.equal((await questsResponse.json()).quests.length, 20);
 assert.equal(deepLinkResponse.status, 200);
@@ -219,6 +228,7 @@ assert.equal(unauthorizedFeedbackResponse.status, 403);
 
 console.log(JSON.stringify({
   health: "passed",
+  databaseReadiness: "passed",
   quests: 20,
   deepLink: "passed",
   nimiqSignature: "passed",
