@@ -213,6 +213,7 @@ try {
         );
         await page.goto(`${baseUrl}${filteredTrailUrl}`, { waitUntil: "networkidle" });
 
+        await page.locator('[data-clear-quest-filters]').click();
         await page.locator('[data-track-filter="merchants"]').click();
         assert.equal(await page.locator('.trail-card:visible').count(), 1);
         assert.match(await page.locator('.trail-card:visible h2').textContent(), /Verify a Merchant Checkout/i);
