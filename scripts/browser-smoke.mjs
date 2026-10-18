@@ -213,13 +213,18 @@ try {
         );
         await page.goto(`${baseUrl}${filteredTrailUrl}`, { waitUntil: "networkidle" });
 
+        await page.locator('[data-track-filter="merchants"]').click();
+        assert.equal(await page.locator('.trail-card:visible').count(), 1);
+        assert.match(await page.locator('.trail-card:visible h2').textContent(), /Verify a Merchant Checkout/i);
+        await page.locator('[data-clear-quest-filters]').click();
+
         await page.locator("[data-quest-search]").fill("definitely-not-a-quest");
         assert.equal(await page.locator(".trail-card:visible").count(), 0);
         assert.equal(await page.locator("[data-quest-empty]").isVisible(), true);
 
         await page.locator("[data-clear-quest-filters]").click();
-        assert.equal(await page.locator(".trail-card:visible").count(), 20);
-        assert.match(await page.locator("[data-quest-results]").textContent(), /20 quests shown/i);
+        assert.equal(await page.locator(".trail-card:visible").count(), 21);
+        assert.match(await page.locator("[data-quest-results]").textContent(), /21 quests shown/i);
         assert.equal(new URL(page.url()).search, "");
 
         await page.evaluate(() => {

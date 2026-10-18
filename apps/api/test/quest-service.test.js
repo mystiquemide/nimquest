@@ -30,14 +30,34 @@ describe("quest service", () => {
     useChallengeStore(new ChallengeStore());
   });
 
-  it("publishes twenty sourced quests without answer keys", () => {
+  it("publishes sourced quests including merchant checkout without answer keys", () => {
     const quests = listQuests();
 
-    assert.equal(quests.length, 20);
+    assert.equal(quests.length, 21);
     assert.equal("answerIndex" in quests[0].questions[0], false);
     assert.equal("explanation" in quests[0].questions[0], false);
     assert.match(quests[0].sourceUrl, /^https:\/\/nimiq/);
     assert.equal(quests[0].reward.status, "unavailable");
+  });
+
+  it("grades merchant checkout without exposing correct answer positions", () => {
+    const quest = findQuest("merchant-checkout");
+    const publicQuest = getQuest("merchant-checkout");
+    assert.equal(publicQuest.track, "merchants");
+    assert.equal(publicQuest.audience, "merchant");
+    assert.equal(publicQuest.difficulty, "intermediate");
+    assert.equal(publicQuest.questions.length, 3);
+    assert.equal(publicQuest.reward.status, "unavailable");
+    assert.equal("answerIndex" in publicQuest.questions[0], false);
+    assert.equal("explanation" in publicQuest.questions[0], false);
+    const correctAnswers = quest.questions.map((question) => question.answerIndex);
+    assert.deepEqual([...new Set(correctAnswers)].sort(), [0, 1, 2]);
+    assert.equal(checkQuestAnswers({ questId: quest.id, answers: correctAnswers }).passed, true);
+    const incorrect = [...correctAnswers];
+    incorrect[0] = (incorrect[0] + 1) % quest.questions[0].options.length;
+    const result = checkQuestAnswers({ questId: quest.id, answers: incorrect });
+    assert.equal(result.passed, false);
+    assert.equal("answerIndex" in result.feedback[0], false);
   });
 
   it("returns one public quest without answer metadata", () => {

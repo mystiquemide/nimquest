@@ -794,6 +794,60 @@ const authoredQuests = [
         explanation: "The quote and fees determine what you receive and pay."
       }
     ]
+  },
+  {
+    "id": "merchant-checkout",
+    "title": "Verify a Merchant Checkout",
+    "track": "merchants",
+    "audience": "merchant",
+    "difficulty": "intermediate",
+    "estimatedSeconds": 100,
+    "reward": {
+      "status": "unavailable",
+      "asset": null,
+      "amount": null
+    },
+    "learningGoals": [
+      "Check the recipient, asset and amount on a merchant checkout request.",
+      "Distinguish a broadcast transaction from confirmed settlement before releasing goods."
+    ],
+    "lesson": "Nimiq Hub's checkout() requests a wallet-approved NIM payment and broadcasts the signed transaction. The returned transaction hash identifies the submitted transfer, but does not by itself prove final settlement. A merchant should check that the payment recipient and amount match the order, then independently confirm the transfer status in the receiving wallet or blockchain before marking the order paid. A screenshot, payment request or pending notification is not settlement proof.",
+    "sourceUrl": "https://nimiq.dev/hub/guide/transactions",
+    "questions": [
+      {
+        "id": "checkout-order-safety",
+        "prompt": "Which details must match the order before approving a NIM checkout?",
+        "options": [
+          "Recipient, amount and asset",
+          "Only the store logo",
+          "Only the sender's nickname"
+        ],
+        "answerIndex": 0,
+        "explanation": "Verify the receiving address, asset and amount against the merchant's actual order."
+      },
+      {
+        "id": "checkout-hash",
+        "prompt": "What does a transaction hash returned from checkout() indicate?",
+        "options": [
+          "A submitted transaction to track, not necessarily final settlement",
+          "The sale must already be finalized",
+          "The customer's wallet secrets are visible"
+        ],
+        "answerIndex": 0,
+        "explanation": "Broadcast and final settlement are different stages. Track the transaction state."
+      },
+      {
+        "id": "checkout-settlement",
+        "prompt": "When should a merchant mark an order paid?",
+        "options": [
+          "After confirming the payment in their own wallet or trusted network data",
+          "When a buyer sends a payment screenshot",
+          "As soon as a QR code is displayed"
+        ],
+        "answerIndex": 0,
+        "explanation": "Independent confirmation protects merchants from mistaking a payment request or pending transfer for cleared funds."
+      }
+    ]
   }
 ];
 

@@ -959,5 +959,53 @@ export const catalogQuests = [
         ]
       }
     ]
+  },
+  {
+    "id": "merchant-checkout",
+    "title": "Verify a Merchant Checkout",
+    "track": "merchants",
+    "audience": "merchant",
+    "difficulty": "intermediate",
+    "estimatedSeconds": 100,
+    "reward": {
+      "status": "unavailable",
+      "asset": null,
+      "amount": null
+    },
+    "learningGoals": [
+      "Check the recipient, asset and amount on a merchant checkout request.",
+      "Distinguish a broadcast transaction from confirmed settlement before releasing goods."
+    ],
+    "lesson": "Nimiq Hub's checkout() requests a wallet-approved NIM payment and broadcasts the signed transaction. The returned transaction hash identifies the submitted transfer, but does not by itself prove final settlement. A merchant should check that the payment recipient and amount match the order, then independently confirm the transfer status in the receiving wallet or blockchain before marking the order paid. A screenshot, payment request or pending notification is not settlement proof.",
+    "sourceUrl": "https://nimiq.dev/hub/guide/transactions",
+    "questions": [
+      {
+        "id": "checkout-order-safety",
+        "prompt": "Which details must match the order before approving a NIM checkout?",
+        "options": [
+          "Only the sender's nickname",
+          "Recipient, amount and asset",
+          "Only the store logo"
+        ]
+      },
+      {
+        "id": "checkout-hash",
+        "prompt": "What does a transaction hash returned from checkout() indicate?",
+        "options": [
+          "A submitted transaction to track, not necessarily final settlement",
+          "The sale must already be finalized",
+          "The customer's wallet secrets are visible"
+        ]
+      },
+      {
+        "id": "checkout-settlement",
+        "prompt": "When should a merchant mark an order paid?",
+        "options": [
+          "When a buyer sends a payment screenshot",
+          "As soon as a QR code is displayed",
+          "After confirming the payment in their own wallet or trusted network data"
+        ]
+      }
+    ]
   }
 ];

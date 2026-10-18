@@ -23,7 +23,8 @@ const QUEST_TRAIL_TRACKS = new Set([
   "network",
   "staking",
   "ecosystem",
-  "mini apps"
+  "mini apps",
+  "merchants"
 ]);
 const QUEST_TRAIL_STATUSES = new Set(["all", "in-progress", "not-started", "verified"]);
 
@@ -263,7 +264,8 @@ const trackPresentation = {
   network: { label: "Network", color: "mint", icon: "◎" },
   staking: { label: "Staking", color: "coral", icon: "◇" },
   ecosystem: { label: "Ecosystem", color: "pink", icon: "◫" },
-  "mini-apps": { label: "Mini Apps", color: "blue", icon: "◫" }
+  "mini-apps": { label: "Mini Apps", color: "blue", icon: "◫" },
+  merchants: { label: "Merchants", color: "mint", icon: "↗" }
 };
 
 const STARTER_QUEST_ID = "meet-nimiq";
@@ -276,7 +278,8 @@ const trackOrder = [
   "staking",
   "mini-apps",
   "mini apps",
-  "ecosystem"
+  "ecosystem",
+  "merchants"
 ];
 const trackRank = new Map(trackOrder.map((track, index) => [track, index]));
 const quests = [...catalogQuests]
@@ -448,7 +451,7 @@ document.querySelector("#app").innerHTML = `
           <a class="button button--quiet" href="#how">See how it works</a>
         </div>
         <div class="hero__proof" aria-label="Product qualities">
-          <span><b>${quests.length}</b> starter quests</span>
+          <span><b>${quests.length}</b> learning quests</span>
           <span><b>60s</b> each</span>
           <span><b>1</b> NIM wallet signature</span>
         </div>
@@ -520,7 +523,7 @@ document.querySelector("#app").innerHTML = `
           <p class="eyebrow">Your first trail</p>
           <h2>Start with what <span class="word-highlight word-highlight--blue">matters.</span></h2>
         </div>
-        <p>Six featured quests give you a quick start. The full trail contains 20 wallet-verifiable Nimiq skills.</p>
+        <p>Six featured quests give you a quick start. The full trail contains ${quests.length} wallet-verifiable Nimiq skills, including merchant checkout.</p>
       </div>
       <div class="quest-grid">${questCards}</div>
       <p class="quest-note"><span aria-hidden="true">✦</span> Every quest is free. Learning and creating a completion proof never asks you for a payment.</p>
@@ -681,6 +684,8 @@ function brandMarkup() {
   `;
 }
 
+const foundationalQuestIds = quests.filter((quest) => quest.audience === "new-user").map((quest) => quest.id);
+
 const badgeDefinitions = [
   {
     id: "first-proof",
@@ -752,7 +757,14 @@ const badgeDefinitions = [
     name: "Trail Complete",
     description: "Verify all 20 starter quests.",
     icon: "✓",
-    unlock: (completed) => completed.size === quests.length
+    unlock: (completed) => foundationalQuestIds.every((id) => completed.has(id))
+  },
+  {
+    id: "merchant-ready",
+    name: "Merchant Ready",
+    description: "Verify the merchant checkout lesson.",
+    icon: "↗",
+    unlock: (completed) => completed.has("merchant-checkout")
   }
 ];
 
@@ -930,7 +942,7 @@ function renderQuestTrail() {
         <div class="trail-hero__copy">
           <p class="eyebrow eyebrow--large">Your Nimiq Quest Trail</p>
           <h1>Pick a skill.<br><span class="word-highlight word-highlight--yellow">Start moving.</span></h1>
-          <p>Twenty short quests cover NIM basics, payments, wallet safety, network concepts, staking, and Mini Apps. Start anywhere, or follow the trail in order.</p>
+          <p>${quests.length} short quests cover NIM basics, payments, wallet safety, network concepts, staking, Mini Apps and merchant checkout. Start anywhere, or follow the trail in order.</p>
         </div>
         <aside class="journey-ticket" aria-label="Current journey status">
           <div class="journey-ticket__top">
@@ -950,7 +962,7 @@ function renderQuestTrail() {
         <div class="quest-browser__top">
           <div>
             <p class="eyebrow">Starter path</p>
-            <h2>Twenty skills worth knowing.</h2>
+            <h2>${quests.length} skills worth knowing.</h2>
           </div>
           <div class="quest-discovery">
             <label class="quest-search">
@@ -966,6 +978,7 @@ function renderQuestTrail() {
               <button class="filter-chip" type="button" data-track-filter="staking" aria-pressed="false">Staking</button>
               <button class="filter-chip" type="button" data-track-filter="ecosystem" aria-pressed="false">Ecosystem</button>
               <button class="filter-chip" type="button" data-track-filter="mini apps" aria-pressed="false">Mini Apps</button>
+              <button class="filter-chip" type="button" data-track-filter="merchants" aria-pressed="false">Merchants</button>
             </div>
             <div class="quest-filters quest-filters--status" aria-label="Filter quests by progress">
               <button class="filter-chip is-active" type="button" data-status-filter="all" aria-pressed="true">All progress</button>
@@ -990,7 +1003,7 @@ function renderQuestTrail() {
               </aside>`
             : `<aside class="recommendation-card recommendation-card--complete">
                 <span class="recommendation-card__mark" aria-hidden="true">✓</span>
-                <div><p class="eyebrow">Trail complete</p><h3>All 20 quests are verified.</h3><p>Your starter trail is complete and every badge is available.</p></div>
+                <div><p class="eyebrow">Trail complete</p><h3>All ${quests.length} quests are verified.</h3><p>Your learning trail is complete and every badge is available.</p></div>
                 <a class="button button--small" href="/journey">View Journey</a>
               </aside>`
         }
@@ -1142,7 +1155,7 @@ function renderQuestSession(questId) {
         <span class="session-not-found__mark">?</span>
         <p class="eyebrow">Trail marker missing</p>
         <h1>That quest isn’t here.</h1>
-        <p>Choose one of the 20 available quests and keep moving.</p>
+        <p>Choose one of the ${quests.length} available quests and keep moving.</p>
         <a class="button" href="/quests">Return to Quest Trail</a>
       </main>
     `;
@@ -2128,7 +2141,7 @@ function renderJourney() {
         <div class="journey-content__heading">
           <div>
             <p class="eyebrow">Starter trail</p>
-            <h2>${completedCount ? "Your proof trail is growing." : "Twenty markers are waiting."}</h2>
+            <h2>${completedCount ? "Your proof trail is growing." : `${quests.length} markers are waiting.`}</h2>
           </div>
           ${nextQuest
             ? `<a class="button button--quiet" href="/quests/${nextQuest.id}">${completedCount ? "Continue journey" : "Start first quest"} <span aria-hidden="true">→</span></a>`

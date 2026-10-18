@@ -31,12 +31,12 @@ describe("api server", () => {
     assert.equal(body.ok, true);
   });
 
-  it("serves twenty public quests without answer keys", async () => {
+  it("serves all public quests without answer keys", async () => {
     const response = await fetch(`${baseUrl}/api/quests`);
     const body = await response.json();
 
     assert.equal(response.status, 200);
-    assert.equal(body.quests.length, 20);
+    assert.equal(body.quests.length, 21);
     assert.equal("answerIndex" in body.quests[0].questions[0], false);
     assert.equal("explanation" in body.quests[0].questions[0], false);
   });

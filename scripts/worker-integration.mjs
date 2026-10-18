@@ -26,7 +26,7 @@ assert.deepEqual(dependencyHealth.components, {
   learnerFeedback: true
 });
 assert.equal(questsResponse.status, 200);
-assert.equal((await questsResponse.json()).quests.length, 20);
+assert.equal((await questsResponse.json()).quests.length, 21);
 assert.equal(deepLinkResponse.status, 200);
 assert.match(await deepLinkResponse.text(), /<div id="app"><\/div>/);
 
@@ -229,7 +229,7 @@ assert.equal(unauthorizedFeedbackResponse.status, 403);
 console.log(JSON.stringify({
   health: "passed",
   databaseReadiness: "passed",
-  quests: 20,
+  quests: 21,
   deepLink: "passed",
   nimiqSignature: "passed",
   d1Persistence: "passed",
