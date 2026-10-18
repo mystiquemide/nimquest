@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import { runCheck, pass, warn, fail, skip, httpGet, httpPost } from "./lib.mjs";
-import { findQuest } from "../apps/api/src/quests.js";
+import { findQuest, quests } from "../apps/api/src/quests.js";
 
 // ---- Health ----------------------------------------------------------------
 
@@ -23,10 +23,10 @@ export async function healthChecks(base, { live = false } = {}) {
   results.push(await runCheck("api.quests", "Quest catalog", async () => {
     const res = await httpGet(`${base}/api/quests`);
     const count = res.json?.quests?.length;
-    if (count !== 20) return fail(`/api/quests returned ${count} quests, expected 20`);
+    if (count !== quests.length) return fail(`/api/quests returned ${count} quests, expected ${quests.length}`);
     if (/answerIndex/.test(res.text)) return fail("Answer keys are exposed in /api/quests", "Regenerate the public catalog; answers must stay server-side.");
     if (/"explanation"\s*:/.test(res.text)) return fail("Pre-grade answer explanations are exposed in /api/quests", "Keep explanations server-side until grading feedback is returned.");
-    return pass(`20 quests, no answer keys leaked`);
+    return pass(`${count} quests, no answer keys leaked`);
   }));
 
   results.push(await runCheck("api.leaderboard", "Leaderboard masking", async () => {
