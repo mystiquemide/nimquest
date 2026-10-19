@@ -24,7 +24,8 @@ const QUEST_TRAIL_TRACKS = new Set([
   "staking",
   "ecosystem",
   "mini apps",
-  "merchants"
+  "merchants",
+  "builders"
 ]);
 const QUEST_TRAIL_STATUSES = new Set(["all", "in-progress", "not-started", "verified"]);
 
@@ -265,7 +266,8 @@ const trackPresentation = {
   staking: { label: "Staking", color: "coral", icon: "◇" },
   ecosystem: { label: "Ecosystem", color: "pink", icon: "◫" },
   "mini-apps": { label: "Mini Apps", color: "blue", icon: "◫" },
-  merchants: { label: "Merchants", color: "mint", icon: "↗" }
+  merchants: { label: "Merchants", color: "mint", icon: "↗" },
+  builders: { label: "Builders", color: "violet", icon: "◫" }
 };
 
 const STARTER_QUEST_ID = "meet-nimiq";
@@ -279,7 +281,8 @@ const trackOrder = [
   "mini-apps",
   "mini apps",
   "ecosystem",
-  "merchants"
+  "merchants",
+  "builders"
 ];
 const trackRank = new Map(trackOrder.map((track, index) => [track, index]));
 const quests = [...catalogQuests]
@@ -523,7 +526,7 @@ document.querySelector("#app").innerHTML = `
           <p class="eyebrow">Your first trail</p>
           <h2>Start with what <span class="word-highlight word-highlight--blue">matters.</span></h2>
         </div>
-        <p>Six featured quests give you a quick start. The full trail contains ${quests.length} wallet-verifiable Nimiq skills, including merchant checkout.</p>
+        <p>Six featured quests give you a quick start. The full trail contains ${quests.length} wallet-verifiable Nimiq skills, including merchant checkout and Mini App developer onboarding.</p>
       </div>
       <div class="quest-grid">${questCards}</div>
       <p class="quest-note"><span aria-hidden="true">✦</span> Every quest is free. Learning and creating a completion proof never asks you for a payment.</p>
@@ -765,6 +768,13 @@ const badgeDefinitions = [
     description: "Verify the merchant checkout lesson.",
     icon: "↗",
     unlock: (completed) => completed.has("merchant-checkout")
+  },
+  {
+    id: "builder-ready",
+    name: "Builder Ready",
+    description: "Verify the first Mini App developer lesson.",
+    icon: "◫",
+    unlock: (completed) => completed.has("build-first-mini-app")
   }
 ];
 
@@ -942,7 +952,7 @@ function renderQuestTrail() {
         <div class="trail-hero__copy">
           <p class="eyebrow eyebrow--large">Your Nimiq Quest Trail</p>
           <h1>Pick a skill.<br><span class="word-highlight word-highlight--yellow">Start moving.</span></h1>
-          <p>${quests.length} short quests cover NIM basics, payments, wallet safety, network concepts, staking, Mini Apps and merchant checkout. Start anywhere, or follow the trail in order.</p>
+          <p>${quests.length} short quests cover NIM basics, payments, wallet safety, network concepts, staking, merchant checkout and Mini App building. Start anywhere, or follow the trail in order.</p>
         </div>
         <aside class="journey-ticket" aria-label="Current journey status">
           <div class="journey-ticket__top">
@@ -979,6 +989,7 @@ function renderQuestTrail() {
               <button class="filter-chip" type="button" data-track-filter="ecosystem" aria-pressed="false">Ecosystem</button>
               <button class="filter-chip" type="button" data-track-filter="mini apps" aria-pressed="false">Mini Apps</button>
               <button class="filter-chip" type="button" data-track-filter="merchants" aria-pressed="false">Merchants</button>
+              <button class="filter-chip" type="button" data-track-filter="builders" aria-pressed="false">Builders</button>
             </div>
             <div class="quest-filters quest-filters--status" aria-label="Filter quests by progress">
               <button class="filter-chip is-active" type="button" data-status-filter="all" aria-pressed="true">All progress</button>

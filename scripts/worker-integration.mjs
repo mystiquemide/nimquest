@@ -26,7 +26,7 @@ assert.deepEqual(dependencyHealth.components, {
   learnerFeedback: true
 });
 assert.equal(questsResponse.status, 200);
-assert.equal((await questsResponse.json()).quests.length, 21);
+assert.equal((await questsResponse.json()).quests.length, 22);
 assert.equal(deepLinkResponse.status, 200);
 assert.match(await deepLinkResponse.text(), /<div id="app"><\/div>/);
 
@@ -41,6 +41,17 @@ const gradeResponse = await fetch(`${baseUrl}/api/grade`, {
 const grade = await gradeResponse.json();
 assert.equal(gradeResponse.status, 200);
 assert.equal(grade.passed, true);
+
+const builderGradeResponse = await fetch(`${baseUrl}/api/grade`, {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify({
+    questId: "build-first-mini-app",
+    answers: correctAnswers("build-first-mini-app")
+  })
+});
+assert.equal(builderGradeResponse.status, 200);
+assert.equal((await builderGradeResponse.json()).passed, true);
 
 const failedAnswers = correctAnswers("meet-nimiq");
 failedAnswers[0] = (failedAnswers[0] + 1) % findQuest("meet-nimiq").questions[0].options.length;
@@ -229,7 +240,8 @@ assert.equal(unauthorizedFeedbackResponse.status, 403);
 console.log(JSON.stringify({
   health: "passed",
   databaseReadiness: "passed",
-  quests: 21,
+  quests: 22,
+  miniAppBuilderGrading: "passed",
   deepLink: "passed",
   nimiqSignature: "passed",
   d1Persistence: "passed",

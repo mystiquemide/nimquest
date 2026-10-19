@@ -848,6 +848,60 @@ const authoredQuests = [
         "explanation": "Independent confirmation protects merchants from mistaking a payment request or pending transfer for cleared funds."
       }
     ]
+  },
+  {
+    "id": "build-first-mini-app",
+    "title": "Build Your First Mini App",
+    "track": "builders",
+    "audience": "developer",
+    "difficulty": "intermediate",
+    "estimatedSeconds": 105,
+    "reward": {
+      "status": "unavailable",
+      "asset": null,
+      "amount": null
+    },
+    "learningGoals": [
+      "Initialize Nimiq Pay's injected provider through the Mini App SDK.",
+      "Distinguish read-only chain calls from wallet-permission requests and handle denied access safely."
+    ],
+    "lesson": "A Nimiq Mini App runs inside Nimiq Pay. Install @nimiq/mini-app-sdk, import init, then call const nimiq = await init({ timeout: 10_000 }) to wait for the injected wallet provider. You can read network readiness with nimiq.isConsensusEstablished() or the block height with nimiq.getBlockNumber() without wallet approval. Calling nimiq.listAccounts() asks the user for permission. If the provider is unavailable or access is denied, catch the error and offer a clear retry; never ask for recovery words or bypass the wallet confirmation.",
+    "sourceUrl": "https://nimiq.dev/mini-apps/tutorials/mini-app-tutorial",
+    "questions": [
+      {
+        "id": "sdk-init",
+        "prompt": "What is the recommended way for a Mini App to access the Nimiq Pay provider?",
+        "options": [
+          "Import init from @nimiq/mini-app-sdk and await init()",
+          "Read the user's recovery words from storage",
+          "Assume the provider exists immediately when the page loads"
+        ],
+        "answerIndex": 0,
+        "explanation": "The Mini App SDK init() waits for the injected provider to become available."
+      },
+      {
+        "id": "wallet-consent",
+        "prompt": "Which provider call requests the user's native wallet approval?",
+        "options": [
+          "nimiq.listAccounts()",
+          "nimiq.getBlockNumber()",
+          "nimiq.isConsensusEstablished()"
+        ],
+        "answerIndex": 0,
+        "explanation": "listAccounts() asks for permission, while the network status methods are read-only."
+      },
+      {
+        "id": "handle-error",
+        "prompt": "What should a developer do when provider initialization fails or account access is denied?",
+        "options": [
+          "Explain the error and provide a safe retry without bypassing permission",
+          "Silently repeat account requests until permission is granted",
+          "Ask for the recovery words to continue"
+        ],
+        "answerIndex": 0,
+        "explanation": "Failure or refusal must be handled gracefully; secrets and user approval remain protected."
+      }
+    ]
   }
 ];
 

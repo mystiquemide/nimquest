@@ -30,10 +30,10 @@ describe("quest service", () => {
     useChallengeStore(new ChallengeStore());
   });
 
-  it("publishes sourced quests including merchant checkout without answer keys", () => {
+  it("publishes the expanded catalog without answer keys", () => {
     const quests = listQuests();
 
-    assert.equal(quests.length, 21);
+    assert.equal(quests.length, 22);
     assert.equal("answerIndex" in quests[0].questions[0], false);
     assert.equal("explanation" in quests[0].questions[0], false);
     assert.match(quests[0].sourceUrl, /^https:\/\/nimiq/);
@@ -58,6 +58,30 @@ describe("quest service", () => {
     const result = checkQuestAnswers({ questId: quest.id, answers: incorrect });
     assert.equal(result.passed, false);
     assert.equal("answerIndex" in result.feedback[0], false);
+  });
+
+  it("grades the builder onboarding quest without exposing answer keys", () => {
+    const quest = findQuest("build-first-mini-app");
+    const publicQuest = getQuest(quest.id);
+    assert.equal(publicQuest.track, "builders");
+    assert.equal(publicQuest.audience, "developer");
+    assert.equal(publicQuest.difficulty, "intermediate");
+    assert.equal(publicQuest.questions.length, 3);
+    assert.equal(publicQuest.reward.status, "unavailable");
+    assert.match(publicQuest.sourceUrl, /^https:\/\/nimiq\.dev\/mini-apps\//);
+    for (const question of publicQuest.questions) {
+      assert.equal("answerIndex" in question, false);
+      assert.equal("explanation" in question, false);
+    }
+    const correct = quest.questions.map((question) => question.answerIndex);
+    assert.deepEqual([...new Set(correct)].sort(), [0, 1, 2]);
+    assert.equal(checkQuestAnswers({ questId: quest.id, answers: correct }).passed, true);
+    const wrong = [...correct];
+    wrong[1] = (wrong[1] + 1) % quest.questions[1].options.length;
+    const failed = checkQuestAnswers({ questId: quest.id, answers: wrong });
+    assert.equal(failed.passed, false);
+    assert.equal(failed.score, 2);
+    assert.equal("answerIndex" in failed.feedback[1], false);
   });
 
   it("returns one public quest without answer metadata", () => {

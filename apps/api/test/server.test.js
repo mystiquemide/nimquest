@@ -36,7 +36,7 @@ describe("api server", () => {
     const body = await response.json();
 
     assert.equal(response.status, 200);
-    assert.equal(body.quests.length, 21);
+    assert.equal(body.quests.length, 22);
     assert.equal("answerIndex" in body.quests[0].questions[0], false);
     assert.equal("explanation" in body.quests[0].questions[0], false);
   });
