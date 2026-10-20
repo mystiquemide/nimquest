@@ -33,7 +33,7 @@ describe("quest service", () => {
   it("publishes the expanded catalog without answer keys", () => {
     const quests = listQuests();
 
-    assert.equal(quests.length, 22);
+    assert.equal(quests.length, 23);
     assert.equal("answerIndex" in quests[0].questions[0], false);
     assert.equal("explanation" in quests[0].questions[0], false);
     assert.match(quests[0].sourceUrl, /^https:\/\/nimiq/);
@@ -82,6 +82,30 @@ describe("quest service", () => {
     assert.equal(failed.passed, false);
     assert.equal(failed.score, 2);
     assert.equal("answerIndex" in failed.feedback[1], false);
+  });
+
+  it("reconciles merchant payments without revealing answer keys", () => {
+    const quest = findQuest("reconcile-merchant-payments");
+    const publicQuest = getQuest(quest.id);
+    assert.equal(publicQuest.track, "merchants");
+    assert.equal(publicQuest.audience, "merchant");
+    assert.equal(publicQuest.difficulty, "advanced");
+    assert.equal(publicQuest.reward.status, "unavailable");
+    assert.equal(publicQuest.questions.length, 3);
+    assert.ok(publicQuest.sourceUrl.startsWith("https://nimiq.dev/web-client/"));
+    for (const question of publicQuest.questions) {
+      assert.equal("answerIndex" in question, false);
+      assert.equal("explanation" in question, false);
+    }
+    const correct = quest.questions.map(({ answerIndex }) => answerIndex);
+    assert.deepEqual([...new Set(correct)].sort(), [0, 1, 2]);
+    assert.equal(checkQuestAnswers({ questId: quest.id, answers: correct }).passed, true);
+    const wrong = [...correct];
+    wrong[0] = (wrong[0] + 1) % quest.questions[0].options.length;
+    const result = checkQuestAnswers({ questId: quest.id, answers: wrong });
+    assert.equal(result.passed, false);
+    assert.equal(result.score, 2);
+    assert.equal("answerIndex" in result.feedback[0], false);
   });
 
   it("returns one public quest without answer metadata", () => {

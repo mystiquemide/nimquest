@@ -1055,5 +1055,53 @@ export const catalogQuests = [
         ]
       }
     ]
+  },
+  {
+    "id": "reconcile-merchant-payments",
+    "title": "Reconcile a Merchant Payment",
+    "track": "merchants",
+    "audience": "merchant",
+    "difficulty": "advanced",
+    "estimatedSeconds": 135,
+    "reward": {
+      "status": "unavailable",
+      "asset": null,
+      "amount": null
+    },
+    "learningGoals": [
+      "Match a confirmed on-chain NIM transfer to the correct order and amount in luna.",
+      "Prevent duplicate fulfillment when transaction receipts or notifications repeat."
+    ],
+    "lesson": "A merchant needs an order ledger, not just a checkout success screen. Record the order ID, receiving address and exact expected NIM amount (1 NIM = 100,000 luna). Look up the transaction by its hash through a trusted Nimiq network source and check its recipient, value and state against the order. Mark an order paid only after the transfer is included and meets your confirmation policy, the amount and recipient match, and that transaction hash has not already settled another order. Repeated notifications for the same hash are not additional payments. If the payment is pending, unconfirmed, short or tied to another order, keep it unresolved for review instead of fulfilling it. Save the verified order-to-hash link as an audit receipt; a screenshot alone is not reliable proof.",
+    "sourceUrl": "https://nimiq.dev/web-client/guides/query-the-blockchain",
+    "questions": [
+      {
+        "id": "one-hash-two-orders",
+        "prompt": "Two separate orders claim payment using the same confirmed transaction hash. What should you do?",
+        "options": [
+          "Send a new checkout request and automatically mark both paid",
+          "Link the transaction to only one verified order and investigate the other",
+          "Mark both orders paid because both show the same hash"
+        ]
+      },
+      {
+        "id": "nim-luna-amount",
+        "prompt": "An order costs 2 NIM, but the confirmed transfer is 150,000 luna. How should the order be recorded?",
+        "options": [
+          "Paid: 150,000 luna is 2 NIM",
+          "Overpaid: 150,000 luna is 15 NIM",
+          "Underpaid: 150,000 luna is 1.5 NIM, not 2 NIM"
+        ]
+      },
+      {
+        "id": "unconfirmed-order",
+        "prompt": "The transaction recipient and value match the order, but the network still reports it as pending. What is the safe next step?",
+        "options": [
+          "Keep the order pending until the transfer meets the store's confirmation policy",
+          "Use the customer's screenshot as the final confirmation",
+          "Fulfill the order immediately because the amount matches"
+        ]
+      }
+    ]
   }
 ];

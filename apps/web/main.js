@@ -526,7 +526,7 @@ document.querySelector("#app").innerHTML = `
           <p class="eyebrow">Your first trail</p>
           <h2>Start with what <span class="word-highlight word-highlight--blue">matters.</span></h2>
         </div>
-        <p>Six featured quests give you a quick start. The full trail contains ${quests.length} wallet-verifiable Nimiq skills, including merchant checkout and Mini App developer onboarding.</p>
+        <p>Six featured quests give you a quick start. The full trail contains ${quests.length} wallet-verifiable Nimiq skills, including merchant checkout, payment reconciliation and Mini App developer onboarding.</p>
       </div>
       <div class="quest-grid">${questCards}</div>
       <p class="quest-note"><span aria-hidden="true">✦</span> Every quest is free. Learning and creating a completion proof never asks you for a payment.</p>
@@ -770,6 +770,14 @@ const badgeDefinitions = [
     unlock: (completed) => completed.has("merchant-checkout")
   },
   {
+    id: "merchant-ledger-ready",
+    name: "Merchant Ledger Ready",
+    description: "Verify both merchant checkout and reconciliation lessons.",
+    icon: "↗",
+    unlock: (completed) =>
+      ["merchant-checkout", "reconcile-merchant-payments"].every((id) => completed.has(id))
+  },
+  {
     id: "builder-ready",
     name: "Builder Ready",
     description: "Verify the first Mini App developer lesson.",
@@ -952,7 +960,7 @@ function renderQuestTrail() {
         <div class="trail-hero__copy">
           <p class="eyebrow eyebrow--large">Your Nimiq Quest Trail</p>
           <h1>Pick a skill.<br><span class="word-highlight word-highlight--yellow">Start moving.</span></h1>
-          <p>${quests.length} short quests cover NIM basics, payments, wallet safety, network concepts, staking, merchant checkout and Mini App building. Start anywhere, or follow the trail in order.</p>
+          <p>${quests.length} short quests cover NIM basics, payments, wallet safety, network concepts, staking, merchant checkout, payment reconciliation and Mini App building. Start anywhere, or follow the trail in order.</p>
         </div>
         <aside class="journey-ticket" aria-label="Current journey status">
           <div class="journey-ticket__top">

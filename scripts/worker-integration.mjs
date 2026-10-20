@@ -26,7 +26,7 @@ assert.deepEqual(dependencyHealth.components, {
   learnerFeedback: true
 });
 assert.equal(questsResponse.status, 200);
-assert.equal((await questsResponse.json()).quests.length, 22);
+assert.equal((await questsResponse.json()).quests.length, 23);
 assert.equal(deepLinkResponse.status, 200);
 assert.match(await deepLinkResponse.text(), /<div id="app"><\/div>/);
 
@@ -52,6 +52,16 @@ const builderGradeResponse = await fetch(`${baseUrl}/api/grade`, {
 });
 assert.equal(builderGradeResponse.status, 200);
 assert.equal((await builderGradeResponse.json()).passed, true);
+const reconciliationGradeResponse = await fetch(`${baseUrl}/api/grade`, {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify({
+    questId: "reconcile-merchant-payments",
+    answers: correctAnswers("reconcile-merchant-payments")
+  })
+});
+assert.equal(reconciliationGradeResponse.status, 200);
+assert.equal((await reconciliationGradeResponse.json()).passed, true);
 
 const failedAnswers = correctAnswers("meet-nimiq");
 failedAnswers[0] = (failedAnswers[0] + 1) % findQuest("meet-nimiq").questions[0].options.length;
@@ -179,12 +189,12 @@ assert.equal(communityResponse.status, 200);
 assert.equal(community.summary.verifiedCompletions, 1);
 assert.equal(community.summary.participatingWallets, 1);
 assert.equal(community.summary.activeQuests, 1);
-assert.equal(community.funnel.quizAttempts, 2);
-assert.equal(community.funnel.quizPasses, 1);
+assert.equal(community.funnel.quizAttempts, 4);
+assert.equal(community.funnel.quizPasses, 3);
 assert.equal(community.funnel.proofStarts, 1);
 assert.equal(community.funnel.verifiedCompletions, 1);
-assert.equal(community.funnel.passRate, 50);
-assert.equal(community.funnel.proofStartRate, 100);
+assert.equal(community.funnel.passRate, 75);
+assert.ok(community.funnel.proofStartRate >= 33 && community.funnel.proofStartRate <= 34);
 assert.equal(community.funnel.verificationRate, 100);
 assert.match(community.funnel.trackingSince, /^\d{4}-\d{2}-\d{2}$/);
 assert.equal("walletAddress" in community.funnel, false);
@@ -240,8 +250,9 @@ assert.equal(unauthorizedFeedbackResponse.status, 403);
 console.log(JSON.stringify({
   health: "passed",
   databaseReadiness: "passed",
-  quests: 22,
+  quests: 23,
   miniAppBuilderGrading: "passed",
+  merchantReconciliationGrading: "passed",
   deepLink: "passed",
   nimiqSignature: "passed",
   d1Persistence: "passed",

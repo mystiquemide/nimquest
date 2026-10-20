@@ -29,6 +29,7 @@ const routes = [
   ["/quests", /Pick a skill/, "Quest Trail | NimQuest"],
   ["/quests/meet-nimiq", /Meet Nimiq/, "Meet Nimiq | NimQuest"],
   ["/quests/build-first-mini-app", /Build Your First Mini App/, "Build Your First Mini App | NimQuest"],
+  ["/quests/reconcile-merchant-payments", /Reconcile a Merchant Payment/, "Reconcile a Merchant Payment | NimQuest"],
   ["/proof/meet-nimiq", /wallet proof/i, "Meet Nimiq Wallet Proof | NimQuest"],
   ["/completions/test-feedback-proof", /Meet Nimiq/, "Completion Receipt | NimQuest"],
   ["/journey", /Small wins/, "My Journey | NimQuest"],
@@ -216,8 +217,9 @@ try {
 
         await page.locator('[data-quest-search]').fill("");
         await page.locator('[data-track-filter="merchants"]').click();
-        assert.equal(await page.locator('.trail-card:visible').count(), 1);
-        assert.match(await page.locator('.trail-card:visible h2').textContent(), /Verify a Merchant Checkout/i);
+        assert.equal(await page.locator('.trail-card:visible').count(), 2);
+        assert.match(await page.locator('.trail-card:visible').first().textContent(), /Verify a Merchant Checkout/i);
+        assert.match(await page.locator('.trail-card:visible').last().textContent(), /Reconcile a Merchant Payment/i);
         await page.locator('[data-track-filter="all"]').click();
         await page.locator('[data-track-filter="builders"]').click();
         assert.equal(await page.locator(".trail-card:visible").count(), 1);
@@ -230,8 +232,8 @@ try {
         assert.equal(await page.locator("[data-quest-empty]").isVisible(), true);
 
         await page.locator("[data-clear-quest-filters]").click();
-        assert.equal(await page.locator(".trail-card:visible").count(), 22);
-        assert.match(await page.locator("[data-quest-results]").textContent(), /22 quests shown/i);
+        assert.equal(await page.locator(".trail-card:visible").count(), 23);
+        assert.match(await page.locator("[data-quest-results]").textContent(), /23 quests shown/i);
         assert.equal(new URL(page.url()).search, "");
 
         await page.evaluate(() => {

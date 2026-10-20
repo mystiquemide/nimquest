@@ -161,7 +161,7 @@ Run them all: `npm test`.
 - App: https://nimquest.midelabs.xyz (Cloudflare Workers with Static Assets)
 - Health: https://nimquest.midelabs.xyz/health
 - Read-only D1 health: https://nimquest.midelabs.xyz/api/health/dependencies
-- Public quests API: https://nimquest.midelabs.xyz/api/quests (22 quests after this development update; no answer keys)
+- Public quests API: https://nimquest.midelabs.xyz/api/quests (23 quests after this development update; no answer keys)
 - Live leaderboard API: https://nimquest.midelabs.xyz/api/leaderboard
 - Storage: Cloudflare D1, four migration files in `migrations/`; verify remote application separately
 - Deploys automatically from `main`.
@@ -220,7 +220,7 @@ What is next for NimQuest, in priority order.
 
 - **Sponsored quest campaigns.** Let Nimiq projects and builders fund a quest pool with verifiable completion claims, so learners earn from the sponsor and the sponsor gets proof of education.
 - **Quest authoring tools.** A publishing flow so ecosystem contributors can write, review, and ship new quests without touching the core repository.
-- **Merchant and builder onboarding.** Initial merchant checkout and Mini App SDK developer quests are implemented. Merchant reconciliation and further developer paths remain to be built and tested on real devices.
+- **Merchant and builder onboarding.** Merchant checkout, payment reconciliation, and initial Mini App SDK developer quests are implemented. More merchant workflows and developer paths remain to be built and tested on real devices.
 - **Multilingual quests.** Community-contributed translations so NimQuest works for Nimiq users regardless of language.
 
 Every item on this roadmap stays gated by real usage data and real funding. Nothing ships as a promise without the rail to back it.
