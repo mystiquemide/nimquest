@@ -1,3 +1,6 @@
+import publishedCommunityQuests from "../../../contributions/published-quests.json" with { type: "json" };
+import { validateQuestContributionCatalog } from "./quest-contribution-validation.js";
+
 const authoredQuests = [
   {
     id: "meet-nimiq",
@@ -959,7 +962,10 @@ const authoredQuests = [
   }
 ];
 
-export const quests = authoredQuests.map((quest) => ({
+export const builtInQuestIds = authoredQuests.map((quest) => quest.id);
+const contributedQuests = validateQuestContributionCatalog(publishedCommunityQuests, builtInQuestIds);
+
+export const quests = [...authoredQuests, ...contributedQuests].map((quest) => ({
   ...quest,
   questions: quest.questions.map((question) => hardenQuestionOrder(quest.id, question))
 }));

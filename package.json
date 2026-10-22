@@ -9,7 +9,7 @@
     "dev:web": "vite --host 0.0.0.0",
     "dev:worker": "wrangler dev",
     "generate:web-catalog": "node scripts/generate-web-catalog.mjs",
-    "prebuild:web": "npm run generate:web-catalog",
+    "prebuild:web": "npm run quest:check && npm run generate:web-catalog",
     "build:web": "vite build",
     "preview:web": "vite preview --host 0.0.0.0",
     "test": "node --test",
@@ -23,7 +23,12 @@
     "qa:full": "node cli/index.mjs qa full",
     "deploy:check": "node cli/index.mjs deploy check",
     "worker:types": "wrangler types",
-    "worker:check": "npm run build:web && wrangler deploy --dry-run"
+    "worker:check": "npm run build:web && wrangler deploy --dry-run",
+    "quest:new": "node scripts/quest-contributions.mjs new",
+    "quest:validate": "node scripts/quest-contributions.mjs validate",
+    "quest:stage": "node scripts/quest-contributions.mjs stage",
+    "quest:check": "node scripts/quest-contributions.mjs check",
+    "pretest": "npm run quest:check"
   },
   "engines": {
     "node": ">=20"

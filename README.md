@@ -201,6 +201,12 @@ The pattern: a docs page teaches but proves nothing, a browser quiz proves somet
 - Public leaderboard participation is mandatory after verification.
 - Nimiq Pay signing needs the Nimiq Pay Mini App provider.
 
+## Community quest authoring
+
+NimQuest now has a **contributor authoring and review workflow**. Write a sourced lesson as JSON, validate its safety and quiz structure, and stage it for a maintainer-reviewed pull request without editing the core quest array. Only approved and merged contributions become public quests.
+
+Quick start: `npm run quest:new -- <slug>`, then `npm run quest:validate -- contributions/drafts/<slug>.json`, then `npm run quest:stage -- contributions/drafts/<slug>.json`. See [the full contribution guide](contributions/README.md). The published community catalog starts empty, and staged drafts do not go live on their own.
+
 ## Roadmap
 
 What is next for NimQuest, in priority order.
@@ -219,7 +225,7 @@ What is next for NimQuest, in priority order.
 ### Long-term (ecosystem)
 
 - **Sponsored quest campaigns.** Let Nimiq projects and builders fund a quest pool with verifiable completion claims, so learners earn from the sponsor and the sponsor gets proof of education.
-- **Quest authoring tools.** A publishing flow so ecosystem contributors can write, review, and ship new quests without touching the core repository.
+- **Quest authoring tools.** Contributor drafting, validation and maintainer-reviewed JSON intake are implemented. Future work: in-app authoring and contributor review dashboards.
 - **Merchant and builder onboarding.** Merchant checkout, payment reconciliation, and initial Mini App SDK developer quests are implemented. More merchant workflows and developer paths remain to be built and tested on real devices.
 - **Multilingual quests.** Community-contributed translations so NimQuest works for Nimiq users regardless of language.
 
